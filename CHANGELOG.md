@@ -9,7 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Multiple cities per country in location data: 216 → 457 locations total, covering major cities worldwide (e.g., France now has Paris, Marseille, Lyon, Toulouse, Nice, etc.; USA has 20 major cities).
+- Improved error messages with fuzzy matching: when a user mistypes a parameter value (sector, company, job title, role, qualification, or country), the error message now suggests the closest matches.
+- New read-only properties: `job_companies` (list of all company names) and `job_roles` (list of all role names).
+- New helper scripts: `scripts/build_report.py` and `scripts/build_sample.py`.
+
+### Changed
+- `faker_locations.csv` enriched with multiple cities per country instead of just capitals.
+- Error handling in `_pick_company`, `_resolve_title`, `_find_role`, `job_qualification_name`, and `job_location` now provides helpful suggestions for common typos.
+- Tests updated to handle multiple locations per country.
+
 ---
+
+## [0.1.0] - 2026-11-04
 
 ## [0.1.0] - 2026-11-04
 
