@@ -1,0 +1,66 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "faker-jobs"
+dynamic = ["version"]
+description = "A custom Faker provider for simulating job postings: roles, skills, salaries, benefits, companies and locations"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "jctranc" }]
+keywords = ["faker", "jobs", "job posting", "recruitment", "hr", "test data"]
+requires-python = ">=3.11"
+dependencies = ["faker>=20.0.0"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Environment :: Console",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+dev = ["pytest", "ruff", "build", "mypy"]
+
+[project.urls]
+Homepage = "https://github.com/arribo44/faker-jobs"
+Changelog = "https://github.com/arribo44/faker-jobs/blob/main/CHANGELOG.md"
+
+[tool.setuptools.dynamic]
+version = { attr = "faker_jobs.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["faker_jobs*"]
+
+[tool.setuptools.package-data]
+"faker_jobs" = ["py.typed"]
+"faker_jobs.data" = ["*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.mypy]
+strict = true
+# The data is loaded from JSON into dict[str, Any]: values read from it
+# are Any by nature, and flagging every one of them would be noise.
+warn_return_any = false
+
+[[tool.mypy.overrides]]
+# Faker ships no type information for some of its modules.
+module = ["faker.*"]
+ignore_missing_imports = true
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+# Explicit rule set so CI doesn't change behaviour when ruff's defaults do.
+select = ["E", "F", "W", "B"]

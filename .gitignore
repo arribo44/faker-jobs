@@ -1,0 +1,19 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+.venv/
+
+# Données sources (CSV, archive, cache de géocodage) : non publiées.
+# Les données utiles sont embarquées dans faker_jobs/data/jobs_data.json.
+DATAS/
+
+# Fichier de déploiement (aide-mémoire personnel, exclu de Git)
+DEPLOY.md
+
+# Editor settings
+.vscode/
