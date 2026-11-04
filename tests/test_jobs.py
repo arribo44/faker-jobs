@@ -117,7 +117,8 @@ class TestJobsProvider(unittest.TestCase):
         # With multiple cities per country, verify we get a French city
         french_loc = self.fake.job_location(country="france")
         self.assertEqual(french_loc["country"], "France")
-        self.assertIn(french_loc["city"], [loc["city"] for loc in self.provider._data["locations"] if loc["country"] == "France"])
+        french_cities = [loc["city"] for loc in self.provider._data["locations"] if loc["country"] == "France"]
+        self.assertIn(french_loc["city"], french_cities)
         with self.assertRaises(ValueError):
             self.fake.job_location(country="Atlantis")
 
