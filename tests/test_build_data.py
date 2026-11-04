@@ -33,9 +33,20 @@ class TestBuildData(unittest.TestCase):
             self.assertGreater(role["posting_count"], 0, msg=role["role"])
             self.assertIn(role["job_title"], self.data["job_titles"])
 
-    def test_one_location_per_country(self):
+    def test_multiple_locations_per_country(self):
+        # Now we have multiple cities per country
         countries = [location["country"] for location in self.data["locations"]]
-        self.assertEqual(len(countries), len(set(countries)))
+        unique_countries = set(countries)
+        # Verify we have locations for multiple countries
+        self.assertGreater(len(unique_countries), 1)
+        # Verify total locations is greater than unique countries (multiple cities per country)
+        self.assertGreater(len(countries), len(unique_countries))
+        # Verify each location has required fields
+        for location in self.data["locations"]:
+            self.assertIn("city", location)
+            self.assertIn("country", location)
+            self.assertIn("latitude", location)
+            self.assertIn("longitude", location)
 
     def test_unique_company_names(self):
         names = [company["company"].lower() for company in self.data["companies"]]

@@ -12,6 +12,7 @@ per country, geocoded). Roles are picked in proportion to how often they are
 posted in that dataset. Contact names and phone numbers come from the Faker
 locale, so they are localized; everything else is in English.
 """
+import difflib
 import datetime as _datetime
 import itertools
 import json
@@ -24,6 +25,16 @@ __version__ = "0.1.0"
 
 _DATA_PATH = os.path.join(os.path.dirname(__file__), "data", "jobs_data.json")
 _data_cache: dict[str, Any] | None = None
+
+
+def _suggest_similar(value: str, options: list[str], n: int = 3) -> list[str]:
+    """Suggest similar values using fuzzy matching."""
+    return difflib.get_close_matches(
+        value.lower(),
+        [o.lower() for o in options],
+        n=n,
+        cutoff=0.6
+    )
 
 
 class RoleRecord(TypedDict):
@@ -128,7 +139,12 @@ def _build_index(raw: dict[str, Any]) -> dict[str, Any]:
         "cum_weights": cum_weights(roles),
         "cum_weights_by_title": {title: cum_weights(rows) for title, rows in by_title.items()},
         "title_cum_weights": list(itertools.accumulate(title_weights)),
-        "locations_by_country": {loc["country"].lower(): loc for loc in raw["locations"]},
+        "locations_by_country": {
+            country.lower(): list(locations)
+            for country, locations in itertools.groupby(
+                sorted(raw["locations"], key=lambda x: x["country"]), key=lambda x: x["country"]
+            )
+        },
         "company_by_name": {company["company"].lower(): company for company in raw["companies"]},
         "companies_by_sector": by_sector,
         "sector_by_name": {sector.lower(): sector for sector in by_sector},
@@ -158,13 +174,21 @@ class JobsProvider(BaseProvider):
             return None
         title = self._data["title_by_name"].get(str(job_title).strip().lower())
         if title is None:
-            raise ValueError(f"Unknown job title: {job_title!r}")
+            similar = _suggest_similar(job_title, self._data["title_by_name"].keys())
+            msg = f"Unknown job title: {job_title!r}"
+            if similar:
+                msg += f". Did you mean: {', '.join(similar)}?"
+            raise ValueError(msg)
         return title
 
     def _find_role(self, role: str) -> dict[str, Any]:
         found = self._data["role_by_name"].get(str(role).strip().lower())
         if found is None:
-            raise ValueError(f"Unknown role: {role!r}")
+            similar = _suggest_similar(role, self._data["role_by_name"].keys())
+            msg = f"Unknown role: {role!r}"
+            if similar:
+                msg += f". Did you mean: {', '.join(similar)}?"
+            raise ValueError(msg)
         return found
 
     def _pick_role(
@@ -246,7 +270,11 @@ class JobsProvider(BaseProvider):
         for known, name in self._data["qualifications"].items():
             if known.lower() == str(code).strip().lower():
                 return name
-        raise ValueError(f"Unknown qualification: {code!r}")
+        similar = _suggest_similar(code, self._data["qualifications"].keys())
+        msg = f"Unknown qualification: {code!r}"
+        if similar:
+            msg += f". Did you mean: {', '.join(similar)}?"
+        raise ValueError(msg)
 
     def job_experience_range(self) -> tuple[int, int]:
         """Return a random (min, max) years-of-experience range, e.g. (2, 12)."""
@@ -317,13 +345,19 @@ class JobsProvider(BaseProvider):
 
     def job_location(self, country: str | None = None) -> LocationRecord:
         """Return a random job location (city, country and coordinates), or
-        the one of the given `country` (one city per country)."""
+        a random one from the given `country`."""
         if country is None:
             location = self.random_element(self._data["locations"])
         else:
-            location = self._data["locations_by_country"].get(str(country).strip().lower())
-            if location is None:
-                raise ValueError(f"Unknown country: {country!r}")
+            locations = self._data["locations_by_country"].get(str(country).strip().lower())
+            if locations is None:
+                countries = sorted({loc["country"] for loc in self._data["locations"]})
+                similar = _suggest_similar(country, countries)
+                msg = f"Unknown country: {country!r}"
+                if similar:
+                    msg += f". Did you mean: {', '.join(similar)}?"
+                raise ValueError(msg)
+            location = self.random_element(locations)
         return {
             "city": location["city"],
             "country": location["country"],
@@ -338,17 +372,38 @@ class JobsProvider(BaseProvider):
         """list: every company sector (e.g. 'Financial Services'), sorted."""
         return sorted(self._data["companies_by_sector"])
 
+    @property
+    def job_companies(self) -> list[str]:
+        """list: every company name (e.g. '3M'), sorted."""
+        return sorted([c["company"] for c in self._data["companies"]])
+
+    @property
+    def job_roles(self) -> list[str]:
+        """list: every role name (e.g. 'Frontend Web Developer'), sorted."""
+        return sorted([r["role"] for r in self._data["roles"]])
+
     def _pick_company(self, company: str | None = None, sector: str | None = None) -> dict[str, Any]:
         if company is not None:
             found = self._data["company_by_name"].get(str(company).strip().lower())
             if found is None:
-                raise ValueError(f"Unknown company: {company!r}")
+                similar = _suggest_similar(company, self._data["company_by_name"].keys())
+                msg = f"Unknown company: {company!r}"
+                if similar:
+                    msg += f". Did you mean: {', '.join(similar)}?"
+                raise ValueError(msg)
             return found
         if sector is None:
             return self.random_element(self._data["companies"])
         name = self._data["sector_by_name"].get(str(sector).strip().lower())
         if name is None:
-            raise ValueError(f"Unknown sector: {sector!r}")
+            similar = _suggest_similar(sector, self._data["companies_by_sector"].keys())
+            sectors = sorted(self._data["companies_by_sector"].keys())
+            msg = f"Unknown sector: {sector!r}"
+            if similar:
+                msg += f". Did you mean: {', '.join(similar)}?"
+            else:
+                msg += f". Available sectors: {', '.join(sectors[:5])}..."
+            raise ValueError(msg)
         return self.random_element(self._data["companies_by_sector"][name])
 
     def job_company(self, sector: str | None = None) -> str:

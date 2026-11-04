@@ -114,7 +114,10 @@ class TestJobsProvider(unittest.TestCase):
         location = self.fake.job_location()
         self.assertIn(location["country"], self.provider.job_countries)
         self.assertTrue(-90 <= location["latitude"] <= 90 and -180 <= location["longitude"] <= 180)
-        self.assertEqual(self.fake.job_location(country="france")["city"], "Paris")
+        # With multiple cities per country, verify we get a French city
+        french_loc = self.fake.job_location(country="france")
+        self.assertEqual(french_loc["country"], "France")
+        self.assertIn(french_loc["city"], [loc["city"] for loc in self.provider._data["locations"] if loc["country"] == "France"])
         with self.assertRaises(ValueError):
             self.fake.job_location(country="Atlantis")
 
@@ -153,7 +156,8 @@ class TestJobsProvider(unittest.TestCase):
     def test_job_posting_is_consistent(self):
         posting = self.fake.job_posting(job_title="Web Developer", country="France", sector="Retail")
         self.assertEqual(posting["job_title"], "Web Developer")
-        self.assertEqual(posting["location"]["city"], "Paris")
+        # With multiple cities per country, verify it's a French city
+        self.assertEqual(posting["location"]["country"], "France")
         self.assertEqual(posting["company"]["sector"], "Retail")
         record = self.fake.job_role_record(role=posting["role"])
         self.assertEqual(posting["description"], record["description"])

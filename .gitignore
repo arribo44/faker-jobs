@@ -17,3 +17,6 @@ DEPLOY.md
 
 # Editor settings
 .vscode/
+
+# Generated reports
+reports/
