@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev]"
+      - run: ruff check .
+      - name: Type check (package + documented typed usage)
+        run: mypy faker_jobs tests/test_typing.py
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
+        faker-version: ["latest"]
+        include:
+          # Oldest supported Faker (see `dependencies` in pyproject.toml).
+          - python-version: "3.11"
+            faker-version: "20.0.0"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -e ".[test]"
+      - if: matrix.faker-version != 'latest'
+        run: pip install "faker==${{ matrix.faker-version }}"
+      # DATAS/ is not published: tests/test_build_data.py is skipped here.
+      - run: pytest -q
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install build
+      - run: python -m build
+      - name: Check the wheel ships the data
+        run: unzip -l dist/*.whl | grep -q "faker_jobs/data/jobs_data.json"
