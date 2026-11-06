@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New helper scripts: `scripts/build_report.py` and `scripts/build_sample.py`.
 
 ### Changed
+- **Breaking:** `job_posting()` is built on a ROME / ESCO occupation by default (`source="occupations"`): every trade, in the language of the Faker locale, picked by demand, with French conditions in French locales. The same keys as before, plus `source` and `occupation` (the `OccupationRecord`, None for Kaggle postings). `source="kaggle"` gives the previous postings; `job_title` and `role` require it, and `code` / activity `sector` select the occupation otherwise.
 - `faker_locations.csv` enriched with multiple cities per country instead of just capitals.
 - Error handling in `_pick_company`, `_resolve_title`, `_find_role`, `job_qualification_name`, and `job_location` now provides helpful suggestions for common typos.
 - Tests updated to handle multiple locations per country.

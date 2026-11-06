@@ -155,7 +155,9 @@ class TestJobsProvider(unittest.TestCase):
         self.assertEqual(self.fake.job_posting_date(start_date=fixed, end_date=fixed), fixed)
 
     def test_job_posting_is_consistent(self):
-        posting = self.fake.job_posting(job_title="Web Developer", country="France", sector="Retail")
+        posting = self.fake.job_posting(job_title="Web Developer", country="France", sector="Retail", source="kaggle")
+        self.assertEqual(posting["source"], "kaggle")
+        self.assertIsNone(posting["occupation"])
         self.assertEqual(posting["job_title"], "Web Developer")
         # With multiple cities per country, verify it's a French city
         self.assertEqual(posting["location"]["country"], "France")
@@ -167,6 +169,35 @@ class TestJobsProvider(unittest.TestCase):
                          f"${posting['salary_min'] // 1000}K-${posting['salary_max'] // 1000}K")
         self.assertEqual(posting["salary_currency"], "USD")
         self.assertIsInstance(posting["job_posting_date"], datetime.date)
+
+    def test_job_posting_defaults_to_occupations(self):
+        posting = self.fake.job_posting()
+        self.assertEqual(posting["source"], "occupations")
+        occupation = posting["occupation"]
+        self.assertEqual(posting["role"], occupation["title"])
+        self.assertTrue(posting["description"] and posting["skills"] and posting["responsibilities"])
+        # fr_FR: French conditions and job title.
+        self.assertEqual(posting["salary_currency"], "EUR")
+        self.assertTrue(posting["job_title"].endswith(" (H/F)"))
+        for activity in posting["responsibilities"].split("; "):
+            self.assertIn(activity, occupation["skills"])
+
+    def test_job_posting_occupation_options(self):
+        posting = self.fake.job_posting(code="J1506", country="Belgium")
+        self.assertEqual(posting["occupation"]["code"], "J1506")
+        self.assertEqual(posting["location"]["country"], "Belgium")
+        self.assertIn("Santé", self.fake.job_posting(sector="Santé")["occupation"]["sectors"])
+
+    def test_job_posting_source_errors(self):
+        with self.assertRaisesRegex(ValueError, "source='kaggle'"):
+            self.fake.job_posting(job_title="Web Developer")
+        with self.assertRaisesRegex(ValueError, "source must be"):
+            self.fake.job_posting(source="rome")
+        with self.assertRaisesRegex(ValueError, "source='occupations'"):
+            self.fake.job_posting(code="J1506", source="kaggle")
+
+    def test_kaggle_and_occupation_postings_have_the_same_keys(self):
+        self.assertEqual(set(self.fake.job_posting()), set(self.fake.job_posting(source="kaggle")))
 
     def test_contact_comes_from_locale(self):
         # fr_FR phone numbers start with +33 or 0; en_US ones never do with "0x xx".
