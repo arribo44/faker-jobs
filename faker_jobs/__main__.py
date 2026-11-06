@@ -47,8 +47,11 @@ def demo(locale: str) -> None:
     print(f"  {occupation['code']} {occupation['title']} ({occupation['sector']})")
     print(f"  skills: {'; '.join(jobs.job_occupation_skills(code=occupation['code'], count=3))}")
     occupation_posting = jobs.job_occupation_posting()
+    naf = occupation_posting["company_naf"]
     print(f"  posting: {occupation_posting['job_title']} at {occupation_posting['company']['company']} "
-          f"({occupation_posting['company_sector'] or 'company made up by the locale'})")
+          f"({occupation_posting['company_sector'] or 'company made up by the locale'}"
+          f"{f', NAF {naf} ' + str(occupation_posting['company']['industry']) if naf else ''}), "
+          f"demand {occupation_posting['occupation']['demand']}")
 
     print("\n--- Job posting ---")
     posting = jobs.job_posting()

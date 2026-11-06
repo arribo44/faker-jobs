@@ -168,6 +168,7 @@ fake.job_occupation_record(sector="Healthcare")
 #     'regulated': True,                       # a regulated profession
 #     'riasec': ['I', 'R'],                    # Holland codes, major first
 #     'transitions': ['demographic'],          # any of 'ecological', 'digital', 'demographic'
+#     'demand': 689,                           # estimated yearly recruitment projects in France (BMO 2026)
 # }
 fake.job_occupation_record(code="7b74626d-b487-48a1-9e80-47faf9928210")  # a given occupation
 ```
@@ -195,6 +196,7 @@ fake.job_occupation_record(code="J1506")
 #     'soft_skills': ['Etre force de proposition', ...],                                   # savoir-être
 #     'qualifications': ["Diplôme d'Etat d'infirmier (ière)"],    # diplomas listed by the ROME sheet
 #     'executive': False, 'regulated': True, 'riasec': ['S', 'I'], 'transitions': ['demographic'],
+#     'demand': 1489,
 # }
 ```
 
@@ -207,12 +209,37 @@ JobsProvider(fake).job_activity_sectors   # ['Activités juridiques et comptable
 JobsProvider(fake).job_occupation_codes   # ['A1101', 'A1201', ...] (1,923; 2,045 in English)
 ```
 
+Occupations are picked by **demand**: in proportion to their estimated
+yearly recruitment projects in France (`demand`), from France Travail's
+[BMO 2026](https://www.data.gouv.fr/datasets/enquete-besoins-en-main-doeuvre-bmo)
+survey, so cooks, farm workers and care assistants come up far more often
+than air traffic controllers. `weighted=False` picks uniformly, in every
+`job_occupation*` method:
+
+```python
+fake.job_occupation()                  # weighted by demand
+fake.job_occupation(weighted=False)    # uniform
+```
+
+BMO counts recruitment projects by job family (FAP 2021): each family's
+projects are shared evenly between its ROME sheets with the
+[DARES FAP 2021 → ROME table](https://dares.travail-emploi.gouv.fr/donnees/la-nomenclature-des-familles-professionnelles-2021).
+That table only knows the 532 ROME codes older than ROME 4.0: the other
+sheets get the mean weight of their ROME group (same 3-character prefix),
+and the weights are scaled back to the BMO total (2.2 million projects). An
+ESCO occupation gets the weight of its ROME sheets, shared by mapped job
+titles. These are French figures in every locale, and an **estimate**: use
+them as a popularity weight, not as statistics.
+
 `job_occupation_posting()` builds a full posting on an occupation: the job
-title, its skills and the hiring company fit together. The company is one of
-the packaged companies whose sector is the occupation's sector (the
-requested one, else its main one); when none is (social work, public
-service, research..., about 1 posting in 5), it is a name made up by the
-Faker locale and `company_sector` is `None`.
+title, its skills and the hiring company fit together, in the occupation's
+sector (the requested one, else its main one). In non-French locales the
+company is one of the packaged companies of that sector; when none is
+(social work, public service, research..., about 1 posting in 5), it is a
+name made up by the Faker locale and `company_sector` is `None`. In French
+locales the company is made up by the Faker locale, with an activity of the
+occupation's sector from the French NAF rév. 2 classification
+(`company_naf`, e.g. '86.10Z', and its label as `industry`).
 
 In French locales the whole posting is French: the job title follows the
 French usage for job ads (masculine form + "(H/F)": an ad may not target a
@@ -233,8 +260,10 @@ fake.job_occupation_posting(sector="Logistique et transport")
 #     'work_type': 'CDI',                       # CDI, CDD, Intérim, Alternance, Stage, Freelance
 #     'benefits': ['Intéressement et participation', 'Tickets restaurant', ...],   # fit the job and contract
 #     'location': {'city': 'Lyon', 'country': 'France', ...},
-#     'company': {'company': 'Transurban Group', 'sector': 'Transportation/Infrastructure', ...},
+#     'company': {'company': 'Lemaire SARL', 'sector': 'Logistique et transport',
+#                 'industry': 'Transports routiers de fret interurbains', 'city': 'Lyon', 'ceo': 'Paul Gomez', ...},
 #     'company_sector': 'Logistique et transport',
+#     'company_naf': '49.41A',                  # NAF rév. 2 activity of the sector (None outside French locales)
 #     'job_portal': 'HelloWork',                # APEC and Cadremploi for executive jobs only
 #     'contact_person': 'Agathe Evrard de Lopez', 'contact': '+33 (0)3 51 39 07 57',
 #     ...
@@ -254,9 +283,12 @@ Spanish and Italian postings have the occupation, job title and skills in
 their language (title as "Busfahrer (m/w/d)" in German, "(m/f)" in Italian;
 Spanish keeps both forms, "conductor/conductora") and these English conditions.
 
-ROME sheets have no description (`None`). The occupation methods are not
-weighted (these sources have no posting counts) and are independent from the
-Kaggle-based methods: activity sectors (occupations) are not `job_sectors`
+The NAF activities of each sector are chosen by hand (`NAF_BY_SECTOR` in
+`scripts/build_occupations.py`) and picked at random within the sector: a
+wastewater plant manager may work for a waste treatment company.
+
+ROME sheets have no description (`None`). The occupation methods are
+independent from the Kaggle-based methods: activity sectors (occupations) are not `job_sectors`
 (companies), and `job_posting()` is unchanged.
 
 An ESCO occupation takes the sectors that cover at least 25% of the ROME job
@@ -370,6 +402,10 @@ DATAS/metiers/rome-4-0-métiers-×-secteurs-d-activité.xlsx   ROME 4.0 v62 (Fra
 DATAS/esco/EURESmapping_occs_FR_v1.0.9.csv   ROME 4.0 -> ESCO 1.0.9 crosswalk (ESCO portal, France)
 DATAS/esco/esco_occupations_v1.0.9.json      English ESCO data, cached by fetch_esco.py
 DATAS/esco/esco_occupations_v1.0.9_{de,es,it}.json   same in German, Spanish, Italian
+DATAS/bmo/Base-open-data-BMO-2026.xlsx       BMO 2026 recruitment projects (France Travail, data.gouv.fr)
+DATAS/bmo/Dares_FAP2021_Table_passage_ROME.xlsx   FAP 2021 -> ROME table (DARES; its site blocks
+                                             scripts: download it in a browser or from the Web Archive)
+DATAS/naf/naf2008_liste_n5.xls               NAF rév. 2 sub-classes (INSEE)
 scripts/
   fetch_esco.py [language]      ESCO web-service API -> the caches above (~2,000 requests each, resumable)
   rome_labels.py                ROME sectors, domains and soft skills in English, German, Spanish, Italian
@@ -379,7 +415,7 @@ scripts/
 
 ```bash
 for l in en de es it; do python scripts/fetch_esco.py $l; done   # only if the crosswalk changed
-python scripts/build_occupations.py # needs openpyxl (dev extra); after build_data.py
+python scripts/build_occupations.py # needs openpyxl and xlrd (dev extra); after build_data.py
 ```
 
 After changing anything in `DATAS/`:
@@ -414,5 +450,7 @@ Occupation data:
 - ROME 4.0 © France Travail, [Licence Ouverte / Etalab 2.0](https://www.etalab.gouv.fr/licence-ouverte-open-licence/).
 - ESCO © European Union, reused under [Commission Decision 2011/833/EU](https://eur-lex.europa.eu/eli/dec/2011/833/oj);
   ROME 4.0 → ESCO crosswalk by France Travail, from the [ESCO portal](https://esco.ec.europa.eu/en/use-esco/eures-countries-mapping-tables).
+- BMO 2026 © France Travail, FAP 2021 → ROME table © DARES, NAF rév. 2 ©
+  INSEE: [Licence Ouverte / Etalab 2.0](https://www.etalab.gouv.fr/licence-ouverte-open-licence/).
 - English, German, Spanish and Italian labels of the 35 ROME activity
   sectors, 14 domains and 16 soft skills are translated by this project.
