@@ -36,7 +36,7 @@ from typing import Any, TypedDict
 
 from faker.providers import BaseProvider
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 _DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 _DATA_PATH = os.path.join(_DATA_DIR, "jobs_data.json")
