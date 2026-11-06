@@ -21,7 +21,8 @@ is in **English**, whatever the locale. Contact names and phone numbers in
 
 [Occupations](#-occupations-rome--esco) follow the locale: **French** (ROME
 4.0) in French locales (`fr_FR`, `fr_CA`, `fr_BE`...), **English** (ESCO) in
-every other one.
+every other one. In French locales, `job_occupation_posting()` is entirely
+French (contract, salary in EUR, diplomas, place, job boards).
 
 ---
 
@@ -161,6 +162,11 @@ fake.job_occupation_record(sector="Healthcare")
 #     'skills': ["manage healthcare users' data", 'follow clinical guidelines', ...],   # 37 skills
 #     'knowledge': ['medicines for self-medication'],
 #     'soft_skills': ['Active listening and empathy', 'Attention to detail', ...],
+#     'qualifications': [],                    # French diplomas: French locales only
+#     'executive': False,                      # a "cadre" job (from ROME)
+#     'regulated': True,                       # a regulated profession
+#     'riasec': ['I', 'R'],                    # Holland codes, major first
+#     'transitions': ['demographic'],          # any of 'ecological', 'digital', 'demographic'
 # }
 fake.job_occupation_record(code="7b74626d-b487-48a1-9e80-47faf9928210")  # a given occupation
 ```
@@ -174,6 +180,7 @@ fake.add_provider(JobsProvider)
 
 fake.job_occupation_title(sector="Bâtiment et travaux publics (BTP)")
 # "Technicien / Technicienne de maintenance en matériels de chantier de travaux publics"
+fake.job_occupation_title(sector="Santé", gender="F")   # "Pharmacienne assistante" ("M": masculine form)
 fake.job_occupation_record(code="J1506")
 # {
 #     'code': 'J1506',
@@ -185,6 +192,8 @@ fake.job_occupation_record(code="J1506")
 #     'skills': ['Appliquer un protocole de soin', ...],                                  # savoir-faire
 #     'knowledge': ["Connaissance de l'écosystème sanitaire, médico-social et social", ...], # savoirs
 #     'soft_skills': ['Etre force de proposition', ...],                                   # savoir-être
+#     'qualifications': ["Diplôme d'Etat d'infirmier (ière)"],    # diplomas listed by the ROME sheet
+#     'executive': False, 'regulated': True, 'riasec': ['S', 'I'], 'transitions': ['demographic'],
 # }
 ```
 
@@ -204,22 +213,37 @@ requested one, else its main one, else its other ones); when none does
 (social work, public service, research...), it is a name made up by the
 Faker locale and `company_sector` is `None`.
 
+In French locales the whole posting is French: the job title follows the
+French usage for job ads (masculine form + "(H/F)": an ad may not target a
+gender), the diploma comes from the ROME sheet, and the contract, salary,
+benefits, place (France by default) and job board are French:
+
 ```python
 fake.job_occupation_posting(sector="Logistique et transport")
 # {
-#     'job_id': 1795576578659365,
-#     'job_title': 'Conducteur routier régional / Conductrice routière régionale',
+#     'job_id': 854448090234722,
+#     'job_title': 'Conducteur routier régional (H/F)',
 #     'occupation': {'code': 'N4101', 'title': 'Conducteur / Conductrice de poids lourd', ...},
-#     'skills': ["Contrôler l'état de fonctionnement du véhicule", ...],   # 5 by default (`skills=`)
+#     'skills': ["Rendre compte à l'exploitant de son activité", ...],   # 5 by default (`skills=`)
+#     'qualification': 'Titre professionnel conducteur du transport routier de marchandises sur tous véhicules',
+#     'experience': '3 à 6 ans', 'experience_min': 3, 'experience_max': 6,   # or 'Débutant accepté'
+#     'salary_range': '24 000 € - 32 000 € brut/an', 'salary_min': 24000, 'salary_max': 32000,
+#     'salary_currency': 'EUR',
+#     'work_type': 'CDI',                       # CDI, CDD, Intérim, Alternance, Stage, Freelance
+#     'benefits': ['Intéressement et participation', 'Tickets restaurant', ...],
+#     'location': {'city': 'Lyon', 'country': 'France', ...},
 #     'company': {'company': 'Transurban Group', 'sector': 'Transportation/Infrastructure', ...},
 #     'company_sector': 'Logistique et transport',
-#     'qualification': 'BA', 'experience': '3 to 11 Years', 'salary_range': '$57K-$112K', ...
-#     'contact_person': 'Étienne Guillot', 'contact': '+33 (0)6 36 57 93 83',
+#     'job_portal': 'HelloWork',                # APEC and Cadremploi for executive jobs only
+#     'contact_person': 'Agathe Evrard de Lopez', 'contact': '+33 (0)3 51 39 07 57',
+#     ...
 # }
 ```
 
-Qualifications, salaries (USD), benefits, work types, portals and locations
-still come from the Kaggle data, in English whatever the locale.
+The French conditions are **illustrative**, made by hand to look plausible:
+contract weights and salary ranges (by executive status) are not
+statistics. In other locales, qualifications, salaries (USD), benefits, work
+types, portals and locations come from the Kaggle data, in English.
 
 ROME sheets have no description (`None`). The occupation methods are not
 weighted (these sources have no posting counts) and are independent from the

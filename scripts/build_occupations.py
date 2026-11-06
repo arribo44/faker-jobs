@@ -119,6 +119,16 @@ SOFT_SKILLS_EN = {
 }
 
 
+# ROME "Transition écologique" values counted as ecological jobs ("Emploi
+# Blanc" and "Emploi Brun", jobs bound to shrink, are not).
+ECOLOGICAL_JOBS = {"Emploi Vert", "Emploi stratégique pour la Transition écologique"}
+
+# Knowledge labels that are diplomas (CAP, Bac pro, BTS, Master...), as opposed
+# to know-how or certifications (CACES, habilitations), which stay knowledge.
+DIPLOMA = re.compile(r"(CAP|BEP|BP|Bac|BTSA?|BUT|DUT|DEUST|Licence|Master|Mastère|Doctorat|Diplôme|MC|CQP"
+                     r"|Brevet|Titre professionnel|Ingénieur diplômé)\b")
+
+
 def normalize(label):
     """Key used to join appellation labels across files (quotes, spaces, case)."""
     return " ".join(unicodedata.normalize("NFC", label).replace("’", "'").split()).lower()
@@ -141,10 +151,20 @@ def load_rome(sheets):
     jobs = {}
     for row in sheets["Fiches métiers"]:
         code = row[0]
+        riasec, ecological, digital, demographic, regulated, executive = row[9:15]
         jobs[code] = {
             "code": code, "title": row[1], "domain_code": row[2], "domain": row[3],
             "titles": [], "sector_codes": [], "main_sector_code": None,
-            "skills": [], "knowledge": [], "soft_skills": [],
+            "skills": [], "knowledge": [], "soft_skills": [], "qualifications": [],
+            # "R – Réaliste / C – Conventionnel" -> ["R", "C"]
+            "riasec": [part.strip()[0] for part in riasec.split("/")] if riasec else [],
+            "transitions": [name for name, flag in (
+                ("ecological", ecological in ECOLOGICAL_JOBS),
+                ("digital", digital == "Oui"),
+                ("demographic", demographic == "Oui"),
+            ) if flag],
+            "regulated": regulated == "Oui",
+            "executive": executive == "Oui",
         }
     for label, code, _sheet_title, rare in sheets["Appellations"]:
         if rare != "Oui":
@@ -161,8 +181,10 @@ def load_rome(sheets):
     for sheet, field in (("Savoir-faire", "skills"), ("Savoirs", "knowledge"),
                          ("Savoir-être professionnels", "soft_skills")):
         for code, _title, label in sheets[sheet]:
-            if label not in jobs[code][field]:
-                jobs[code][field].append(label)
+            # Diplomas are listed among the knowledge: they get their own field.
+            target = "qualifications" if field == "knowledge" and DIPLOMA.match(label) else field
+            if label not in jobs[code][target]:
+                jobs[code][target].append(label)
     for job in jobs.values():
         if job["main_sector_code"] is None:
             raise ValueError(f"ROME job {job['code']} has no main sector")
@@ -204,8 +226,56 @@ def package(meta, sectors, occupations):
             "skills": pool.many(occupation["skills"]),
             "knowledge": pool.many(occupation["knowledge"]),
             "soft_skills": pool.many(occupation["soft_skills"]),
+            "qualifications": pool.many(occupation["qualifications"]),
+            "executive": occupation["executive"],
+            "regulated": occupation["regulated"],
+            "riasec": occupation["riasec"],
+            "transitions": occupation["transitions"],
         })
     return {"meta": meta, "sectors": sorted(sectors), "strings": pool.strings, "occupations": records}
+
+
+ROME_ATTRIBUTES = ("qualifications", "executive", "regulated", "riasec", "transitions")
+
+# Job conditions of the French postings (job_occupation_posting() in French
+# locales), instead of the Kaggle ones (USD, US degrees, worldwide places).
+# Hand-made and ILLUSTRATIVE: contract weights and salary ranges give
+# plausible postings, they are not statistics.
+CONDITIONS_FR = {
+    "country": "France",
+    "currency": "EUR",
+    # Contract type -> relative weight.
+    "contracts": {"CDI": 55, "CDD": 20, "Intérim": 12, "Alternance": 6, "Stage": 4, "Freelance": 3},
+    # Yearly gross salary, in k€: [min, max] of the lower bound, [min, max] of the gap to the upper bound.
+    "salary_k": {
+        "executive": {"low": [35, 60], "gap": [5, 15]},
+        "other": {"low": [22, 32], "gap": [2, 8]},
+    },
+    # Years of experience asked: [min, max] of the minimum, [min, max] of the gap to the maximum.
+    "experience": {
+        "executive": {"low": [1, 8], "gap": [2, 5]},
+        "other": {"low": [0, 5], "gap": [2, 5]},
+    },
+    # Asked when the ROME sheet lists no diploma.
+    "qualifications": {
+        "executive": ["Bac+5 (Master, école d'ingénieur ou de commerce)", "Bac+3 (Licence, BUT)"],
+        "other": ["CAP / BEP", "Bac pro", "Bac", "Bac+2 (BTS, DUT)"],
+    },
+    "benefits": [
+        "Mutuelle d'entreprise", "Tickets restaurant", "RTT", "Prime annuelle", "13e mois",
+        "Intéressement et participation", "Plan d'épargne entreprise (PEE)", "Télétravail partiel",
+        "Remboursement à 50 % du titre de transport", "Comité social et économique (CSE)",
+        "Formation continue", "Horaires flexibles", "Prime de vacances", "Chèques cadeaux",
+        "Véhicule de fonction", "Forfait mobilités durables",
+    ],
+    "benefits_per_posting": 4,
+    # Job boards for every posting, plus those for executive ("cadre") jobs only.
+    "job_portals": {
+        "all": ["France Travail", "HelloWork", "Indeed", "LinkedIn", "Welcome to the Jungle", "Meteojob",
+                "Jobteaser", "Monster", "Le Bon Coin Emploi"],
+        "executive": ["APEC", "Cadremploi"],
+    },
+}
 
 
 def build_fr(sectors, jobs):
@@ -219,9 +289,10 @@ def build_fr(sectors, jobs):
         "skills": job["skills"],
         "knowledge": job["knowledge"],
         "soft_skills": job["soft_skills"],
+        **{field: job[field] for field in ROME_ATTRIBUTES},
     } for job in jobs.values()]
     meta = {"source": ROME_SOURCE, "language": "fr"}
-    return package(meta, sectors.values(), occupations)
+    return {**package(meta, sectors.values(), occupations), "conditions": CONDITIONS_FR}
 
 
 def link_esco_to_rome(jobs):
@@ -270,6 +341,10 @@ def build_en(jobs):
             domain_code[jobs[code]["domain_code"]] += n
         domain_code = domain_code.most_common(1)[0][0]
         soft_skills = list(dict.fromkeys(SOFT_SKILLS_EN[skill] for job in linked for skill in job["soft_skills"]))
+        # Executive status, regulation, RIASEC profile and transitions: those
+        # of the ROME sheet holding most of the mapped titles. French diplomas
+        # have no English equivalent: no qualifications.
+        main_job = linked[0]
         essential = record["essential_skills"]
         occupations.append({
             "code": uri.rsplit("/", 1)[-1],
@@ -281,6 +356,8 @@ def build_en(jobs):
             "skills": [s["label"] for s in essential if s["type"] != "knowledge"],
             "knowledge": [s["label"] for s in essential if s["type"] == "knowledge"],
             "soft_skills": soft_skills,
+            **{field: main_job[field] for field in ROME_ATTRIBUTES if field != "qualifications"},
+            "qualifications": [],
         })
     meta = {"source": ESCO_SOURCE + "; sectors, domains and soft skills: " + ROME_SOURCE, "language": "en"}
     return package(meta, SECTORS_EN.values(), occupations)

@@ -6,7 +6,14 @@ import unittest
 
 from faker import Faker
 
-from faker_jobs import CompanyProfile, JobsProvider, OccupationPosting, OccupationRecord, _occupation_locale
+from faker_jobs import (
+    CompanyProfile,
+    JobsProvider,
+    OccupationPosting,
+    OccupationRecord,
+    _gender_form,
+    _occupation_locale,
+)
 
 
 def make_faker(locale):
@@ -141,6 +148,18 @@ class OccupationTests:
             with self.assertRaises(ValueError):
                 self.fake.job_occupation_skills(count=count)
 
+    def test_record_rome_attributes(self):
+        for _ in range(30):
+            record = self.fake.job_occupation_record()
+            self.assertIsInstance(record["executive"], bool)
+            self.assertIsInstance(record["regulated"], bool)
+            self.assertTrue(set(record["riasec"]) <= set("RIASEC") and 1 <= len(record["riasec"]) <= 2)
+            self.assertTrue(set(record["transitions"]) <= {"ecological", "digital", "demographic"})
+
+    def test_title_gender_validation(self):
+        with self.assertRaises(ValueError):
+            self.fake.job_occupation_title(gender="X")
+
     def test_record_lists_are_copies(self):
         code = self.provider.job_occupation_codes[0]
         self.fake.job_occupation_record(code=code)["skills"].append("x")
@@ -154,9 +173,14 @@ class OccupationTests:
             self.assertEqual(set(posting), set(OccupationPosting.__annotations__))
             self.assertEqual(set(posting["company"]), set(CompanyProfile.__annotations__))
             occupation = posting["occupation"]
-            self.assertIn(posting["job_title"], self._titles(occupation["code"]))
+            self.assertIn(self._posted_title_source(posting["job_title"], occupation["code"]),
+                          self._titles(occupation["code"]))
             self.assertTrue(set(posting["skills"]) <= set(occupation["skills"]))
             self.assertEqual(len(posting["skills"]), min(5, len(occupation["skills"])))
+
+    def _posted_title_source(self, job_title, code):
+        """The occupation title a posting's job title was made from (overridden in French)."""
+        return job_title
 
     def _titles(self, code):
         return self.provider._occupations["occupation_by_code"][code.lower()]["titles"]
@@ -212,6 +236,74 @@ class TestRomeOccupations(OccupationTests, unittest.TestCase):
     def test_1923_occupations(self):
         self.assertEqual(len(self.provider.job_occupation_codes), 1923)
 
+    def _posted_title_source(self, job_title, code):
+        # "Conducteur routier régional (H/F)" comes from "Conducteur routier régional / Conductrice ...".
+        self.assertTrue(job_title.endswith(" (H/F)"), msg=job_title)
+        masculine = job_title.removesuffix(" (H/F)")
+        return next(title for title in self._titles(code) if _gender_form(title, "M") == masculine)
+
+    def test_diplomas_are_qualifications_not_knowledge(self):
+        record = self.fake.job_occupation_record(code="J1506")
+        self.assertIn("Diplôme d'Etat d'infirmier (ière)", record["qualifications"])
+        self.assertNotIn("Diplôme d'Etat d'infirmier (ière)", record["knowledge"])
+        self.assertTrue(record["regulated"])
+
+    def test_gendered_titles(self):
+        # Every ROME title with both forms splits, except the few with several " / ".
+        titles = [title for code in self.provider.job_occupation_codes for title in self._titles(code)]
+        double = [title for title in titles if " / " in title]
+        unsplit = [title for title in double if " / " in _gender_form(title, "F")]
+        # Left as is: alternatives, not genders ("Responsable d'atelier en chimie / Pharmacie").
+        self.assertLess(len(unsplit), 20)
+        masculine = self.fake.job_occupation_title(sector="Santé", gender="M")
+        feminine = self.fake.job_occupation_title(sector="Santé", gender="F")
+        self.assertNotIn(" / ", masculine + feminine)
+
+    def test_french_posting_conditions(self):
+        portals = set()
+        for _ in range(60):
+            posting = self.fake.job_occupation_posting()
+            occupation = posting["occupation"]
+            self.assertEqual(posting["salary_currency"], "EUR")
+            self.assertTrue(posting["salary_range"].endswith("€ brut/an"))
+            self.assertLess(posting["salary_min"], posting["salary_max"])
+            self.assertGreaterEqual(posting["salary_min"], 35_000 if occupation["executive"] else 22_000)
+            self.assertEqual(posting["location"]["country"], "France")
+            self.assertIn(posting["work_type"], {"CDI", "CDD", "Intérim", "Alternance", "Stage", "Freelance"})
+            if occupation["qualifications"]:
+                self.assertIn(posting["qualification"], occupation["qualifications"])
+            if not occupation["executive"]:
+                self.assertNotIn(posting["job_portal"], {"APEC", "Cadremploi"})
+            self.assertEqual(posting["experience"] == "Débutant accepté", posting["experience_min"] == 0)
+            portals.add(posting["job_portal"])
+        self.assertGreater(len(portals), 5)
+        self.assertEqual(self.fake.job_occupation_posting(country="Belgium")["location"]["country"], "Belgium")
+
+
+class TestGenderForm(unittest.TestCase):
+    def test_forms(self):
+        cases = {
+            "Conducteur / Conductrice d'engins agricoles": ("Conducteur d'engins agricoles",
+                                                            "Conductrice d'engins agricoles"),
+            "Conducteur routier régional / Conductrice routière régionale": ("Conducteur routier régional",
+                                                                             "Conductrice routière régionale"),
+            "Garde Forestier / Forestière": ("Garde Forestier", "Garde Forestière"),
+            "Homme / Femme de pied": ("Homme de pied", "Femme de pied"),
+            "Steward / Hôtesse de train": ("Steward de train", "Hôtesse de train"),
+            "Homme sage-femme / Sage-femme": ("Homme sage-femme", "Sage-femme"),
+            "Caviste affineur / Affineuse": ("Caviste affineur", "Caviste affineuse"),
+            "Auxiliaire Vétérinaire Qualifié / Qualifiée (AVQ)": ("Auxiliaire Vétérinaire Qualifié (AVQ)",
+                                                                  "Auxiliaire Vétérinaire Qualifiée (AVQ)"),
+        }
+        for title, (masculine, feminine) in cases.items():
+            self.assertEqual(_gender_form(title, "M"), masculine)
+            self.assertEqual(_gender_form(title, "F"), feminine)
+
+    def test_other_shapes_are_unchanged(self):
+        for title in ("Tractoriste agricole", "Chef / Cheffe de service infrastructure / Environnement",
+                      "Analyste biologie/microbiologie en industrie"):
+            self.assertEqual(_gender_form(title, "F"), title)
+
 
 class TestEscoOccupations(OccupationTests, unittest.TestCase):
     locale = "en_US"
@@ -220,6 +312,17 @@ class TestEscoOccupations(OccupationTests, unittest.TestCase):
         records = [self.fake.job_occupation_record() for _ in range(30)]
         self.assertTrue(all(record["description"] for record in records))
         self.assertGreater(len(self.provider.job_occupation_codes), 2000)
+
+    def test_english_titles_ignore_gender(self):
+        Faker.seed(1)
+        title = self.fake.job_occupation_title(gender="F")
+        Faker.seed(1)
+        self.assertEqual(self.fake.job_occupation_title(), title)
+
+    def test_english_posting_keeps_kaggle_conditions(self):
+        posting = self.fake.job_occupation_posting()
+        self.assertEqual(posting["salary_currency"], "USD")
+        self.assertEqual(posting["occupation"]["qualifications"], [])
 
 
 if __name__ == "__main__":
