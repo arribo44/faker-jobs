@@ -169,6 +169,7 @@ fake.job_occupation_record(sector="Healthcare")
 #     'regulated': True,                       # a regulated profession
 #     'riasec': ['I', 'R'],                    # Holland codes, major first
 #     'transitions': ['demographic'],          # any of 'ecological', 'digital', 'demographic'
+#     'isco_code': '3213', 'isco_group': '3',  # ISCO-08 unit and major group (skill level, salary)
 #     'demand': 689,                           # estimated yearly recruitment projects in France (BMO 2026)
 # }
 fake.job_occupation_record(code="7b74626d-b487-48a1-9e80-47faf9928210")  # a given occupation
@@ -197,6 +198,7 @@ fake.job_occupation_record(code="J1506")
 #     'soft_skills': ['Etre force de proposition', ...],                                   # savoir-être
 #     'qualifications': ["Diplôme d'Etat d'infirmier (ière)"],    # diplomas listed by the ROME sheet
 #     'executive': False, 'regulated': True, 'riasec': ['S', 'I'], 'transitions': ['demographic'],
+#     'isco_code': '2221', 'isco_group': '2',
 #     'demand': 1489,
 # }
 ```
@@ -265,6 +267,7 @@ fake.job_occupation_posting(sector="Logistique et transport")
 #                 'industry': 'Transports routiers de fret interurbains', 'city': 'Lyon', 'ceo': 'Paul Gomez', ...},
 #     'company_sector': 'Logistique et transport',
 #     'company_naf': '49.41A',                  # NAF rév. 2 activity of the sector (None outside French locales)
+#     'seniority': 'mid',                       # 'junior' (< 3 years asked), 'mid' (3-7), 'senior' (8+)
 #     'job_portal': 'HelloWork',                # APEC and Cadremploi for executive jobs only
 #     'contact_person': 'Agathe Evrard de Lopez', 'contact': '+33 (0)3 51 39 07 57',
 #     ...
@@ -276,13 +279,44 @@ Benefits fit the job: remote work and flexible hours only for office jobs
 a company car only for executives, no bonus or profit-sharing for interns,
 no employee benefit for freelancers.
 
-The French conditions are **illustrative**, made by hand to look plausible:
-contract weights, salary ranges (by executive status) and benefit rules are
-not statistics. In other locales, qualifications, salaries (USD), benefits, work
-types, portals and locations come from the Kaggle data, in English. German,
-Spanish and Italian postings have the occupation, job title and skills in
-their language (title as "Busfahrer (m/w/d)" in German, "(m/f)" in Italian;
-Spanish keeps both forms, "conductor/conductora") and these English conditions.
+German, Spanish, Italian and US postings get **local conditions** too, in
+their language: contracts (Unbefristet, Zeitarbeit, Ausbildung...;
+Indefinido, Fijo discontinuo, Prácticas...; Tempo indeterminato,
+Somministrazione, Apprendistato...; Full-time, Part-time, Internship...),
+diplomas, benefits (Betriebliche Altersvorsorge, Seguro médico privado,
+Buoni pasto, 401(k) matching...), job boards (StepStone, InfoJobs, Subito
+Lavoro, ZipRecruiter...) and a city of the country:
+
+| Locale | Example |
+|---|---|
+| `de_DE` | Lastkraftwagenfahrer (m/w/d), Unbefristet, "Berufseinsteiger willkommen", 29.500 € - 34.000 € brutto/Jahr |
+| `es_ES` | operadora de máquina afiladora, Indefinido, "De 1 a 2 años de experiencia", 20.500 € - 26.000 € brutos/año |
+| `it_IT` | conducente di autocarri (m/f), Tempo indeterminato, "Anche prima esperienza", RAL 26.000 € - 30.000 € |
+| `en_US` | boatbuilder, Full-time, "4-7 years of experience", $58,000 - $71,000 a year |
+
+The US conditions only apply to `en_US`: the other locales that use the
+English data (`en_GB`, `nl_NL`...) keep the Kaggle conditions (USD,
+worldwide places), as `job_posting(source="kaggle")`.
+
+**Salaries follow the occupation.** The occupation's ISCO-08 major group
+(`isco_group`, from ESCO) gives its mean gross annual earnings in the
+country: [Eurostat SES 2022](https://ec.europa.eu/eurostat/web/microdata/structure-of-earnings-survey)
+by major group and NACE section of the company (France, Germany, Spain,
+Italy), [BLS OEWS](https://www.bls.gov/oes/) by SOC major group (United
+States). That mean is then adjusted:
+- to the experience asked, by the ratio of the matching age band (under
+  30, 30-49, 50 and over) to the group's mean;
+- to the contract: about 30% of a full-time salary for an internship, 55%
+  for an apprenticeship, half for part-time;
+- and kept above the minimum wage for a full-time employee.
+
+The experience asked and the default diploma follow the skill level of the
+group (managers and professionals, technicians, other jobs). Expect a
+specialist doctor to earn far more than a kitchen assistant, and a senior
+more than a junior; but the figures are 2022 (Eurostat) or latest-year
+(BLS) means of broad groups, not the pay of the exact job: an
+**estimate**. Contract weights, benefit rules, job boards and default
+diplomas are hand-made and **illustrative** (`scripts/posting_conditions.py`).
 
 The NAF activities of each sector are chosen by hand (`NAF_BY_SECTOR` in
 `scripts/build_occupations.py`) and picked at random within the sector: a
@@ -440,8 +474,12 @@ DATAS/bmo/Base-open-data-BMO-2026.xlsx       BMO 2026 recruitment projects (Fran
 DATAS/bmo/Dares_FAP2021_Table_passage_ROME.xlsx   FAP 2021 -> ROME table (DARES; its site blocks
                                              scripts: download it in a browser or from the Web Archive)
 DATAS/naf/naf2008_liste_n5.xls               NAF rév. 2 sub-classes (INSEE)
+DATAS/salaries/eurostat_ses2022.json         Eurostat SES 2022 earnings, cached by fetch_salaries.py
+DATAS/salaries/bls_oews.json                 BLS OEWS mean wages, cached by fetch_salaries.py
 scripts/
   fetch_esco.py [language]      ESCO web-service API -> the caches above (~2,000 requests each, resumable)
+  fetch_salaries.py             Eurostat and BLS APIs -> the salary caches above
+  posting_conditions.py         local contracts, benefits, job boards, diplomas by locale
   rome_labels.py                ROME sectors, domains and soft skills in English, German, Spanish, Italian
   build_occupations.py          -> faker_jobs/data/occupations_{de_DE,en_US,es_ES,fr_FR,it_IT}.json.gz (gzipped)
                                    (also matches the companies of jobs_data.json to the ROME sectors)
@@ -486,5 +524,7 @@ Occupation data:
   ROME 4.0 → ESCO crosswalk by France Travail, from the [ESCO portal](https://esco.ec.europa.eu/en/use-esco/eures-countries-mapping-tables).
 - BMO 2026 © France Travail, FAP 2021 → ROME table © DARES, NAF rév. 2 ©
   INSEE: [Licence Ouverte / Etalab 2.0](https://www.etalab.gouv.fr/licence-ouverte-open-licence/).
+- Earnings: Eurostat SES 2022 © European Union (reuse authorised, source
+  acknowledged); BLS OEWS, U.S. Bureau of Labor Statistics (public domain).
 - English, German, Spanish and Italian labels of the 35 ROME activity
   sectors, 14 domains and 16 soft skills are translated by this project.

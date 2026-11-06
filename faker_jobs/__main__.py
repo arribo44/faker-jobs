@@ -52,6 +52,8 @@ def demo(locale: str) -> None:
           f"({occupation_posting['company_sector'] or 'company made up by the locale'}"
           f"{f', NAF {naf} ' + str(occupation_posting['company']['industry']) if naf else ''}), "
           f"demand {occupation_posting['occupation']['demand']}")
+    print(f"  {occupation_posting['work_type']}, {occupation_posting['experience']}, "
+          f"{occupation_posting['salary_range']} ({occupation_posting['seniority']})")
 
     print("\n--- Job posting ---")
     for source in ("occupations", "kaggle"):

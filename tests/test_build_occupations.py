@@ -16,7 +16,8 @@ import build_occupations  # noqa: E402
 import fetch_esco  # noqa: E402
 
 SOURCES = (build_occupations.ROME_PATH, build_occupations.BMO_PATH, build_occupations.FAP_ROME_PATH,
-           build_occupations.NAF_PATH,
+           build_occupations.NAF_PATH, build_occupations.fetch_salaries.EUROSTAT_PATH,
+           build_occupations.fetch_salaries.BLS_PATH,
            fetch_esco.MAPPING_PATH,
            *map(fetch_esco.cache_path, fetch_esco.LANGUAGES))
 
@@ -25,7 +26,7 @@ SOURCES = (build_occupations.ROME_PATH, build_occupations.BMO_PATH, build_occupa
 # openpyxl and xlrd, dev dependencies) are available.
 @unittest.skipUnless(all(map(os.path.exists, SOURCES))
                      and all(map(importlib.util.find_spec, ("openpyxl", "xlrd"))),
-                     "ROME/ESCO/BMO/NAF source files, openpyxl or xlrd not available")
+                     "ROME/ESCO/BMO/NAF/salary source files, openpyxl or xlrd not available")
 class TestBuildOccupations(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
