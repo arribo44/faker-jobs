@@ -50,4 +50,7 @@ jobs:
       - run: pip install build
       - run: python -m build
       - name: Check the wheel ships the data
-        run: unzip -l dist/*.whl | grep -q "faker_jobs/data/jobs_data.json"
+        run: |
+          for f in jobs_data.json occupations_en_US.json occupations_fr_FR.json; do
+            unzip -l dist/*.whl | grep -q "faker_jobs/data/$f"
+          done

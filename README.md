@@ -4,14 +4,24 @@
 
 The data is built from the [Job Description Dataset](https://www.kaggle.com/datasets/ravindrasinghrana/job-description-dataset) (~1.6M synthetic postings): **147 job titles**, **376 roles**, **888 companies** with their profile, **216 locations** (one city per country, geocoded) and **25 benefits**.
 
+On top of it, **occupations** cover every trade, not only office jobs: the
+**1,923 job sheets** of the French [ROME 4.0](https://www.francetravail.org/opendata/repertoire-operationnel-des-meti.html)
+directory (France Travail) in French, and the **2,045 [ESCO](https://esco.ec.europa.eu/)
+occupations** mapped to them in English, with **~14,000 job titles**,
+**35 activity sectors**, skills, knowledge and soft skills.
+
 ---
 
 ## 🌍 Languages
 
-Job data (titles, roles, descriptions, benefits...) is in **English**,
-whatever the locale. Contact names and phone numbers in `job_posting()` come
-from the Faker locale, so they are localized (`fr_FR` -> "Luc Renaud",
-"04 97 52 87 61").
+Job data from the Kaggle dataset (titles, roles, descriptions, benefits...)
+is in **English**, whatever the locale. Contact names and phone numbers in
+`job_posting()` come from the Faker locale, so they are localized (`fr_FR` ->
+"Luc Renaud", "04 97 52 87 61").
+
+[Occupations](#-occupations-rome--esco) follow the locale: **French** (ROME
+4.0) in French locales (`fr_FR`, `fr_CA`, `fr_BE`...), **English** (ESCO) in
+every other one.
 
 ---
 
@@ -123,6 +133,122 @@ fake.job_location(country="France")     # {'city': 'Paris', 'country': 'France',
 Company profile fields missing from the source data (no state outside the
 US, no CEO for some companies...) are `None`.
 
+### 🧰 Occupations (ROME / ESCO)
+
+Occupations come from a second source, in the language of the Faker locale
+(see [Languages](#-languages)), and cover every trade: healthcare,
+construction, industry, logistics, hospitality, public service... Each one
+belongs to one or more of **35 activity sectors**, so you can pick an
+occupation that fits a sector.
+
+```python
+fake = Faker("en_US")
+fake.add_provider(JobsProvider)
+
+fake.job_activity_sector()                     # "Logistics and transport"
+fake.job_occupation()                          # "plasterer"
+fake.job_occupation(sector="Healthcare")       # restricted to an activity sector: "physiotherapy assistant"
+fake.job_occupation_title(sector="Healthcare") # a job title as posted: "technologist in pharmacy"
+fake.job_occupation_skills(count=3)            # ['assess nature of injury in emergency', 'provide first aid', ...]
+fake.job_occupation_record(sector="Healthcare")
+# {
+#     'code': '7b74626d-b487-48a1-9e80-47faf9928210',   # ESCO concept id
+#     'title': 'pharmacy technician',
+#     'job_title': 'technologist in pharmacy',          # one of its job titles
+#     'domain': 'Healthcare',
+#     'sector': 'Healthcare', 'sectors': ['Healthcare'],
+#     'description': 'Pharmacy technicians, under the supervision of a pharmacist, check incoming goods, ...',
+#     'skills': ["manage healthcare users' data", 'follow clinical guidelines', ...],   # 37 skills
+#     'knowledge': ['medicines for self-medication'],
+#     'soft_skills': ['Active listening and empathy', 'Attention to detail', ...],
+# }
+fake.job_occupation_record(code="7b74626d-b487-48a1-9e80-47faf9928210")  # a given occupation
+```
+
+With a French locale, the same methods return the ROME 4.0 data in French;
+`code` is then the ROME code:
+
+```python
+fake = Faker("fr_FR")
+fake.add_provider(JobsProvider)
+
+fake.job_occupation_title(sector="Bâtiment et travaux publics (BTP)")
+# "Technicien / Technicienne de maintenance en matériels de chantier de travaux publics"
+fake.job_occupation_record(code="J1506")
+# {
+#     'code': 'J1506',
+#     'title': 'Infirmier / Infirmière en soins généraux (IDE)',
+#     'job_title': "Infirmier / Infirmière d'hospitalisation à domicile",
+#     'domain': 'Santé',
+#     'sector': 'Santé', 'sectors': ['Santé', 'Social'],
+#     'description': None,
+#     'skills': ['Appliquer un protocole de soin', ...],                                  # savoir-faire
+#     'knowledge': ["Connaissance de l'écosystème sanitaire, médico-social et social", ...], # savoirs
+#     'soft_skills': ['Etre force de proposition', ...],                                   # savoir-être
+# }
+```
+
+The lists of activity sectors and occupation codes are properties of the
+provider (Faker only registers methods), in the language of the Faker
+instance it is given:
+
+```python
+JobsProvider(fake).job_activity_sectors   # ['Activités juridiques et comptables', ...] (35)
+JobsProvider(fake).job_occupation_codes   # ['A1101', 'A1201', ...] (1,923; 2,045 in English)
+```
+
+`job_occupation_posting()` builds a full posting on an occupation: the job
+title, its skills and the hiring company fit together. The company is one of
+the packaged companies whose sector matches the occupation's sector (the
+requested one, else its main one, else its other ones); when none does
+(social work, public service, research...), it is a name made up by the
+Faker locale and `company_sector` is `None`.
+
+```python
+fake.job_occupation_posting(sector="Logistique et transport")
+# {
+#     'job_id': 1795576578659365,
+#     'job_title': 'Conducteur routier régional / Conductrice routière régionale',
+#     'occupation': {'code': 'N4101', 'title': 'Conducteur / Conductrice de poids lourd', ...},
+#     'skills': ["Contrôler l'état de fonctionnement du véhicule", ...],   # 5 by default (`skills=`)
+#     'company': {'company': 'Transurban Group', 'sector': 'Transportation/Infrastructure', ...},
+#     'company_sector': 'Logistique et transport',
+#     'qualification': 'BA', 'experience': '3 to 11 Years', 'salary_range': '$57K-$112K', ...
+#     'contact_person': 'Étienne Guillot', 'contact': '+33 (0)6 36 57 93 83',
+# }
+```
+
+Qualifications, salaries (USD), benefits, work types, portals and locations
+still come from the Kaggle data, in English whatever the locale.
+
+ROME sheets have no description (`None`). The occupation methods are not
+weighted (these sources have no posting counts) and are independent from the
+Kaggle-based methods: activity sectors (occupations) are not `job_sectors`
+(companies), and `job_posting()` is unchanged.
+
+An ESCO occupation takes the sectors that cover at least 25% of the ROME job
+titles mapped to it. Sectors follow ROME, which lists secondary sectors too:
+a few occupations show up in a sector you would not expect (e.g. a library
+clerk in healthcare).
+
+With several locales, add the provider to each one (Faker does not proxy
+`add_provider()` in multiple locale mode):
+
+```python
+fake = Faker(["fr_FR", "en_US"])
+for locale in fake.locales:
+    fake[locale].add_provider(JobsProvider)
+fake["fr_FR"].job_occupation()   # French
+fake["en_US"].job_occupation()   # English
+```
+
+To use one language whatever the Faker locale, subclass the provider:
+
+```python
+class FrenchJobsProvider(JobsProvider):
+    occupations_locale = "fr_FR"   # or "en_US"
+```
+
 ### 📋 Job postings
 
 ```python
@@ -157,7 +283,7 @@ fake.job_posting(job_title="Web Developer", country="France", sector="Retail")
 
 The package ships type information (`py.typed`) and `TypedDict`s describing
 the returned dicts: `RoleRecord`, `LocationRecord`, `CompanyProfile`,
-`JobPosting`. Methods added to a `Faker` instance by `add_provider()` are not
+`JobPosting`, `OccupationRecord`, `OccupationPosting`. Methods added to a `Faker` instance by `add_provider()` are not
 visible to type checkers, so either annotate the result or call the
 provider directly:
 
@@ -204,6 +330,23 @@ scripts/
 faker_jobs/data/jobs_data.json  packaged data (~450 KB)
 ```
 
+Occupations have their own sources and scripts:
+
+```
+DATAS/metiers/rome-4-0-métiers-×-secteurs-d-activité.xlsx   ROME 4.0 v62 (France Travail)
+DATAS/esco/EURESmapping_occs_FR_v1.0.9.csv   ROME 4.0 -> ESCO 1.0.9 crosswalk (ESCO portal, France)
+DATAS/esco/esco_occupations_v1.0.9.json      English ESCO data, cached by fetch_esco.py
+scripts/
+  fetch_esco.py                 ESCO web-service API -> the cache above (~2,000 requests, resumable)
+  build_occupations.py          -> faker_jobs/data/occupations_en_US.json, occupations_fr_FR.json
+                                   (also matches the companies of jobs_data.json to the ROME sectors)
+```
+
+```bash
+python scripts/fetch_esco.py        # only if the crosswalk changed
+python scripts/build_occupations.py # needs openpyxl (dev extra); after build_data.py
+```
+
 After changing anything in `DATAS/`:
 
 ```bash
@@ -222,11 +365,19 @@ ruff check faker_jobs tests scripts
 mypy faker_jobs tests/test_typing.py
 ```
 
-`tests/test_build_data.py` also checks that the packaged JSON is in sync
-with `DATAS/` (skipped when `DATAS/` is not available).
+`tests/test_build_data.py` and `tests/test_build_occupations.py` also check
+that the packaged JSON files are in sync with `DATAS/` (skipped when
+`DATAS/` is not available).
 
 ---
 
 ## 📄 License
 
-MIT - see [LICENSE](LICENSE).
+Code: MIT - see [LICENSE](LICENSE).
+
+Occupation data:
+- ROME 4.0 © France Travail, [Licence Ouverte / Etalab 2.0](https://www.etalab.gouv.fr/licence-ouverte-open-licence/).
+- ESCO © European Union, reused under [Commission Decision 2011/833/EU](https://eur-lex.europa.eu/eli/dec/2011/833/oj);
+  ROME 4.0 → ESCO crosswalk by France Travail, from the [ESCO portal](https://esco.ec.europa.eu/en/use-esco/eures-countries-mapping-tables).
+- English labels of the 35 ROME activity sectors, 14 domains and 16 soft
+  skills are translated by this project.

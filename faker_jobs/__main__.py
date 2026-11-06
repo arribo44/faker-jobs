@@ -39,6 +39,17 @@ def demo(locale: str) -> None:
     print(f"  {jobs.job_company_profile()}")
     print(f"  {jobs.job_location()}")
 
+    print("\n--- Occupations (ROME 4.0 / ESCO, in the locale's language) ---")
+    for _ in range(3):
+        sector = jobs.job_activity_sector()
+        print(f"  - {sector}: {jobs.job_occupation_title(sector=sector)}")
+    occupation = jobs.job_occupation_record()
+    print(f"  {occupation['code']} {occupation['title']} ({occupation['sector']})")
+    print(f"  skills: {'; '.join(jobs.job_occupation_skills(code=occupation['code'], count=3))}")
+    occupation_posting = jobs.job_occupation_posting()
+    print(f"  posting: {occupation_posting['job_title']} at {occupation_posting['company']['company']} "
+          f"({occupation_posting['company_sector'] or 'company made up by the locale'})")
+
     print("\n--- Job posting ---")
     posting = jobs.job_posting()
     print(f"  #{posting['job_id']} {posting['role']} ({posting['work_type']}) at {posting['company']['company']}")
