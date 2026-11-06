@@ -105,6 +105,12 @@ class OccupationRecord(TypedDict):
     diplomas listed by the ROME sheet (CAP, Bac pro, BTS, Master...); empty
     for ESCO occupations.
 
+    `isco_code` is the ISCO-08 unit group of the occupation (e.g. '2221',
+    from ESCO; for a ROME sheet, that of most of its ESCO occupations, None
+    when it has none) and `isco_group` its major group ('1' managers to
+    '9' elementary occupations, '0' armed forces), which sets the skill
+    level and the salary of the postings.
+
     `demand` estimates the yearly recruitment projects in France (France
     Travail's BMO 2026 survey, by job family, shared between the ROME sheets
     of the family by the DARES FAP 2021 → ROME table; ROME 4.0 sheets
@@ -126,6 +132,8 @@ class OccupationRecord(TypedDict):
     regulated: bool
     riasec: list[str]
     transitions: list[str]
+    isco_code: str | None
+    isco_group: str
     demand: int
 
 
@@ -134,13 +142,16 @@ class OccupationPosting(TypedDict):
     `JobsProvider.job_occupation_posting()`.
 
     `job_title`, `skills` and the company follow the occupation and its
-    sector. In French locales the conditions are French (contract type in
-    `work_type`, yearly gross salary in EUR, French diplomas, a place in
-    France, French job boards) and the job title reads "Conducteur de
-    poids lourd (H/F)"; in other locales they are drawn as in `JobPosting`
-    (salaries in USD, from the Kaggle data), and the job title reads
-    "Busfahrer (m/w/d)" in German locales, "autista di autobus (m/f)" in
-    Italian ones (Spanish ones keep both forms).
+    sector. In the locales of the occupation data (French, German, Spanish
+    and Italian ones, and en_US) the conditions are local: contract type in
+    `work_type` (CDI, Unbefristet, Indefinido, Tempo indeterminato,
+    Full-time...), a yearly gross salary in the local currency from official
+    earnings (see `job_occupation_posting`), local diplomas, a place in the
+    country, local job boards and benefits. In other locales they are drawn
+    as in `JobPosting(source='kaggle')` (USD, worldwide). The job title reads
+    "Conducteur de poids lourd (H/F)" in French, "Busfahrer (m/w/d)" in
+    German, "autista di autobus (m/f)" in Italian (Spanish keeps both forms).
+    `seniority` is 'junior', 'mid' or 'senior', from the experience asked.
 
     In French locales the company is made up by the Faker locale, in the
     occupation's sector: `company_naf` is its NAF rév. 2 activity code
@@ -169,6 +180,7 @@ class OccupationPosting(TypedDict):
     company_sector: str | None
     company_naf: str | None
     company_size: int
+    seniority: str
     job_portal: str
     job_posting_date: _datetime.date
     contact_person: str
@@ -188,7 +200,10 @@ class JobPosting(TypedDict):
       none, its main activities).
     - 'kaggle': a role of the Kaggle data, in English; `occupation` is None.
       Salaries are yearly amounts in `salary_currency` (USD, as in the
-      source data); `salary_range` is their compact text form ("$59K-$104K")."""
+      source data); `salary_range` is their compact text form ("$59K-$104K").
+
+    `seniority` is 'junior' (under 3 years of experience asked), 'mid' (3 to
+    7) or 'senior' (8 and more)."""
 
     source: str
     occupation: OccupationRecord | None
@@ -211,6 +226,7 @@ class JobPosting(TypedDict):
     location: LocationRecord
     company: CompanyProfile
     company_size: int
+    seniority: str
     job_portal: str
     job_posting_date: _datetime.date
     contact_person: str
@@ -302,7 +318,7 @@ def _build_occupation_index(raw: dict[str, Any]) -> dict[str, Any]:
         "cum_weights": cum_weights(occupations),
         "cum_weights_by_sector": {sector: cum_weights(rows) for sector, rows in by_sector.items()},
         "sector_by_name": {sector.lower(): sector for sector in raw["sectors"]},
-        # Kaggle companies by sector (not in French locales: see _french_company).
+        # Kaggle companies by sector (not in French locales: see _local_company).
         "companies_by_sector": raw.get("companies_by_sector", {}),
         "conditions": raw.get("conditions"),
         # None (titles are not gendered) or {"titles": "rome" | "esco", "posting_suffix": str | None}.
@@ -366,6 +382,11 @@ def _occupation_locale(locale: str | None) -> str:
     language = locale.replace("-", "_").split("_")[0].lower() if locale else None
     return next((known for known in OCCUPATION_LOCALES if known.startswith(f"{language}_")),
                 DEFAULT_OCCUPATION_LOCALE)
+
+
+def _seniority(experience_min: int) -> str:
+    """'junior' (under 3 years of experience asked), 'mid' (3 to 7) or 'senior' (8 and more)."""
+    return "junior" if experience_min < 3 else "mid" if experience_min < 8 else "senior"
 
 
 def _check_count(name: str, value: object) -> None:
@@ -774,6 +795,8 @@ class JobsProvider(BaseProvider):
             "regulated": found["regulated"],
             "riasec": list(found["riasec"]),
             "transitions": list(found["transitions"]),
+            "isco_code": found["isco_code"],
+            "isco_group": found["isco_group"],
             "demand": found["weight"],
         }
 
@@ -819,29 +842,38 @@ class JobsProvider(BaseProvider):
           sector, in French locales; else a Kaggle company of that sector,
           or a name made up by the Faker locale when none is in it.
         - `skills`: how many of the occupation's skills to list (default 5).
-        - `country` sets the job location (default: France in French
-          locales, anywhere otherwise).
+        - `country` sets the job location (default: the locale's country,
+          anywhere for locales without local conditions).
         - `weighted` picks the occupation by demand (see `job_occupation`)
-          and, in non-French locales, the Kaggle benefits by popularity.
+          and, without local conditions, the Kaggle benefits by popularity.
 
-        In French locales the conditions are French and illustrative
-        (contract, yearly gross salary in EUR by executive status, a diploma
-        from the ROME sheet, French benefits that fit the job and contract,
-        French job boards) and the company is made up, with a NAF activity
-        of the occupation's sector; otherwise they come from the Kaggle
-        data, in English.
+        Local conditions (fr_*, de_*, es_*, it_* and en_US locales): the
+        contract, benefits, job boards and default diplomas are hand-made
+        and illustrative (scripts/posting_conditions.py), the experience
+        asked follows the occupation's skill level (ISCO major group), and
+        the salary comes from official mean earnings: Eurostat SES 2022 by
+        ISCO major group and NACE section (France, Germany, Spain, Italy),
+        BLS OEWS by SOC major group (United States), adjusted to the
+        experience asked (earnings by age), to the contract (internships,
+        apprenticeships, part-time) and kept above the minimum wage. ROME
+        diplomas come first in French locales, and the company is made up
+        there, with a NAF activity of the occupation's sector. Other locales
+        get the Kaggle conditions, in English.
         """
         _check_count("skills", skills)
         occupation = self.job_occupation_record(code=code, sector=sector, weighted=weighted)
-        conditions = self._occupations["conditions"]
-        company_naf = None
+        conditions = self._local_conditions()
+        company_naf: str | None = None
+        company_sector: str | None
         if conditions is None:
             terms = self._kaggle_terms(country, weighted)
-            company, company_sector = self._occupation_company(occupation["sector"])
         else:
-            terms = self._french_terms(occupation, conditions, country)
-            company, company_naf = self._french_company(occupation["sector"], conditions, terms["location"])
-            company_sector = occupation["sector"]
+            terms = self._local_terms(occupation, conditions, country)
+        if conditions is not None and terms["naf"] is not None:
+            company = self._local_company(occupation["sector"], terms["naf"], terms["location"])
+            company_sector, company_naf = occupation["sector"], terms["naf"][0]
+        else:
+            company, company_sector = self._occupation_company(occupation["sector"])
         job_title = occupation["job_title"]
         style = self._occupations["gender"]
         if style is not None and style["posting_suffix"]:
@@ -872,23 +904,33 @@ class JobsProvider(BaseProvider):
             "company_sector": company_sector,
             "company_naf": company_naf,
             "company_size": self.job_company_size(),
+            "seniority": _seniority(terms["experience_min"]),
             "job_portal": terms["job_portal"],
             "job_posting_date": self.job_posting_date(),
             "contact_person": self.generator.name(),
             "contact": self.generator.phone_number(),
         }
 
-    def _french_company(
-        self, sector: str, conditions: dict[str, Any], location: LocationRecord
-    ) -> tuple[CompanyProfile, str]:
+    def _local_conditions(self) -> dict[str, Any] | None:
+        """The local posting conditions of the occupation data, or None to use
+        the Kaggle ones. The English data serves every locale without data
+        of its own: its US conditions only apply to en_US."""
+        data = self._occupations
+        conditions: dict[str, Any] | None = data["conditions"]
+        if conditions is not None and data["meta"]["language"] == "en":
+            locale = self.occupations_locale or _generator_locale(self.generator)
+            if (locale or "").replace("-", "_") != "en_US":
+                return None
+        return conditions
+
+    def _local_company(self, sector: str, naf: list[str], location: LocationRecord) -> CompanyProfile:
         """A company made up by the Faker locale, with a NAF rév. 2 activity
         of the occupation's sector, in the city of the posting."""
-        naf_code, naf_label = self.random_element(conditions["naf_by_sector"][sector])
         return {
             "company": self.generator.company(),
-            "sector": sector, "industry": naf_label, "city": location["city"], "state": None,
+            "sector": sector, "industry": naf[1], "city": location["city"], "state": None,
             "zip": None, "website": None, "ticker": None, "ceo": self.generator.name(),
-        }, naf_code
+        }
 
     def _kaggle_terms(self, country: str | None, weighted: bool) -> dict[str, Any]:
         """Posting conditions from the Kaggle data (as in `job_posting`)."""
@@ -909,47 +951,93 @@ class JobsProvider(BaseProvider):
             "job_portal": self.job_portal(),
         }
 
-    def _french_benefits(self, occupation: OccupationRecord, conditions: dict[str, Any], contract: str) -> list[str]:
-        """French benefits that fit the job: remote work and flexible hours for
-        office or executive jobs, a company car for executives, no bonus or
-        profit-sharing for interns..."""
+    def _local_benefits(self, occupation: OccupationRecord, conditions: dict[str, Any], contract: str) -> list[str]:
+        """Local benefits that fit the job and contract: remote work and
+        flexible hours for office or executive jobs, a company car for
+        executives, no bonus for interns, only those office benefits for
+        freelancers..."""
         office = occupation["executive"] or occupation["domain"] in conditions["office_domains"]
         allowed = {"office": office, "executive": occupation["executive"], None: True}
+        employee = conditions["contracts"][contract]["employee"]
         eligible = [name for name, rule in conditions["benefits"].items()
-                    if allowed[rule["requires"]] and contract not in rule["not_for"]]
+                    if allowed[rule["requires"]] and contract not in rule["not_for"]
+                    and (employee or rule["requires"] == "office")]
         return self.generator.random.sample(eligible, min(conditions["benefits_per_posting"], len(eligible)))
 
-    def _french_terms(
+    def _local_salary(
+        self, group: str, section: str | None, experience: tuple[int, int], contract: dict[str, Any],
+        conditions: dict[str, Any],
+    ) -> tuple[int, int]:
+        """Yearly gross salary bounds: the mean earnings of the occupation's
+        ISCO major group in the company's NACE section (else in every
+        section), times the ratio of the age band that matches the
+        experience asked, times the contract's share of a full-time salary;
+        spread around that value, rounded, and not below the minimum wage
+        for a full-time employee."""
+        rng = self.generator.random
+        salary = conditions["salary"]
+        means = salary["base"][group]
+        base = means.get(section, means["*"]) if section else means["*"]
+        middle = sum(experience) / 2
+        band = "Y_LT30" if middle < 5 else "Y30-49" if middle < 20 else "Y_GE50"
+        center = base * salary["age_ratio"][group][band] * contract["salary_factor"]
+        low, high = center * rng.uniform(0.85, 0.95), center * rng.uniform(1.05, 1.2)
+        step = 1000 if center >= 100_000 else 500
+        low, high = round(low / step) * step, round(high / step) * step
+        minimum = conditions["minimum_wage"]
+        if minimum and contract["salary_factor"] == 1 and contract["employee"] and low < minimum:
+            low = -(-minimum // step) * step   # rounded up, so never below the minimum wage
+        return int(low), int(max(high, low + step))
+
+    def _local_terms(
         self, occupation: OccupationRecord, conditions: dict[str, Any], country: str | None
     ) -> dict[str, Any]:
-        """Illustrative French posting conditions (see CONDITIONS_FR in scripts/build_occupations.py)."""
+        """Local posting conditions (see scripts/posting_conditions.py): the
+        contract, the experience and diploma for the occupation's skill
+        level, a salary from the earnings of its ISCO group, local benefits
+        and job boards; in French locales, the NAF activity of the company."""
         rng = self.generator.random
-        level = "executive" if occupation["executive"] else "other"
-
-        def bounds(spec: dict[str, list[int]]) -> tuple[int, int]:
-            low = self.random_int(*spec["low"])
-            return low, low + self.random_int(*spec["gap"])
-
-        experience_min, experience_max = bounds(conditions["experience"][level])
-        salary_low_k, salary_high_k = bounds(conditions["salary_k"][level])
+        level = conditions["skill_levels"][occupation["isco_group"]]
         contracts = conditions["contracts"]
-        qualifications = occupation["qualifications"] or conditions["qualifications"][level]
-        contract = rng.choices(list(contracts), weights=list(contracts.values()))[0]
+        contract = rng.choices(list(contracts), weights=[spec["weight"] for spec in contracts.values()])[0]
+        spec = contracts[contract]
+        bounds = conditions["experience"][level]
+        experience_min = self.random_int(*bounds["low"])
+        experience_max = experience_min + self.random_int(*bounds["gap"])
+        if spec["max_experience"] is not None:
+            experience_min = min(experience_min, spec["max_experience"])
+            experience_max = min(experience_max, spec["max_experience"])
+        naf = None
+        if "naf_by_sector" in conditions:
+            naf = self.random_element(conditions["naf_by_sector"][occupation["sector"]])
+            section = naf[2]
+        else:
+            section = conditions["section_by_sector"].get(occupation["sector"])
+        salary_min, salary_max = self._local_salary(
+            occupation["isco_group"], section, (experience_min, experience_max), spec, conditions)
+        salary_format = conditions["salary_format"]
+
+        def amount(value: int) -> str:
+            return f"{value:,}".replace(",", salary_format["thousands"])
+
         portals = conditions["job_portals"]
+        qualifications = occupation["qualifications"] or conditions["qualifications"][level]
         return {
             "qualification": self.random_element(qualifications),
-            "experience": ("Débutant accepté" if experience_min == 0
-                           else f"{experience_min} à {experience_max} ans"),
+            "experience": (conditions["experience_none"] if experience_min == 0
+                           else conditions["experience_range"].format(min=experience_min, max=experience_max)),
             "experience_min": experience_min,
             "experience_max": experience_max,
-            "salary_range": f"{salary_low_k * 1000:,} € - {salary_high_k * 1000:,} € brut/an".replace(",", " "),
-            "salary_min": salary_low_k * 1000,
-            "salary_max": salary_high_k * 1000,
+            "salary_range": salary_format["template"].format(min=amount(salary_min), max=amount(salary_max)),
+            "salary_min": salary_min,
+            "salary_max": salary_max,
             "salary_currency": conditions["currency"],
             "work_type": contract,
-            "benefits": self._french_benefits(occupation, conditions, contract),
+            "benefits": self._local_benefits(occupation, conditions, contract),
             "location": self.job_location(country=conditions["country"] if country is None else country),
-            "job_portal": self.random_element(portals["all"] + (portals["executive"] if level == "executive" else [])),
+            "job_portal": self.random_element(
+                portals["all"] + (portals.get("executive", []) if occupation["executive"] else [])),
+            "naf": naf,
         }
 
     # -- postings ---------------------------------------------------------------
@@ -1029,6 +1117,7 @@ class JobsProvider(BaseProvider):
             "location": self.job_location(country=country),
             "company": self.job_company_profile(sector=sector),
             "company_size": self.job_company_size(),
+            "seniority": _seniority(experience_min),
             "job_portal": self.job_portal(),
             "job_posting_date": self.job_posting_date(),
             "contact_person": self.generator.name(),
@@ -1065,6 +1154,7 @@ class JobsProvider(BaseProvider):
             "location": posting["location"],
             "company": posting["company"],
             "company_size": posting["company_size"],
+            "seniority": posting["seniority"],
             "job_portal": posting["job_portal"],
             "job_posting_date": posting["job_posting_date"],
             "contact_person": posting["contact_person"],

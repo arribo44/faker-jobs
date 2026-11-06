@@ -40,6 +40,8 @@ import unicodedata
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import fetch_esco  # noqa: E402
+import fetch_salaries  # noqa: E402
+from posting_conditions import BENEFITS_PER_POSTING, CONDITIONS, EXPERIENCE, SKILL_LEVELS  # noqa: E402
 from rome_labels import DOMAINS, SECTORS, SOFT_SKILLS  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -260,70 +262,58 @@ def package(meta, sectors, occupations):
             "regulated": occupation["regulated"],
             "riasec": occupation["riasec"],
             "transitions": occupation["transitions"],
+            "isco_code": occupation["isco_code"],
+            "isco_group": occupation["isco_group"],
             # Demand weight: estimated yearly recruitment projects in France (at least 1).
             "weight": max(1, round(occupation["weight"])),
         })
     return {"meta": meta, "sectors": sorted(sectors), "strings": pool.strings, "occupations": records}
 
 
+# Office jobs (remote work, flexible hours): the ROME domains of banking,
+# insurance and real estate (C), communication and media (E), business support (M).
 OFFICE_DOMAIN_CODES = {"C", "E", "M"}
 
 ROME_ATTRIBUTES = ("qualifications", "executive", "regulated", "riasec", "transitions")
 
-# Job conditions of the French postings (job_occupation_posting() in French
-# locales), instead of the Kaggle ones (USD, US degrees, worldwide places).
-# Hand-made and ILLUSTRATIVE: contract weights and salary ranges give
-# plausible postings, they are not statistics.
-CONDITIONS_FR = {
-    "country": "France",
-    "currency": "EUR",
-    # Contract type -> relative weight.
-    "contracts": {"CDI": 55, "CDD": 20, "Intérim": 12, "Alternance": 6, "Stage": 4, "Freelance": 3},
-    # Yearly gross salary, in k€: [min, max] of the lower bound, [min, max] of the gap to the upper bound.
-    "salary_k": {
-        "executive": {"low": [35, 60], "gap": [5, 15]},
-        "other": {"low": [22, 32], "gap": [2, 8]},
-    },
-    # Years of experience asked: [min, max] of the minimum, [min, max] of the gap to the maximum.
-    "experience": {
-        "executive": {"low": [1, 8], "gap": [2, 5]},
-        "other": {"low": [0, 5], "gap": [2, 5]},
-    },
-    # Asked when the ROME sheet lists no diploma.
-    "qualifications": {
-        "executive": ["Bac+5 (Master, école d'ingénieur ou de commerce)", "Bac+3 (Licence, BUT)"],
-        "other": ["CAP / BEP", "Bac pro", "Bac", "Bac+2 (BTS, DUT)"],
-    },
-    # Benefit -> who can get it: "requires" is "office" (an office job or an
-    # executive one: see office_domains), "executive", or None for every job;
-    # "not_for" lists contract types that never get it (a freelancer is not an
-    # employee: no employee benefits).
-    "benefits": {
-        "Mutuelle d'entreprise": {"requires": None, "not_for": ["Freelance"]},
-        "Tickets restaurant": {"requires": None, "not_for": ["Freelance"]},
-        "RTT": {"requires": None, "not_for": ["Stage", "Freelance"]},
-        "Prime annuelle": {"requires": None, "not_for": ["Stage", "Freelance"]},
-        "13e mois": {"requires": None, "not_for": ["Stage", "Freelance"]},
-        "Intéressement et participation": {"requires": None, "not_for": ["Stage", "Freelance", "Intérim"]},
-        "Plan d'épargne entreprise (PEE)": {"requires": None, "not_for": ["Stage", "Freelance", "Intérim"]},
-        "Télétravail partiel": {"requires": "office", "not_for": []},
-        "Remboursement à 50 % du titre de transport": {"requires": None, "not_for": ["Freelance"]},
-        "Comité social et économique (CSE)": {"requires": None, "not_for": ["Freelance"]},
-        "Formation continue": {"requires": None, "not_for": ["Freelance"]},
-        "Horaires flexibles": {"requires": "office", "not_for": []},
-        "Prime de vacances": {"requires": None, "not_for": ["Stage", "Freelance"]},
-        "Chèques cadeaux": {"requires": None, "not_for": ["Freelance"]},
-        "Véhicule de fonction": {"requires": "executive", "not_for": ["Stage", "Alternance", "Freelance"]},
-        "Forfait mobilités durables": {"requires": None, "not_for": ["Freelance"]},
-    },
-    "benefits_per_posting": 4,
-    # Job boards for every posting, plus those for executive ("cadre") jobs only.
-    "job_portals": {
-        "all": ["France Travail", "HelloWork", "Indeed", "LinkedIn", "Welcome to the Jungle", "Meteojob",
-                "Jobteaser", "Monster", "Le Bon Coin Emploi"],
-        "executive": ["APEC", "Cadremploi"],
-    },
+# Countries of the Eurostat earnings, by locale (en_US: BLS earnings).
+EUROSTAT_COUNTRIES = {"fr_FR": "FR", "de_DE": "DE", "es_ES": "ES", "it_IT": "IT"}
+# ISCO-08 major groups the earnings survey does not cover (agriculture,
+# armed forces), and the group whose earnings they take instead.
+ISCO_FALLBACK = {"6": "9", "0": "3"}
+# Age bands of the earnings survey (the experience asked picks one).
+AGE_BANDS = ("Y_LT30", "Y30-49", "Y_GE50")
+# ISCO-08 major group -> the BLS SOC major groups it gathers (a rough match:
+# SOC and ISCO do not split occupations the same way).
+ISCO_TO_SOC = {
+    "1": ["110000"],
+    "2": ["150000", "170000", "190000", "230000", "250000", "290000"],
+    "3": ["130000", "210000", "270000"],
+    "4": ["430000"],
+    "5": ["310000", "330000", "350000", "390000", "410000"],
+    "6": ["450000"],
+    "7": ["470000", "490000"],
+    "8": ["510000", "530000"],
+    "9": ["350000", "370000"],
+    "0": ["330000"],
 }
+SALARY_SOURCES = {
+    "eurostat": "salaries: Eurostat SES 2022 (© European Union), by ISCO-08 major group, NACE section and age",
+    "bls": "salaries: U.S. BLS OEWS {year}, by SOC major group (public domain)",
+}
+
+# NACE Rev. 2 section of each NAF / NACE division (first two digits).
+NACE_SECTIONS = [
+    ("A", 1, 3), ("B", 5, 9), ("C", 10, 33), ("D", 35, 35), ("E", 36, 39), ("F", 41, 43), ("G", 45, 47),
+    ("H", 49, 53), ("I", 55, 56), ("J", 58, 63), ("K", 64, 66), ("L", 68, 68), ("M", 69, 75), ("N", 77, 82),
+    ("O", 84, 84), ("P", 85, 85), ("Q", 86, 88), ("R", 90, 93), ("S", 94, 96), ("T", 97, 98), ("U", 99, 99),
+]
+
+
+def nace_section(code):
+    """NACE section letter of a NAF code ('86.10Z' -> 'Q')."""
+    division = int(code[:2])
+    return next(section for section, low, high in NACE_SECTIONS if low <= division <= high)
 
 
 # NAF rév. 2 activities of the companies of each ROME sector (French
@@ -378,7 +368,7 @@ def read_naf():
 
 
 def naf_by_sector(sectors, naf):
-    """{ROME sector name: [[NAF code, label], ...]}, from NAF_BY_SECTOR."""
+    """{ROME sector name: [[NAF code, label, NACE section], ...]}, from NAF_BY_SECTOR."""
     missing = set(NAF_BY_SECTOR) ^ set(sectors)
     if missing:
         raise ValueError(f"NAF_BY_SECTOR out of sync with the ROME sectors: {sorted(missing)}")
@@ -390,11 +380,104 @@ def naf_by_sector(sectors, naf):
             if not matched:
                 raise ValueError(f"NAF prefix {prefix!r} (sector {sector_code}) matches no NAF sub-class")
             codes += matched
-        result[sectors[sector_code]] = [[code, naf[code]] for code in sorted(set(codes))]
+        result[sectors[sector_code]] = [[code, naf[code], nace_section(code)] for code in sorted(set(codes))]
     return dict(sorted(result.items()))
 
 
-def build_fr(sectors, jobs, weights, naf):
+def section_by_sector(sector_names, naf):
+    """{sector name: NACE section of most of its NAF sub-classes}, sector names from {code: name}."""
+    result = {}
+    for sector_code, prefixes in NAF_BY_SECTOR.items():
+        counts = collections.Counter(nace_section(code) for code in naf if code.startswith(tuple(prefixes)))
+        result[sector_names[sector_code]] = counts.most_common(1)[0][0]
+    return dict(sorted(result.items()))
+
+
+def rome_isco(jobs, links, esco):
+    """{ROME code: (ISCO-08 unit group or None, major group)}: the ISCO code of
+    the ESCO occupations its job titles are mapped to (most titles wins). A
+    sheet without ESCO occupation takes the most common major group of its
+    ROME group (same first 3 characters), else 2 for executive jobs, 5 otherwise."""
+    votes = collections.defaultdict(collections.Counter)
+    for uri, counts in links.items():
+        unit = esco[uri]["isco_code"].split(".")[0]
+        for code, n in counts.items():
+            votes[code][unit] += n
+    result = {code: (counter.most_common(1)[0][0], counter.most_common(1)[0][0][0]) for code, counter in votes.items()}
+    by_group = collections.defaultdict(collections.Counter)
+    for code, (_unit, major) in result.items():
+        by_group[code[:3]][major] += 1
+    for code, job in jobs.items():
+        if code not in result:
+            groups = by_group.get(code[:3])
+            major = groups.most_common(1)[0][0] if groups else ("2" if job["executive"] else "5")
+            result[code] = (None, major)
+    return result
+
+
+def salary_table(locale, eurostat, bls):
+    """Mean gross annual earnings of the locale's country: {"base": {ISCO
+    major group: {NACE section or "*": mean}}, "age_ratio": {group: {age
+    band: mean of the band / mean of the group}}}.
+
+    Eurostat countries: by group and section ("*": all sections), and by
+    group and age. United States: the BLS mean of the SOC major groups of
+    each ISCO group (ISCO_TO_SOC), for every section, with the mean age
+    ratios of the Eurostat countries. Groups the survey misses take the
+    earnings of ISCO_FALLBACK."""
+    groups = sorted(SKILL_LEVELS)
+
+    def source(group, ages):
+        # Cells under statistical confidentiality are missing: a group with no
+        # mean at all takes the earnings of its fallback group.
+        return f"OC{group}" if f"OC{group}|TOTAL" in ages else f"OC{ISCO_FALLBACK[group]}"
+
+    def age_ratios(country):
+        ages = eurostat["by_isco_age"][country]["values"]
+        ratios = {}
+        for group in groups:
+            occupation = source(group, ages)
+            ratios[group] = {band: ages.get(f"{occupation}|{band}", ages[f"{occupation}|TOTAL"])
+                             / ages[f"{occupation}|TOTAL"] for band in AGE_BANDS}
+        return ratios
+
+    if locale in EUROSTAT_COUNTRIES:
+        country = EUROSTAT_COUNTRIES[locale]
+        table = eurostat["by_isco_section"][country]["values"]
+        ages = eurostat["by_isco_age"][country]["values"]
+        base = {}
+        for group in groups:
+            occupation = source(group, ages)
+            sections = {key.split("|")[1]: value for key, value in table.items()
+                        if key.startswith(f"{occupation}|") and len(key.split("|")[1]) == 1}
+            # "*": every section (the age table covers sections B to S except O).
+            base[group] = {"*": ages[f"{occupation}|TOTAL"], **sections}
+        return {"base": base, "age_ratio": age_ratios(country)}
+    wages = bls["mean_annual_wage"]
+    ratios = [age_ratios(country) for country in EUROSTAT_COUNTRIES.values()]
+    return {
+        "base": {group: {"*": sum(wages[soc] for soc in ISCO_TO_SOC[group]) / len(ISCO_TO_SOC[group])}
+                 for group in groups},
+        "age_ratio": {group: {band: sum(r[group][band] for r in ratios) / len(ratios) for band in AGE_BANDS}
+                      for group in groups},
+    }
+
+
+def make_conditions(locale, office_domains, salary, sections, naf=None):
+    """The posting conditions of a locale (see posting_conditions.py), with its salaries."""
+    local = CONDITIONS[locale]
+    contracts = {name: {"weight": spec["weight"], "salary_factor": spec.get("salary_factor", 1),
+                        "max_experience": spec.get("max_experience"), "employee": spec.get("employee", True)}
+                 for name, spec in local["contracts"].items()}
+    conditions = {**local, "contracts": contracts, "experience": EXPERIENCE, "skill_levels": SKILL_LEVELS,
+                  "benefits_per_posting": BENEFITS_PER_POSTING, "office_domains": sorted(office_domains),
+                  "salary": salary, "section_by_sector": sections}
+    if naf is not None:
+        conditions["naf_by_sector"] = naf
+    return conditions
+
+
+def build_fr(sectors, jobs, weights, naf, isco, salary):
     occupations = [{
         "code": job["code"],
         "title": job["title"],
@@ -406,13 +489,15 @@ def build_fr(sectors, jobs, weights, naf):
         "knowledge": job["knowledge"],
         "soft_skills": job["soft_skills"],
         **{field: job[field] for field in ROME_ATTRIBUTES},
+        "isco_code": isco[job["code"]][0],
+        "isco_group": isco[job["code"]][1],
         "weight": weights[job["code"]],
     } for job in jobs.values()]
-    meta = {"source": f"{ROME_SOURCE}; {BMO_SOURCE}; NAF: {NAF_SOURCE}", "language": "fr", "gender": GENDER["fr"]}
-    # Office jobs (remote work, flexible hours): the domains of banking,
-    # insurance and real estate (C), communication and media (E), business support (M).
-    office_domains = sorted({job["domain"] for job in jobs.values() if job["domain_code"] in OFFICE_DOMAIN_CODES})
-    conditions = {**CONDITIONS_FR, "office_domains": office_domains, "naf_by_sector": naf_by_sector(sectors, naf)}
+    meta = {"source": f"{ROME_SOURCE}; {BMO_SOURCE}; NAF: {NAF_SOURCE}; {SALARY_SOURCES['eurostat']}",
+            "language": "fr", "gender": GENDER["fr"]}
+    office_domains = {job["domain"] for job in jobs.values() if job["domain_code"] in OFFICE_DOMAIN_CODES}
+    conditions = make_conditions("fr_FR", office_domains, salary, section_by_sector(sectors, naf),
+                                 naf_by_sector(sectors, naf))
     return {**package(meta, sectors.values(), occupations), "conditions": conditions}
 
 
@@ -457,8 +542,9 @@ def esco_weights(jobs, links, weights):
             for uri, counts in links.items()}
 
 
-def build_esco(jobs, language, weights):
+def build_esco(locale, jobs, weights, naf, salary, salary_source):
     """Occupations of an ESCO language, with the ROME sectors, domains and soft skills in it."""
+    language = ESCO_LOCALES[locale]
     sector_labels, domain_labels, soft_skill_labels = SECTORS[language], DOMAINS[language], SOFT_SKILLS[language]
     with open(fetch_esco.cache_path(language), encoding="utf-8") as f:
         esco = json.load(f)
@@ -494,11 +580,16 @@ def build_esco(jobs, language, weights):
             "soft_skills": soft_skills,
             **{field: main_job[field] for field in ROME_ATTRIBUTES if field != "qualifications"},
             "qualifications": [],
+            "isco_code": record["isco_code"].split(".")[0],
+            "isco_group": record["isco_code"][0],
             "weight": weight_by_uri[uri],
         })
-    meta = {"source": f"{ESCO_SOURCE}; sectors, domains and soft skills: {ROME_SOURCE}; {BMO_SOURCE}",
+    meta = {"source": f"{ESCO_SOURCE}; sectors, domains and soft skills: {ROME_SOURCE}; {BMO_SOURCE}; "
+                      f"{salary_source}",
             "language": language, "gender": GENDER.get(language)}
-    return package(meta, sector_labels.values(), occupations)
+    office_domains = {domain_labels[code] for code in OFFICE_DOMAIN_CODES}
+    conditions = make_conditions(locale, office_domains, salary, section_by_sector(sector_labels, naf))
+    return {**package(meta, sector_labels.values(), occupations), "conditions": conditions}
 
 
 # ROME activity sector of the companies (faker_jobs/data/jobs_data.json), from
@@ -568,9 +659,17 @@ def build_occupations():
             if missing:
                 raise ValueError(f"rome_labels.{name}[{language!r}] out of sync with ROME: {sorted(missing)}")
     weights = bmo_weights(jobs, read_bmo(), read_fap_rome())
-    built = {"fr_FR": build_fr(sectors, jobs, weights, read_naf())}
+    naf = read_naf()
+    with open(fetch_esco.CACHE_PATH, encoding="utf-8") as f:
+        isco = rome_isco(jobs, link_esco_to_rome(jobs), json.load(f))
+    with open(fetch_salaries.EUROSTAT_PATH, encoding="utf-8") as f:
+        eurostat = json.load(f)
+    with open(fetch_salaries.BLS_PATH, encoding="utf-8") as f:
+        bls = json.load(f)
+    built = {"fr_FR": build_fr(sectors, jobs, weights, naf, isco, salary_table("fr_FR", eurostat, bls))}
     for locale, language in ESCO_LOCALES.items():
-        built[locale] = build_esco(jobs, language, weights)
+        source = SALARY_SOURCES["bls"].format(year=bls["year"]) if locale == "en_US" else SALARY_SOURCES["eurostat"]
+        built[locale] = build_esco(locale, jobs, weights, naf, salary_table(locale, eurostat, bls), source)
         built[locale]["companies_by_sector"] = companies_by_sector(SECTORS[language])
     return dict(sorted(built.items()))
 

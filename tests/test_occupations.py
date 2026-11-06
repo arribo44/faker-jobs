@@ -281,11 +281,11 @@ class TestRomeOccupations(OccupationTests, unittest.TestCase):
             company, sector = posting["company"], posting["occupation"]["sector"]
             self.assertEqual(posting["company_sector"], sector)
             self.assertEqual(company["sector"], sector)
-            self.assertIn([posting["company_naf"], company["industry"]], naf[sector])
+            self.assertIn([posting["company_naf"], company["industry"]], [entry[:2] for entry in naf[sector]])
             self.assertRegex(posting["company_naf"], r"^\d\d\.\d\d[A-Z]$")
             self.assertEqual(company["city"], posting["location"]["city"])
             self.assertTrue(company["company"] and company["ceo"])
-        self.assertIn(["86.10Z", "Activités hospitalières"], naf["Santé"])
+        self.assertIn(["86.10Z", "Activités hospitalières", "Q"], naf["Santé"])
 
     def _posted_title_source(self, job_title, code):
         # "Conducteur routier régional (H/F)" comes from "Conducteur routier régional / Conductrice ...".
@@ -336,7 +336,8 @@ class TestRomeOccupations(OccupationTests, unittest.TestCase):
             self.assertEqual(posting["salary_currency"], "EUR")
             self.assertTrue(posting["salary_range"].endswith("€ brut/an"))
             self.assertLess(posting["salary_min"], posting["salary_max"])
-            self.assertGreaterEqual(posting["salary_min"], 35_000 if occupation["executive"] else 22_000)
+            if posting["work_type"] in {"CDI", "CDD", "Intérim"}:
+                self.assertGreaterEqual(posting["salary_min"], 20_150)   # SMIC
             self.assertEqual(posting["location"]["country"], "France")
             self.assertIn(posting["work_type"], {"CDI", "CDD", "Intérim", "Alternance", "Stage", "Freelance"})
             if occupation["qualifications"]:
@@ -347,6 +348,97 @@ class TestRomeOccupations(OccupationTests, unittest.TestCase):
             portals.add(posting["job_portal"])
         self.assertGreater(len(portals), 5)
         self.assertEqual(self.fake.job_occupation_posting(country="Belgium")["location"]["country"], "Belgium")
+
+
+class LocalConditionsTests:
+    """Local posting conditions and salaries (mixed into a TestCase below)."""
+
+    locale = ""
+    country = ""
+    currency = ""
+
+    def setUp(self):
+        Faker.seed(20261107)
+        self.fake = make_faker(self.locale)
+        self.provider = JobsProvider(self.fake)
+        self.conditions = self.provider._local_conditions()
+
+    def test_local_terms(self):
+        contracts = self.conditions["contracts"]
+        portals = set(self.conditions["job_portals"]["all"]) | set(self.conditions["job_portals"].get("executive", []))
+        for _ in range(80):
+            posting = self.fake.job_occupation_posting()
+            spec = contracts[posting["work_type"]]
+            self.assertEqual(posting["salary_currency"], self.currency)
+            self.assertEqual(posting["location"]["country"], self.country)
+            self.assertIn(posting["job_portal"], portals)
+            self.assertLess(posting["salary_min"], posting["salary_max"])
+            self.assertIn(posting["seniority"], {"junior", "mid", "senior"})
+            self.assertTrue(set(posting["benefits"]) <= set(self.conditions["benefits"]))
+            if spec["max_experience"] is not None:
+                self.assertLessEqual(posting["experience_max"], spec["max_experience"])
+            minimum = self.conditions["minimum_wage"]
+            if minimum and spec["salary_factor"] == 1 and spec["employee"]:
+                self.assertGreaterEqual(posting["salary_min"], minimum)
+
+    def _salaries(self, group, **fixed):
+        conditions = self.conditions
+        contract = {"salary_factor": 1, "employee": True}
+        return [sum(self.provider._local_salary(group, None, fixed.get("experience", (2, 5)), contract, conditions))
+                for _ in range(50)]
+
+    def test_salary_follows_the_occupation_and_experience(self):
+        managers, elementary = self._salaries("1"), self._salaries("9")
+        self.assertGreater(min(managers), max(elementary))
+        juniors, seniors = self._salaries("2", experience=(0, 2)), self._salaries("2", experience=(20, 25))
+        self.assertGreater(sum(seniors), sum(juniors) * 1.3)
+
+    def test_internship_pays_less(self):
+        full = {"salary_factor": 1, "employee": True}
+        intern = {"salary_factor": 0.3, "employee": True}
+        self.assertLess(self.provider._local_salary("3", None, (0, 0), intern, self.conditions)[1],
+                        self.provider._local_salary("3", None, (0, 0), full, self.conditions)[0])
+
+
+class TestFrenchConditions(LocalConditionsTests, unittest.TestCase):
+    locale, country, currency = "fr_FR", "France", "EUR"
+
+
+class TestGermanConditions(LocalConditionsTests, unittest.TestCase):
+    locale, country, currency = "de_DE", "Germany", "EUR"
+
+    def test_german_wording(self):
+        posting = self.fake.job_occupation_posting()
+        self.assertTrue(posting["salary_range"].endswith("€ brutto/Jahr"), posting["salary_range"])
+
+
+class TestSpanishConditions(LocalConditionsTests, unittest.TestCase):
+    locale, country, currency = "es_ES", "Spain", "EUR"
+
+
+class TestItalianConditions(LocalConditionsTests, unittest.TestCase):
+    locale, country, currency = "it_IT", "Italy", "EUR"
+
+    def test_italian_wording(self):
+        self.assertTrue(self.fake.job_occupation_posting()["salary_range"].startswith("RAL "))
+
+
+class TestUSConditions(LocalConditionsTests, unittest.TestCase):
+    locale, country, currency = "en_US", "USA", "USD"
+
+    def test_us_wording(self):
+        posting = self.fake.job_occupation_posting()
+        self.assertRegex(posting["salary_range"], r"^\$[\d,]+ - \$[\d,]+ a year$")
+
+
+class TestNoLocalConditions(unittest.TestCase):
+    def test_other_english_locales_keep_the_kaggle_conditions(self):
+        for locale in ("en_GB", "nl_NL"):
+            provider = JobsProvider(Faker(locale))
+            self.assertIsNone(provider._local_conditions(), msg=locale)
+            posting = provider.job_occupation_posting()
+            self.assertIsNone(posting["company_naf"])
+            self.assertRegex(posting["salary_range"], r"^\$\d+K-\$\d+K$")   # the Kaggle format
 
 
 class TestGenderForm(unittest.TestCase):
