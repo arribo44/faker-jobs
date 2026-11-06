@@ -14,17 +14,22 @@ occupations** mapped to them in English, German, Spanish and Italian, with **~14
 
 ## 🌍 Languages
 
-Job data from the Kaggle dataset (titles, roles, descriptions, benefits...)
-is in **English**, whatever the locale. Contact names and phone numbers in
-postings come from the Faker locale, so they are localized (`fr_FR` ->
-"Luc Renaud", "04 97 52 87 61").
-
 [Occupations](#-occupations-rome--esco) follow the locale: **French** (ROME
 4.0) in French locales (`fr_FR`, `fr_CA`, `fr_BE`...), **German**, **Spanish**
 or **Italian** (ESCO) in those locales (`de_DE`, `de_AT`, `es_ES`, `es_MX`,
 `it_IT`...), **English** (ESCO) in every other one. `job_posting()` is built
-on them by default. In French locales, postings are entirely French
-(contract, salary in EUR, diplomas, place, job boards).
+on them by default.
+
+In **German, Spanish, French and Italian** locales, every method speaks the
+language: the generic methods (`job_title`, `job_role_record`,
+`job_salary_range`, `job_work_type`, `job_company_profile`...) use the
+occupations and the local conditions (contracts, diplomas, salary in EUR,
+benefits, job boards, places of the country, companies made up by the
+locale), see [Localized generic methods](#-localized-generic-methods).
+Other locales (`en_US`, `en_GB`, `nl_NL`...) use the Kaggle data, in
+**English**; so does `job_posting(source="kaggle")` in every locale.
+Contact names and phone numbers always come from the Faker locale (`fr_FR`
+-> "Luc Renaud", "04 97 52 87 61").
 
 ---
 
@@ -55,6 +60,10 @@ untouched.
 
 Unknown names (job title, role, country, company, sector, qualification)
 and invalid arguments raise `ValueError`. Name lookups are case-insensitive.
+
+The examples of the next sections show the Kaggle data, as in English
+locales. German, Spanish, French and Italian locales return local values
+instead: see [Localized generic methods](#-localized-generic-methods).
 
 ### 💼 Job titles & roles
 
@@ -135,6 +144,61 @@ fake.job_location(country="France")     # {'city': 'Paris', 'country': 'France',
 
 Company profile fields missing from the source data (no state outside the
 US, no CEO for some companies...) are `None`.
+
+### 🇫🇷 Localized generic methods
+
+In German, Spanish, French and Italian locales the generic methods use the
+occupations and local conditions, so that the data is in one language:
+
+```python
+fake = Faker("fr_FR")
+fake.add_provider(JobsProvider)
+
+fake.job_title()              # "Conducteur / Conductrice de bus"  (a job title of an occupation, by demand)
+fake.job_role(job_title="Conducteur / Conductrice de bus")   # "Conducteur / Conductrice de bus"  (its occupation)
+fake.job_role_record()
+# {
+#     'job_title': 'Agent / Agente en cyno-détection de matières explosives',
+#     'role': 'Agent / Agente cynotechnique en détection des explosifs',
+#     'description': "Contrôler l'accès et la circulation des personnes; ...",   # ESCO description (de, es, it)
+#     'skills': 'Bien-être animal, Connaissance des comportements canins, ...',  # knowledge and soft skills
+#     'responsibilities': "Contrôler l'accès et la circulation des personnes; ...",   # 5 activities
+# }
+fake.job_qualification()      # "Bac+2 (BTS, DUT)"
+fake.job_experience()         # "1 à 4 ans" or "Débutant accepté"
+fake.job_salary_range()       # "26 500 € - 33 000 € brut/an"  (Eurostat earnings of a random occupation)
+fake.job_work_type()          # "CDI", "CDD", "CDD saisonnier", "Intérim", "Alternance", "Stage", "Freelance"
+fake.job_benefits()           # ['Tickets restaurant', 'RTT', ...]
+fake.job_portal()             # "France Travail", "HelloWork", "APEC"...
+fake.job_location()           # {'city': 'Nice', 'country': 'France', ...}  (the locale's country by default)
+fake.job_company_profile(sector="Santé")
+# {'company': 'Vallet', 'sector': 'Santé', 'industry': 'Activités hospitalières',   # NAF label (French locales)
+#  'city': 'Nice', 'state': None, 'zip': None, 'website': None, 'ticker': None, 'ceo': 'Alfred Roux-Bertrand'}
+```
+
+| Method | Kaggle data (English locales) | Localized (de, es, fr, it) |
+|---|---|---|
+| `job_title()`, `job_titles` | job title, a family of roles | a job title of an occupation (picked by demand) |
+| `job_role()`, `job_roles` | role | the occupation's name, as `job_posting()` gives it |
+| `job_role_record()`, `job_description()`, `job_skills()`, `job_responsibilities()` | Kaggle texts | ESCO description (else activities: ROME has none), knowledge and soft skills, 5 activities |
+| `job_qualification()` | code ('MBA') | local diploma (`full_name` changes nothing) |
+| `job_experience()`, `job_salary_range()` | US ranges, USD | local wording, Eurostat earnings of a random occupation |
+| `job_work_type()`, `job_benefits()`, `job_portal()` | Kaggle values | local contracts (mix of a random occupation), benefits (uniform), job boards |
+| `job_location()` | anywhere | the locale's country by default, with local names (Deutschland, München, Sevilla, Roma...) |
+| `job_company()`, `job_company_profile()`, `job_sectors` | Kaggle companies and sectors | made up by the locale, in an activity sector |
+
+`job_countries`, `job_companies` and `job_company_size()` stay on the
+Kaggle data. Countries other than the locale's keep their English name
+(`country="Belgium"`); the local name of the locale's country is accepted
+too (`country="Deutschland"`). For the Kaggle data in every locale, as
+before 0.4, use a subclass:
+
+```python
+class KaggleJobs(JobsProvider):
+    use_kaggle_data = True
+
+fake.add_provider(KaggleJobs)
+```
 
 ### 🧰 Occupations (ROME / ESCO)
 
@@ -237,13 +301,14 @@ them as a popularity weight, not as statistics.
 
 `job_occupation_posting()` builds a full posting on an occupation: the job
 title, its skills and the hiring company fit together, in the occupation's
-sector (the requested one, else its main one). In non-French locales the
+sector (the requested one, else its main one). In English locales the
 company is one of the packaged companies of that sector; when none is
 (social work, public service, research..., about 1 posting in 5), it is a
-name made up by the Faker locale and `company_sector` is `None`. In French
-locales the company is made up by the Faker locale, with an activity of the
-occupation's sector from the French NAF rév. 2 classification
-(`company_naf`, e.g. '86.10Z', and its label as `industry`).
+name made up by the Faker locale and `company_sector` is `None`. In German,
+Spanish, French and Italian locales the company is made up by the Faker
+locale, in the occupation's sector and the city of the posting; in French
+locales with an activity of that sector from the French NAF rév. 2
+classification (`company_naf`, e.g. '86.10Z', and its label as `industry`).
 
 In French locales the whole posting is French: the job title follows the
 French usage for job ads (masculine form + "(H/F)": an ad may not target a

@@ -9,8 +9,7 @@ companies with their profile, locations, contacts and full job postings.
 The data comes from the "Job Description Dataset" (Kaggle, ~1.6M synthetic
 postings): 147 job titles, 376 roles, 888 companies, 216 locations (one city
 per country, geocoded). Roles are picked in proportion to how often they are
-posted in that dataset. Contact names and phone numbers come from the Faker
-locale, so they are localized; everything else is in English.
+posted in that dataset. That data is in English.
 
 The `job_occupation*` and `job_activity_sector*` methods use a second,
 locale-aware source: the 1,923 job sheets of the French ROME 4.0 directory
@@ -18,6 +17,13 @@ locale-aware source: the 1,923 job sheets of the French ROME 4.0 directory
 to them (European Commission), in German, Spanish or Italian for those
 locales and in English for every other one. Each occupation comes
 with its job titles, activity sectors, skills, knowledge and soft skills.
+
+In German, Spanish, French and Italian locales the generic methods
+(job_title, job_role_record, job_salary_range, job_company_profile...) use
+the occupations and the local conditions instead of the Kaggle data, so
+that everything is in the locale's language (see
+`JobsProvider.use_kaggle_data`). Contact names and phone numbers always
+come from the Faker locale.
 """
 import difflib
 import gzip
@@ -25,6 +31,7 @@ import datetime as _datetime
 import itertools
 import json
 import os
+from collections.abc import Mapping
 from typing import Any, TypedDict
 
 from faker.providers import BaseProvider
@@ -292,6 +299,15 @@ def _load_occupations(locale: str) -> dict[str, Any]:
     return _occupation_cache[locale]
 
 
+def _group_by_title(occupations: list[dict[str, Any]]) -> dict[str, tuple[str, list[dict[str, Any]]]]:
+    """{lowercase job title: (job title, occupations that have it)}."""
+    grouped: dict[str, tuple[str, list[dict[str, Any]]]] = {}
+    for occupation in occupations:
+        for title in occupation["titles"]:
+            grouped.setdefault(title.lower(), (title, []))[1].append(occupation)
+    return grouped
+
+
 def _build_occupation_index(raw: dict[str, Any]) -> dict[str, Any]:
     # Labels are stored once in `strings`; records refer to them by index.
     strings = raw["strings"]
@@ -318,6 +334,9 @@ def _build_occupation_index(raw: dict[str, Any]) -> dict[str, Any]:
         "sectors": sorted(raw["sectors"]),
         "occupations": occupations,
         "occupation_by_code": {occupation["code"].lower(): occupation for occupation in occupations},
+        # Localized generic methods: role = occupation name, job title = one of its titles.
+        "occupation_by_title": {occupation["title"].lower(): occupation for occupation in occupations},
+        "occupations_by_job_title": _group_by_title(occupations),
         "occupations_by_sector": by_sector,
         "cum_weights": cum_weights(occupations),
         "cum_weights_by_sector": {sector: cum_weights(rows) for sector, rows in by_sector.items()},
@@ -388,6 +407,39 @@ def _occupation_locale(locale: str | None) -> str:
                 DEFAULT_OCCUPATION_LOCALE)
 
 
+def _local_experience_text(conditions: dict[str, Any], low: int, high: int) -> str:
+    """The experience asked in the local wording ('Débutant accepté', '1 à 3 ans'...)."""
+    return conditions["experience_none"] if low == 0 else conditions["experience_range"].format(min=low, max=high)
+
+
+def _local_salary_text(conditions: dict[str, Any], low: int, high: int) -> str:
+    """The salary in the local wording ('31 000 € - 34 500 € brut/an'...)."""
+    salary_format = conditions["salary_format"]
+
+    def amount(value: int) -> str:
+        return f"{value:,}".replace(",", salary_format["thousands"])
+
+    return str(salary_format["template"].format(min=amount(low), max=amount(high)))
+
+
+class _RoleTexts(TypedDict):
+    description: str
+    skills: str
+    responsibilities: str
+
+
+def _role_texts(occupation: Mapping[str, Any], activities: list[str]) -> _RoleTexts:
+    """Description, skills and responsibilities of an occupation, in the
+    Kaggle shape: the ESCO description (else the activities: ROME sheets
+    have none), knowledge and soft skills, the given activities."""
+    skills = list(occupation["knowledge"][:5]) + list(occupation["soft_skills"][:3])
+    return {
+        "description": occupation["description"] or "; ".join(activities),
+        "skills": ", ".join(skills or activities),
+        "responsibilities": "; ".join(activities),
+    }
+
+
 def _seniority(experience_min: int) -> str:
     """'junior' (under 3 years of experience asked), 'mid' (3 to 7) or 'senior' (8 and more)."""
     return "junior" if experience_min < 3 else "mid" if experience_min < 8 else "senior"
@@ -408,6 +460,12 @@ class JobsProvider(BaseProvider):
     #: Force the occupation data (one of OCCUPATION_LOCALES) whatever the Faker
     #: locale, e.g. in a subclass. None (default) follows the Faker locale.
     occupations_locale: str | None = None
+
+    #: True: the generic methods (job_title, job_role_record, job_salary_range,
+    #: job_company_profile...) use the Kaggle data, in English, in every locale,
+    #: as before 0.4. False (default): in German, Spanish, French and Italian
+    #: locales they use the occupations and local conditions (see `_localized`).
+    use_kaggle_data: bool = False
 
     @property
     def _data(self) -> dict[str, Any]:
@@ -465,9 +523,24 @@ class JobsProvider(BaseProvider):
 
     # -- job titles / roles -----------------------------------------------------
 
+    def _localized(self) -> dict[str, Any] | None:
+        """The local conditions the generic methods use, or None for the
+        Kaggle data: German, Spanish, French and Italian locales (and
+        `occupations_locale`) are localized, unless `use_kaggle_data`.
+        English locales keep the Kaggle data, which is in English."""
+        if self.use_kaggle_data or self._occupations["meta"]["language"] == "en":
+            return None
+        return self._local_conditions()
+
     @property
     def job_titles(self) -> list[str]:
-        """list: every job title (e.g. 'Software Engineer'), sorted."""
+        """list: every job title (e.g. 'Software Engineer'), sorted.
+
+        Localized (German, Spanish, French, Italian locales, see
+        `use_kaggle_data`): every job title of the occupations
+        ('Conducteur / Conductrice de bus'...)."""
+        if self._localized() is not None:
+            return sorted(title for title, _ in self._occupations["occupations_by_job_title"].values())
         return self._data["job_titles"]
 
     def job_title(self, weighted: bool = True) -> str:
@@ -475,22 +548,50 @@ class JobsProvider(BaseProvider):
         roles. By default titles are picked in proportion to how often they
         are posted in the source data; `weighted=False` picks uniformly.
 
+        Localized: a job title of an occupation picked by demand, in the
+        locale's language (see `job_occupation_title`).
+
         Not to be confused with Faker's own `job()`, unrelated to this provider."""
+        if self._localized() is not None:
+            return self.job_occupation_title(weighted=weighted)
         if weighted:
             return self.generator.random.choices(self.job_titles, cum_weights=self._data["title_cum_weights"])[0]
         return self.generator.random.choice(self.job_titles)
 
+    @property
+    def job_roles(self) -> list[str]:
+        """list: every role name (e.g. 'Frontend Web Developer'), sorted.
+
+        Localized: every occupation name (see `job_occupation`)."""
+        if self._localized() is not None:
+            return sorted(occupation["title"] for occupation in self._occupations["occupations"])
+        return sorted([r["role"] for r in self._data["roles"]])
+
     def job_role(self, job_title: str | None = None, weighted: bool = True) -> str:
         """Return a random role (e.g. 'Frontend Web Developer'), optionally
         restricted to a job title (e.g. 'Web Developer'). `weighted` works
-        as in `job_title`."""
+        as in `job_title`.
+
+        Localized: the name of an occupation (of the one that has
+        `job_title` among its titles), as `job_posting()` gives it."""
+        if self._localized() is not None:
+            return self._local_role(job_title, None, weighted)[0]["title"]
         return self._pick_role(job_title=job_title, weighted=weighted)["role"]
 
     def job_role_record(
         self, job_title: str | None = None, role: str | None = None, weighted: bool = True
     ) -> RoleRecord:
         """Return a dict describing a random role (or the given `role`): its
-        job title, description, skills and responsibilities."""
+        job title, description, skills and responsibilities.
+
+        Localized: an occupation, as in `job_posting()`: `role` is its name,
+        `job_title` one of its titles, `description` its ESCO description
+        (else its activities: ROME sheets have none), `skills` its knowledge
+        and soft skills, `responsibilities` five of its activities."""
+        if self._localized() is not None:
+            occupation, title = self._local_role(job_title, role, weighted)
+            activities = self.generator.random.sample(occupation["skills"], min(5, len(occupation["skills"])))
+            return {"job_title": title, "role": occupation["title"], **_role_texts(occupation, activities)}
         found = self._pick_role(job_title=job_title, role=role, weighted=weighted)
         return {
             "job_title": found["job_title"],
@@ -500,57 +601,139 @@ class JobsProvider(BaseProvider):
             "responsibilities": found["responsibilities"],
         }
 
+    def _local_role(
+        self, job_title: str | None, role: str | None, weighted: bool
+    ) -> tuple[dict[str, Any], str]:
+        """(occupation, job title) of a localized role: the occupation named
+        `role`, or one that has `job_title`, or one picked by demand."""
+        data = self._occupations
+        title = None
+        if job_title is not None:
+            entry = data["occupations_by_job_title"].get(str(job_title).strip().lower())
+            if entry is None:
+                similar = _suggest_similar(job_title, [t for t, _ in data["occupations_by_job_title"].values()])
+                msg = f"Unknown job title: {job_title!r}"
+                if similar:
+                    msg += f". Did you mean: {', '.join(similar)}?"
+                raise ValueError(msg)
+            title, candidates = entry
+        if role is not None:
+            occupation = data["occupation_by_title"].get(str(role).strip().lower())
+            if occupation is None:
+                similar = _suggest_similar(role, [o["title"] for o in data["occupations"]])
+                msg = f"Unknown role: {role!r}"
+                if similar:
+                    msg += f". Did you mean: {', '.join(similar)}?"
+                raise ValueError(msg)
+            if title is not None and occupation not in candidates:
+                raise ValueError(f"Role {role!r} does not belong to job title {job_title!r}")
+        elif title is not None:
+            occupation = self.random_element(candidates)
+        else:
+            occupation = self._pick_occupation(weighted=weighted)
+        return occupation, title if title is not None else self.random_element(occupation["titles"])
+
     def job_description(self, role: str | None = None) -> str:
         """Return the description of the given role, or of a random one."""
+        if self._localized() is not None:
+            return self.job_role_record(role=role)["description"]
         return self._pick_role(role=role)["description"]
 
     def job_skills(self, role: str | None = None) -> str:
         """Return the skills of the given role, or of a random one."""
+        if self._localized() is not None:
+            return self.job_role_record(role=role)["skills"]
         return self._pick_role(role=role)["skills"]
 
     def job_responsibilities(self, role: str | None = None) -> str:
         """Return the responsibilities of the given role, or of a random one."""
+        if self._localized() is not None:
+            return self.job_role_record(role=role)["responsibilities"]
         return self._pick_role(role=role)["responsibilities"]
 
     # -- qualifications / experience / salary -----------------------------------
 
+    def _local_qualifications(self, conditions: dict[str, Any]) -> list[str]:
+        return sorted({name for names in conditions["qualifications"].values() for name in names})
+
     def job_qualification(self, full_name: bool = False) -> str:
         """Return a random qualification code (e.g. 'MBA'), or its full
-        name ('Master of Business Administration') if `full_name` is true."""
+        name ('Master of Business Administration') if `full_name` is true.
+
+        Localized: a local diploma ('Bac+2 (BTS, DUT)', 'Ausbildung'...),
+        whatever `full_name`."""
+        local = self._localized()
+        if local is not None:
+            return self.random_element(self._local_qualifications(local))
+        return self._kaggle_qualification(full_name)
+
+    def _kaggle_qualification(self, full_name: bool = False) -> str:
         code = self.random_element(list(self._data["qualifications"]))
         return self._data["qualifications"][code] if full_name else code
 
     def job_qualification_name(self, code: str) -> str:
-        """Return the full name of a qualification code (e.g. 'MBA')."""
-        for known, name in self._data["qualifications"].items():
+        """Return the full name of a qualification code (e.g. 'MBA').
+        Localized: the diploma itself (local diplomas have no code)."""
+        local = self._localized()
+        known_names = (dict(zip(self._local_qualifications(local), self._local_qualifications(local), strict=True))
+                       if local is not None else self._data["qualifications"])
+        for known, name in known_names.items():
             if known.lower() == str(code).strip().lower():
                 return name
-        similar = _suggest_similar(code, self._data["qualifications"].keys())
+        similar = _suggest_similar(code, list(known_names))
         msg = f"Unknown qualification: {code!r}"
         if similar:
             msg += f". Did you mean: {', '.join(similar)}?"
         raise ValueError(msg)
 
     def job_experience_range(self) -> tuple[int, int]:
-        """Return a random (min, max) years-of-experience range, e.g. (2, 12)."""
+        """Return a random (min, max) years-of-experience range, e.g. (2, 12).
+        Localized: the range asked for a random skill level, as in the postings."""
+        local = self._localized()
+        if local is not None:
+            return self._local_experience(self.random_element(sorted(local["experience"])), None, local)
+        return self._kaggle_experience_range()
+
+    def _kaggle_experience_range(self) -> tuple[int, int]:
         ranges = self._data["ranges"]
         low = self.random_int(*ranges["experience_min"])
         high = self.random_int(*ranges["experience_max"])
         return low, high
 
     def job_experience(self) -> str:
-        """Return a random experience requirement, e.g. '2 to 12 Years'."""
+        """Return a random experience requirement, e.g. '2 to 12 Years'
+        ('1 à 3 ans', 'Débutant accepté'... when localized)."""
+        local = self._localized()
+        if local is not None:
+            return _local_experience_text(local, *self.job_experience_range())
         return "{} to {} Years".format(*self.job_experience_range())
 
     def job_salary_bounds(self) -> tuple[int, int]:
-        """Return a random (min, max) yearly salary range in USD, e.g. (59000, 104000)."""
+        """Return a random (min, max) yearly salary range in USD, e.g. (59000, 104000).
+
+        Localized: in the local currency, from the earnings of a random
+        occupation's ISCO major group (see `job_occupation_posting`), for a
+        full-time employee."""
+        local = self._localized()
+        if local is not None:
+            occupation = self._pick_occupation()
+            experience = self._local_experience(local["skill_levels"][occupation["isco_group"]], None, local)
+            full_time = {"salary_factor": 1, "employee": True}
+            return self._local_salary(occupation["isco_group"], None, experience, full_time, local)
+        return self._kaggle_salary_bounds()
+
+    def _kaggle_salary_bounds(self) -> tuple[int, int]:
         ranges = self._data["ranges"]
         low = self.random_int(*ranges["salary_min_k"])
         high = self.random_int(*ranges["salary_max_k"])
         return low * 1000, high * 1000
 
     def job_salary_range(self) -> str:
-        """Return a random yearly salary range, e.g. '$59K-$104K'."""
+        """Return a random yearly salary range, e.g. '$59K-$104K'
+        ('31 000 € - 34 500 € brut/an'... when localized)."""
+        local = self._localized()
+        if local is not None:
+            return _local_salary_text(local, *self.job_salary_bounds())
         return self._format_salary(*self.job_salary_bounds())
 
     @staticmethod
@@ -560,7 +743,13 @@ class JobsProvider(BaseProvider):
     # -- work type / benefits / portals -----------------------------------------
 
     def job_work_type(self) -> str:
-        """Return a random work type: 'Full-Time', 'Part-Time', 'Contract', 'Temporary' or 'Intern'."""
+        """Return a random work type: 'Full-Time', 'Part-Time', 'Contract', 'Temporary' or 'Intern'.
+
+        Localized: a local contract type (CDI, CDD, Befristet...), with the
+        mix of a random occupation (see `job_occupation_posting`)."""
+        local = self._localized()
+        if local is not None:
+            return self._local_contract(self._pick_occupation(), local)
         return self.random_element(self._data["work_types"])
 
     def job_benefits(self, count: int | None = None, weighted: bool = True) -> list[str]:
@@ -568,7 +757,21 @@ class JobsProvider(BaseProvider):
         posting), e.g. ['Health Insurance', 'Parental Leave', ...].
 
         By default benefits are picked in proportion to how often they are
-        offered in the source data; `weighted=False` picks uniformly."""
+        offered in the source data; `weighted=False` picks uniformly.
+
+        Localized: local benefits ('Tickets restaurant'...), picked
+        uniformly (no frequencies); default count as in the local postings."""
+        local = self._localized()
+        if local is not None:
+            names = list(local["benefits"])
+            count = local["benefits_per_posting"] if count is None else count
+            _check_count("count", count)
+            if count > len(names):
+                raise ValueError(f"count must be at most {len(names)}, got {count!r}")
+            return self.generator.random.sample(names, count)
+        return self._kaggle_benefits(count, weighted)
+
+    def _kaggle_benefits(self, count: int | None = None, weighted: bool = True) -> list[str]:
         if count is None:
             count = self._data["meta"]["benefits_per_posting"]
         _check_count("count", count)
@@ -588,7 +791,12 @@ class JobsProvider(BaseProvider):
         return picked
 
     def job_portal(self) -> str:
-        """Return a random job portal or staffing agency (e.g. 'Indeed', 'Randstad')."""
+        """Return a random job portal or staffing agency (e.g. 'Indeed', 'Randstad').
+        Localized: a local job board (France Travail, StepStone...)."""
+        local = self._localized()
+        if local is not None:
+            portals = local["job_portals"]
+            return self.random_element(portals["all"] + portals.get("executive", []))
         return self.random_element(self._data["job_portals"])
 
     # -- locations --------------------------------------------------------------
@@ -600,7 +808,26 @@ class JobsProvider(BaseProvider):
 
     def job_location(self, country: str | None = None) -> LocationRecord:
         """Return a random job location (city, country and coordinates), or
-        a random one from the given `country`."""
+        a random one from the given `country`. Localized: in the locale's
+        country by default."""
+        local = self._localized()
+        if local is None:
+            return self._kaggle_location(country)
+        return self._local_location(local, country)
+
+    def _local_location(self, conditions: dict[str, Any], country: str | None) -> LocationRecord:
+        """A location, in the locale's country by default (its local name is
+        accepted too), with the local names of the country and its cities."""
+        names = conditions.get("place_names") or {"country": conditions["country"], "cities": {}}
+        if country is None or str(country).strip().lower() == names["country"].lower():
+            country = conditions["country"]
+        location = self._kaggle_location(country)
+        if location["country"] == conditions["country"]:
+            location["city"] = names["cities"].get(location["city"], location["city"])
+            location["country"] = names["country"]
+        return location
+
+    def _kaggle_location(self, country: str | None = None) -> LocationRecord:
         if country is None:
             location = self.random_element(self._data["locations"])
         else:
@@ -624,18 +851,17 @@ class JobsProvider(BaseProvider):
 
     @property
     def job_sectors(self) -> list[str]:
-        """list: every company sector (e.g. 'Financial Services'), sorted."""
+        """list: every company sector (e.g. 'Financial Services'), sorted.
+        Localized: the activity sectors (see `job_activity_sectors`)."""
+        if self._localized() is not None:
+            return self.job_activity_sectors
         return sorted(self._data["companies_by_sector"])
 
     @property
     def job_companies(self) -> list[str]:
-        """list: every company name (e.g. '3M'), sorted."""
+        """list: every company name of the Kaggle data (e.g. '3M'), sorted.
+        Localized locales make their company names up (see `job_company`)."""
         return sorted([c["company"] for c in self._data["companies"]])
-
-    @property
-    def job_roles(self) -> list[str]:
-        """list: every role name (e.g. 'Frontend Web Developer'), sorted."""
-        return sorted([r["role"] for r in self._data["roles"]])
 
     def _pick_company(self, company: str | None = None, sector: str | None = None) -> dict[str, Any]:
         if company is not None:
@@ -663,15 +889,27 @@ class JobsProvider(BaseProvider):
 
     def job_company(self, sector: str | None = None) -> str:
         """Return a random hiring company name, optionally restricted to a
-        sector (see `job_sectors`).
+        sector (see `job_sectors`). Localized: made up by the Faker locale.
 
         Not named `company` so as not to shadow Faker's own `company()`."""
-        return self._pick_company(sector=sector)["company"]
+        return self.job_company_profile(sector=sector)["company"]
 
     def job_company_profile(self, company: str | None = None, sector: str | None = None) -> CompanyProfile:
         """Return the profile of the given company, or of a random one
         (optionally restricted to a sector): sector, industry, headquarters
-        city/state/zip, website, ticker and CEO."""
+        city/state/zip, website, ticker and CEO.
+
+        Localized: a company made up by the Faker locale (or named
+        `company`), in an activity sector (`sector`, else a random one),
+        with a city of the country and a CEO; in French locales, a NAF
+        activity of the sector as `industry`. No state, zip, website or ticker."""
+        local = self._localized()
+        if local is not None:
+            name = self._resolve_activity_sector(sector) if sector is not None else self.job_activity_sector()
+            return self._local_company(name, local, self.job_location(), company)
+        return self._kaggle_company_profile(company, sector)
+
+    def _kaggle_company_profile(self, company: str | None = None, sector: str | None = None) -> CompanyProfile:
         found = self._pick_company(company=company, sector=sector)
         return {
             "company": found["company"],
@@ -823,7 +1061,7 @@ class JobsProvider(BaseProvider):
         worker at an oil company)."""
         companies = self._occupations["companies_by_sector"].get(sector)
         if companies:
-            return self.job_company_profile(company=self.random_element(companies)), sector
+            return self._kaggle_company_profile(company=self.random_element(companies)), sector
         return {
             "company": self.generator.company(),
             "sector": None, "industry": None, "city": None, "state": None,
@@ -879,8 +1117,12 @@ class JobsProvider(BaseProvider):
         else:
             terms = self._local_terms(occupation, conditions, country)
         if conditions is not None and terms["naf"] is not None:
-            company = self._local_company(occupation["sector"], terms["naf"], terms["location"])
+            company = self._local_company(occupation["sector"], conditions, terms["location"], naf=terms["naf"])
             company_sector, company_naf = occupation["sector"], terms["naf"][0]
+        elif conditions is not None and self._localized() is not None:
+            # German, Spanish, Italian: a company of the locale, not an American Kaggle one.
+            company = self._local_company(occupation["sector"], conditions, terms["location"])
+            company_sector = occupation["sector"]
         else:
             company, company_sector = self._occupation_company(occupation["sector"])
         job_title = occupation["job_title"]
@@ -932,21 +1174,27 @@ class JobsProvider(BaseProvider):
                 return None
         return conditions
 
-    def _local_company(self, sector: str, naf: list[str], location: LocationRecord) -> CompanyProfile:
-        """A company made up by the Faker locale, with a NAF rév. 2 activity
-        of the occupation's sector, in the city of the posting."""
+    def _local_company(
+        self, sector: str, conditions: dict[str, Any], location: LocationRecord, name: str | None = None,
+        naf: list[str] | None = None,
+    ) -> CompanyProfile:
+        """A company made up by the Faker locale (or named `name`) in
+        `sector`, in the city of the posting; in French locales with a NAF
+        rév. 2 activity of the sector (`naf`, else a random one) as industry."""
+        if naf is None and "naf_by_sector" in conditions:
+            naf = self.random_element(conditions["naf_by_sector"][sector])
         return {
-            "company": self.generator.company(),
-            "sector": sector, "industry": naf[1], "city": location["city"], "state": None,
+            "company": name if name is not None else self.generator.company(),
+            "sector": sector, "industry": naf[1] if naf else None, "city": location["city"], "state": None,
             "zip": None, "website": None, "ticker": None, "ceo": self.generator.name(),
         }
 
     def _kaggle_terms(self, country: str | None, weighted: bool) -> dict[str, Any]:
         """Posting conditions from the Kaggle data (as in `job_posting`)."""
-        experience_min, experience_max = self.job_experience_range()
-        salary_min, salary_max = self.job_salary_bounds()
+        experience_min, experience_max = self._kaggle_experience_range()
+        salary_min, salary_max = self._kaggle_salary_bounds()
         return {
-            "qualification": self.job_qualification(),
+            "qualification": self._kaggle_qualification(),
             "experience": f"{experience_min} to {experience_max} Years",
             "experience_min": experience_min,
             "experience_max": experience_max,
@@ -954,10 +1202,10 @@ class JobsProvider(BaseProvider):
             "salary_min": salary_min,
             "salary_max": salary_max,
             "salary_currency": self._data["meta"]["salary_currency"],
-            "work_type": self.job_work_type(),
-            "benefits": self.job_benefits(weighted=weighted),
-            "location": self.job_location(country=country),
-            "job_portal": self.job_portal(),
+            "work_type": self.random_element(self._data["work_types"]),
+            "benefits": self._kaggle_benefits(weighted=weighted),
+            "location": self._kaggle_location(country=country),
+            "job_portal": self.random_element(self._data["job_portals"]),
         }
 
     def _local_benefits(self, occupation: OccupationRecord, conditions: dict[str, Any], contract: str) -> list[str]:
@@ -998,7 +1246,18 @@ class JobsProvider(BaseProvider):
             low = -(-minimum // step) * step   # rounded up, so never below the minimum wage
         return int(low), int(max(high, low + step))
 
-    def _local_contract(self, occupation: OccupationRecord, conditions: dict[str, Any]) -> str:
+    def _local_experience(
+        self, level: str, cap: int | None, conditions: dict[str, Any]
+    ) -> tuple[int, int]:
+        """(min, max) years of experience asked for a skill level, capped by the contract."""
+        bounds = conditions["experience"][level]
+        experience_min = self.random_int(*bounds["low"])
+        experience_max = experience_min + self.random_int(*bounds["gap"])
+        if cap is not None:
+            experience_min, experience_max = min(experience_min, cap), min(experience_max, cap)
+        return experience_min, experience_max
+
+    def _local_contract(self, occupation: Mapping[str, Any], conditions: dict[str, Any]) -> str:
         """A contract type from the mix of the occupation's ISCO major group
         (see contract_weights() in scripts/build_occupations.py); a seasonal
         contract, where the locale has one, with the occupation's seasonal share."""
@@ -1022,12 +1281,7 @@ class JobsProvider(BaseProvider):
         contracts = conditions["contracts"]
         contract = self._local_contract(occupation, conditions)
         spec = contracts[contract]
-        bounds = conditions["experience"][level]
-        experience_min = self.random_int(*bounds["low"])
-        experience_max = experience_min + self.random_int(*bounds["gap"])
-        if spec["max_experience"] is not None:
-            experience_min = min(experience_min, spec["max_experience"])
-            experience_max = min(experience_max, spec["max_experience"])
+        experience_min, experience_max = self._local_experience(level, spec["max_experience"], conditions)
         naf = None
         if "naf_by_sector" in conditions:
             naf = self.random_element(conditions["naf_by_sector"][occupation["sector"]])
@@ -1036,26 +1290,20 @@ class JobsProvider(BaseProvider):
             section = conditions["section_by_sector"].get(occupation["sector"])
         salary_min, salary_max = self._local_salary(
             occupation["isco_group"], section, (experience_min, experience_max), spec, conditions)
-        salary_format = conditions["salary_format"]
-
-        def amount(value: int) -> str:
-            return f"{value:,}".replace(",", salary_format["thousands"])
-
         portals = conditions["job_portals"]
         qualifications = occupation["qualifications"] or conditions["qualifications"][level]
         return {
             "qualification": self.random_element(qualifications),
-            "experience": (conditions["experience_none"] if experience_min == 0
-                           else conditions["experience_range"].format(min=experience_min, max=experience_max)),
+            "experience": _local_experience_text(conditions, experience_min, experience_max),
             "experience_min": experience_min,
             "experience_max": experience_max,
-            "salary_range": salary_format["template"].format(min=amount(salary_min), max=amount(salary_max)),
+            "salary_range": _local_salary_text(conditions, salary_min, salary_max),
             "salary_min": salary_min,
             "salary_max": salary_max,
             "salary_currency": conditions["currency"],
             "work_type": contract,
             "benefits": self._local_benefits(occupation, conditions, contract),
-            "location": self.job_location(country=conditions["country"] if country is None else country),
+            "location": self._local_location(conditions, country),
             "job_portal": self.random_element(
                 portals["all"] + (portals.get("executive", []) if occupation["executive"] else [])),
             "naf": naf,
@@ -1114,8 +1362,7 @@ class JobsProvider(BaseProvider):
         if code is not None:
             raise ValueError("code is an occupation code: it needs source='occupations'")
         found = self._pick_role(job_title=job_title, role=role, weighted=weighted)
-        experience_min, experience_max = self.job_experience_range()
-        salary_min, salary_max = self.job_salary_bounds()
+        terms = self._kaggle_terms(country, weighted)
         return {
             "source": "kaggle",
             "occupation": None,
@@ -1125,21 +1372,21 @@ class JobsProvider(BaseProvider):
             "description": found["description"],
             "skills": found["skills"],
             "responsibilities": found["responsibilities"],
-            "qualification": self.job_qualification(),
-            "experience": f"{experience_min} to {experience_max} Years",
-            "experience_min": experience_min,
-            "experience_max": experience_max,
-            "salary_range": self._format_salary(salary_min, salary_max),
-            "salary_min": salary_min,
-            "salary_max": salary_max,
-            "salary_currency": self._data["meta"]["salary_currency"],
-            "work_type": self.job_work_type(),
-            "benefits": self.job_benefits(weighted=weighted),
-            "location": self.job_location(country=country),
-            "company": self.job_company_profile(sector=sector),
+            "qualification": terms["qualification"],
+            "experience": terms["experience"],
+            "experience_min": terms["experience_min"],
+            "experience_max": terms["experience_max"],
+            "salary_range": terms["salary_range"],
+            "salary_min": terms["salary_min"],
+            "salary_max": terms["salary_max"],
+            "salary_currency": terms["salary_currency"],
+            "work_type": terms["work_type"],
+            "benefits": terms["benefits"],
+            "location": terms["location"],
+            "company": self._kaggle_company_profile(sector=sector),
             "company_size": self.job_company_size(),
-            "seniority": _seniority(experience_min),
-            "job_portal": self.job_portal(),
+            "seniority": _seniority(terms["experience_min"]),
+            "job_portal": terms["job_portal"],
             "job_posting_date": self.job_posting_date(),
             "contact_person": self.generator.name(),
             "contact": self.generator.phone_number(),
@@ -1151,17 +1398,13 @@ class JobsProvider(BaseProvider):
         """`job_posting(source='occupations')`: an occupation posting in the `JobPosting` shape."""
         posting = self.job_occupation_posting(code=code, sector=sector, country=country, weighted=weighted)
         occupation = posting["occupation"]
-        activities = posting["skills"]
-        skills = occupation["knowledge"][:5] + occupation["soft_skills"][:3]
         return {
             "source": "occupations",
             "occupation": occupation,
             "job_id": posting["job_id"],
             "job_title": posting["job_title"],
             "role": occupation["title"],
-            "description": occupation["description"] or "; ".join(activities),
-            "skills": ", ".join(skills or activities),
-            "responsibilities": "; ".join(activities),
+            **_role_texts(occupation, posting["skills"]),
             "qualification": posting["qualification"],
             "experience": posting["experience"],
             "experience_min": posting["experience_min"],
