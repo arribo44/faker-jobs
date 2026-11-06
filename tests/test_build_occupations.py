@@ -2,6 +2,7 @@
 Tests for scripts/build_occupations.py: the packaged occupation data must be
 in sync with the ROME and ESCO sources in DATAS/.
 """
+import gzip
 import importlib.util
 import json
 import os
@@ -14,7 +15,8 @@ sys.path.insert(0, os.path.join(ROOT, "scripts"))
 import build_occupations  # noqa: E402
 import fetch_esco  # noqa: E402
 
-SOURCES = (build_occupations.ROME_PATH, fetch_esco.MAPPING_PATH, fetch_esco.CACHE_PATH)
+SOURCES = (build_occupations.ROME_PATH, fetch_esco.MAPPING_PATH,
+           *map(fetch_esco.cache_path, fetch_esco.LANGUAGES))
 
 
 # DATAS/ is not published: these tests only run where the sources (and
@@ -28,20 +30,22 @@ class TestBuildOccupations(unittest.TestCase):
 
     def test_packaged_json_is_up_to_date(self):
         for locale, data in self.data.items():
-            with open(build_occupations.output_path(locale), encoding="utf-8") as f:
+            with gzip.open(build_occupations.output_path(locale), "rt", encoding="utf-8") as f:
                 packaged = json.load(f)
             self.assertEqual(packaged, json.loads(json.dumps(data)),
-                             msg=f"occupations_{locale}.json is stale: re-run scripts/build_occupations.py")
+                             msg=f"occupations_{locale}.json.gz is stale: re-run scripts/build_occupations.py")
 
     def test_every_esco_occupation_is_cached(self):
         mapped = {uri for uri, *_ in fetch_esco.read_mapping()}
-        with open(fetch_esco.CACHE_PATH, encoding="utf-8") as f:
-            self.assertTrue(mapped <= set(json.load(f)))
+        for language in fetch_esco.LANGUAGES:
+            with open(fetch_esco.cache_path(language), encoding="utf-8") as f:
+                self.assertTrue(mapped <= set(json.load(f)), msg=language)
 
-    def test_every_soft_skill_has_an_english_label(self):
+    def test_every_soft_skill_has_a_label_in_each_language(self):
         _sectors, jobs = build_occupations.load_rome(build_occupations.read_rome())
         used = {skill for job in jobs.values() for skill in job["soft_skills"]}
-        self.assertEqual(used, set(build_occupations.SOFT_SKILLS_EN))
+        for language, labels in build_occupations.SOFT_SKILLS.items():
+            self.assertEqual(used, set(labels), msg=language)
 
 
 if __name__ == "__main__":

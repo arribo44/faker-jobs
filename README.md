@@ -7,7 +7,7 @@ The data is built from the [Job Description Dataset](https://www.kaggle.com/data
 On top of it, **occupations** cover every trade, not only office jobs: the
 **1,923 job sheets** of the French [ROME 4.0](https://www.francetravail.org/opendata/repertoire-operationnel-des-meti.html)
 directory (France Travail) in French, and the **2,045 [ESCO](https://esco.ec.europa.eu/)
-occupations** mapped to them in English, with **~14,000 job titles**,
+occupations** mapped to them in English, German, Spanish and Italian, with **~14,000 job titles**,
 **35 activity sectors**, skills, knowledge and soft skills.
 
 ---
@@ -20,8 +20,9 @@ is in **English**, whatever the locale. Contact names and phone numbers in
 "Luc Renaud", "04 97 52 87 61").
 
 [Occupations](#-occupations-rome--esco) follow the locale: **French** (ROME
-4.0) in French locales (`fr_FR`, `fr_CA`, `fr_BE`...), **English** (ESCO) in
-every other one. In French locales, `job_occupation_posting()` is entirely
+4.0) in French locales (`fr_FR`, `fr_CA`, `fr_BE`...), **German**, **Spanish**
+or **Italian** (ESCO) in those locales (`de_DE`, `de_AT`, `es_ES`, `es_MX`,
+`it_IT`...), **English** (ESCO) in every other one. In French locales, `job_occupation_posting()` is entirely
 French (contract, salary in EUR, diplomas, place, job boards).
 
 ---
@@ -248,7 +249,10 @@ no employee benefit for freelancers.
 The French conditions are **illustrative**, made by hand to look plausible:
 contract weights, salary ranges (by executive status) and benefit rules are
 not statistics. In other locales, qualifications, salaries (USD), benefits, work
-types, portals and locations come from the Kaggle data, in English.
+types, portals and locations come from the Kaggle data, in English. German,
+Spanish and Italian postings have the occupation, job title and skills in
+their language (title as "Busfahrer (m/w/d)" in German, "(m/f)" in Italian;
+Spanish keeps both forms, "conductor/conductora") and these English conditions.
 
 ROME sheets have no description (`None`). The occupation methods are not
 weighted (these sources have no posting counts) and are independent from the
@@ -275,7 +279,7 @@ To use one language whatever the Faker locale, subclass the provider:
 
 ```python
 class FrenchJobsProvider(JobsProvider):
-    occupations_locale = "fr_FR"   # or "en_US"
+    occupations_locale = "fr_FR"   # or "en_US", "de_DE", "es_ES", "it_IT"
 ```
 
 ### 📋 Job postings
@@ -365,14 +369,16 @@ Occupations have their own sources and scripts:
 DATAS/metiers/rome-4-0-métiers-×-secteurs-d-activité.xlsx   ROME 4.0 v62 (France Travail)
 DATAS/esco/EURESmapping_occs_FR_v1.0.9.csv   ROME 4.0 -> ESCO 1.0.9 crosswalk (ESCO portal, France)
 DATAS/esco/esco_occupations_v1.0.9.json      English ESCO data, cached by fetch_esco.py
+DATAS/esco/esco_occupations_v1.0.9_{de,es,it}.json   same in German, Spanish, Italian
 scripts/
-  fetch_esco.py                 ESCO web-service API -> the cache above (~2,000 requests, resumable)
-  build_occupations.py          -> faker_jobs/data/occupations_en_US.json, occupations_fr_FR.json
+  fetch_esco.py [language]      ESCO web-service API -> the caches above (~2,000 requests each, resumable)
+  rome_labels.py                ROME sectors, domains and soft skills in English, German, Spanish, Italian
+  build_occupations.py          -> faker_jobs/data/occupations_{de_DE,en_US,es_ES,fr_FR,it_IT}.json.gz (gzipped)
                                    (also matches the companies of jobs_data.json to the ROME sectors)
 ```
 
 ```bash
-python scripts/fetch_esco.py        # only if the crosswalk changed
+for l in en de es it; do python scripts/fetch_esco.py $l; done   # only if the crosswalk changed
 python scripts/build_occupations.py # needs openpyxl (dev extra); after build_data.py
 ```
 
@@ -408,5 +414,5 @@ Occupation data:
 - ROME 4.0 © France Travail, [Licence Ouverte / Etalab 2.0](https://www.etalab.gouv.fr/licence-ouverte-open-licence/).
 - ESCO © European Union, reused under [Commission Decision 2011/833/EU](https://eur-lex.europa.eu/eli/dec/2011/833/oj);
   ROME 4.0 → ESCO crosswalk by France Travail, from the [ESCO portal](https://esco.ec.europa.eu/en/use-esco/eures-countries-mapping-tables).
-- English labels of the 35 ROME activity sectors, 14 domains and 16 soft
-  skills are translated by this project.
+- English, German, Spanish and Italian labels of the 35 ROME activity
+  sectors, 14 domains and 16 soft skills are translated by this project.

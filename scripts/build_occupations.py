@@ -3,24 +3,29 @@
 Build the occupation data of each locale from the ROME 4.0 job directory
 and its official ESCO crosswalk:
 
-- faker_jobs/data/occupations_fr_FR.json: the ROME 4.0 job sheets (France
+- faker_jobs/data/occupations_fr_FR.json.gz: the ROME 4.0 job sheets (France
   Travail), in French: job titles ("appellations"), activity sectors,
   know-how (savoir-faire), knowledge (savoirs), soft skills (savoir-être).
-- faker_jobs/data/occupations_en_US.json: the ESCO occupations mapped to
-  those ROME job titles, in English: labels, description, skills and
-  knowledge come from ESCO; sectors, domains and soft skills come from the
-  linked ROME sheets, with the English labels below.
+- faker_jobs/data/occupations_{en_US,de_DE,es_ES,it_IT}.json.gz: the ESCO
+  occupations mapped to those ROME job titles, in English, German, Spanish
+  and Italian: labels, description, skills and knowledge come from ESCO;
+  sectors, domains and soft skills come from the linked ROME sheets, with
+  the labels of rome_labels.py.
 
 Inputs (DATAS/ is not published):
 - DATAS/metiers/rome-4-0-métiers-×-secteurs-d-activité.xlsx (ROME v62)
 - DATAS/esco/EURESmapping_occs_FR_v1.0.9.csv (ROME 4.0 → ESCO 1.0.9)
-- DATAS/esco/esco_occupations_v1.0.9.json (see fetch_esco.py)
+- DATAS/esco/esco_occupations_v1.0.9[_de|_es|_it].json (see fetch_esco.py)
 - faker_jobs/data/jobs_data.json: companies, matched to the ROME sectors
   (re-run this script after build_data.py)
+
+The outputs are gzipped JSON (~4x smaller installed), written with a fixed
+timestamp so that an unchanged build gives the same bytes.
 
 Requires openpyxl (`pip install -e ".[dev]"`). Re-run whenever an input changes.
 """
 import collections
+import gzip
 import json
 import os
 import re
@@ -29,93 +34,35 @@ import unicodedata
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import fetch_esco  # noqa: E402
+from rome_labels import DOMAINS, SECTORS, SOFT_SKILLS  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROME_PATH = os.path.join(ROOT, "DATAS", "metiers", "rome-4-0-métiers-×-secteurs-d-activité.xlsx")
 OUTPUT_DIR = os.path.join(ROOT, "faker_jobs", "data")
 # Companies of the Kaggle data (built by build_data.py), matched to ROME sectors.
 JOBS_DATA_PATH = os.path.join(OUTPUT_DIR, "jobs_data.json")
-LOCALES = ("en_US", "fr_FR")
+LOCALES = ("de_DE", "en_US", "es_ES", "fr_FR", "it_IT")
 
 ROME_SOURCE = "ROME 4.0 v62 (France Travail, 19/10/2026), Licence Ouverte / Etalab 2.0"
 ESCO_SOURCE = ("ESCO 1.0.9 (© European Union), reused under Commission Decision 2011/833/EU; "
                "ROME 4.0 → ESCO crosswalk by France Travail (19.11.2025)")
 
-# English labels of the ROME classifications ESCO does not cover. ESCO
-# provides the occupations, skills and knowledge in English; these lists
-# are short and translated by hand.
-SECTORS_EN = {
-    "100": "Metalworking industry",
-    "101": "Tourism",
-    "102": "Hotels and restaurants",
-    "103": "Administration and human resources",
-    "104": "Electronics industry",
-    "105": "Research",
-    "106": "Chemical industry",
-    "107": "Wood industry",
-    "108": "Energy",
-    "109": "Social work",
-    "110": "Legal and accounting",
-    "111": "Public service, defence and security",
-    "112": "Education and training",
-    "113": "Logistics and transport",
-    "79": "Agriculture and livestock",
-    "80": "Environment",
-    "81": "Maintenance and cleaning",
-    "82": "Culture and heritage",
-    "83": "Food industry",
-    "84": "Manufacturing",
-    "85": "Healthcare",
-    "86": "Personal care services",
-    "87": "Crafts, audiovisual and performing arts",
-    "88": "Retail and distribution",
-    "89": "Paper and printing industry",
-    "90": "Textile and fashion industry",
-    "91": "Finance, banking and insurance",
-    "92": "Real estate",
-    "93": "Sport and leisure",
-    "94": "Communication and marketing",
-    "95": "Automotive",
-    "96": "IT and telecommunications",
-    "97": "Publishing",
-    "98": "Architecture, engineering studies and standards",
-    "99": "Construction and public works",
-}
+# Labels of the ROME sectors, domains and soft skills in the ESCO languages.
+SECTORS_EN, DOMAINS_EN, SOFT_SKILLS_EN = SECTORS["en"], DOMAINS["en"], SOFT_SKILLS["en"]
 
-DOMAINS_EN = {
-    "A": "Agriculture, fishing, green spaces and animal care",
-    "B": "Arts and crafts",
-    "C": "Banking, insurance and real estate",
-    "D": "Sales, retail and distribution",
-    "E": "Communication, media and multimedia",
-    "F": "Construction and public works",
-    "G": "Hospitality, tourism, leisure and entertainment",
-    "H": "Industry",
-    "I": "Installation and maintenance",
-    "J": "Healthcare",
-    "K": "Personal and community services",
-    "L": "Performing arts",
-    "M": "Business support",
-    "N": "Transport and logistics",
-}
+# Locales built from ESCO -> ESCO language.
+ESCO_LOCALES = {"en_US": "en", "de_DE": "de", "es_ES": "es", "it_IT": "it"}
 
-SOFT_SKILLS_EN = {
-    "Avoir l'esprit d'équipe": "Teamwork",
-    "Avoir le sens du service": "Customer service orientation",
-    "Etre force de proposition": "Proactiveness",
-    "Etre ouvert aux changements": "Adaptability to change",
-    "Etre à l'écoute, faire preuve d'empathie": "Active listening and empathy",
-    "Faire preuve d'autonomie": "Autonomy",
-    "Faire preuve de contrôle de soi": "Self-control",
-    "Faire preuve de créativité, d'inventivité": "Creativity",
-    "Faire preuve de curiosité, d'ouverture d'esprit": "Curiosity and open-mindedness",
-    "Faire preuve de leadership": "Leadership",
-    "Faire preuve de persévérance": "Perseverance",
-    "Faire preuve de rigueur et de précision": "Attention to detail",
-    "Faire preuve de réactivité": "Responsiveness",
-    "Faire preuve de sens des responsabilités": "Sense of responsibility",
-    "Inspirer, donner du sens": "Inspiring others",
-    "Organiser son travail selon les priorités et les objectifs": "Prioritisation and time management",
+# How job titles name both genders, by language ('rome': "Conducteur /
+# Conductrice de bus"; 'esco': "Busfahrer/Busfahrerin", two full forms), and
+# the mark that follows the masculine form in a posting title, as job ads
+# must address every gender (France: "(H/F)", Germany: "(m/w/d)", Italy:
+# "(m/f)"). Spanish postings keep both forms ("conductor/conductora").
+GENDER = {
+    "fr": {"titles": "rome", "posting_suffix": "(H/F)"},
+    "de": {"titles": "esco", "posting_suffix": "(m/w/d)"},
+    "es": {"titles": "esco", "posting_suffix": None},
+    "it": {"titles": "esco", "posting_suffix": "(m/f)"},
 }
 
 
@@ -308,7 +255,7 @@ def build_fr(sectors, jobs):
         "soft_skills": job["soft_skills"],
         **{field: job[field] for field in ROME_ATTRIBUTES},
     } for job in jobs.values()]
-    meta = {"source": ROME_SOURCE, "language": "fr"}
+    meta = {"source": ROME_SOURCE, "language": "fr", "gender": GENDER["fr"]}
     # Office jobs (remote work, flexible hours): the domains of banking,
     # insurance and real estate (C), communication and media (E), business support (M).
     office_domains = sorted({job["domain"] for job in jobs.values() if job["domain_code"] in OFFICE_DOMAIN_CODES})
@@ -347,13 +294,16 @@ def esco_sectors(jobs, counts):
     return sorted(kept, key=lambda code: (-weight[code], int(code)))
 
 
-def build_en(jobs):
-    with open(fetch_esco.CACHE_PATH, encoding="utf-8") as f:
+def build_esco(jobs, language):
+    """Occupations of an ESCO language, with the ROME sectors, domains and soft skills in it."""
+    sector_labels, domain_labels, soft_skill_labels = SECTORS[language], DOMAINS[language], SOFT_SKILLS[language]
+    with open(fetch_esco.cache_path(language), encoding="utf-8") as f:
         esco = json.load(f)
     occupations = []
     for uri, counts in link_esco_to_rome(jobs).items():
         if uri not in esco:
-            raise ValueError(f"ESCO occupation {uri} missing from the cache: re-run fetch_esco.py")
+            raise ValueError(f"ESCO occupation {uri} missing from the {language} cache: "
+                             f"re-run fetch_esco.py {language}")
         record = esco[uri]
         linked = [jobs[code] for code, _ in counts.most_common()]
         sector_codes = esco_sectors(jobs, counts)
@@ -361,18 +311,18 @@ def build_en(jobs):
         for code, n in counts.items():
             domain_code[jobs[code]["domain_code"]] += n
         domain_code = domain_code.most_common(1)[0][0]
-        soft_skills = list(dict.fromkeys(SOFT_SKILLS_EN[skill] for job in linked for skill in job["soft_skills"]))
+        soft_skills = list(dict.fromkeys(soft_skill_labels[skill] for job in linked for skill in job["soft_skills"]))
         # Executive status, regulation, RIASEC profile and transitions: those
         # of the ROME sheet holding most of the mapped titles. French diplomas
-        # have no English equivalent: no qualifications.
+        # have no equivalent in other countries: no qualifications.
         main_job = linked[0]
         essential = record["essential_skills"]
         occupations.append({
             "code": uri.rsplit("/", 1)[-1],
             "title": record["label"],
             "titles": sorted({record["label"], *record["alt_labels"]}),
-            "domain": DOMAINS_EN[domain_code],
-            "sectors": [SECTORS_EN[code] for code in sector_codes],
+            "domain": domain_labels[domain_code],
+            "sectors": [sector_labels[code] for code in sector_codes],
             "description": record["description"] or None,
             "skills": [s["label"] for s in essential if s["type"] != "knowledge"],
             "knowledge": [s["label"] for s in essential if s["type"] == "knowledge"],
@@ -380,8 +330,9 @@ def build_en(jobs):
             **{field: main_job[field] for field in ROME_ATTRIBUTES if field != "qualifications"},
             "qualifications": [],
         })
-    meta = {"source": ESCO_SOURCE + "; sectors, domains and soft skills: " + ROME_SOURCE, "language": "en"}
-    return package(meta, SECTORS_EN.values(), occupations)
+    meta = {"source": ESCO_SOURCE + "; sectors, domains and soft skills: " + ROME_SOURCE,
+            "language": language, "gender": GENDER.get(language)}
+    return package(meta, sector_labels.values(), occupations)
 
 
 # ROME activity sector of the companies (faker_jobs/data/jobs_data.json), from
@@ -444,24 +395,29 @@ def companies_by_sector(sector_names):
 def build_occupations():
     """{locale: packaged data}."""
     sectors, jobs = load_rome(read_rome())
-    missing = set(sectors) ^ set(SECTORS_EN)
-    if missing:
-        raise ValueError(f"SECTORS_EN out of sync with the ROME sectors: {sorted(missing)}")
-    built = {"en_US": build_en(jobs), "fr_FR": build_fr(sectors, jobs)}
-    built["en_US"]["companies_by_sector"] = companies_by_sector(SECTORS_EN)
+    domain_codes = {job["domain_code"] for job in jobs.values()}
+    for language in ESCO_LOCALES.values():
+        for name, labels, codes in (("SECTORS", SECTORS, set(sectors)), ("DOMAINS", DOMAINS, domain_codes)):
+            missing = codes ^ set(labels[language])
+            if missing:
+                raise ValueError(f"rome_labels.{name}[{language!r}] out of sync with ROME: {sorted(missing)}")
+    built = {"fr_FR": build_fr(sectors, jobs)}
     built["fr_FR"]["companies_by_sector"] = companies_by_sector(sectors)
-    return built
+    for locale, language in ESCO_LOCALES.items():
+        built[locale] = build_esco(jobs, language)
+        built[locale]["companies_by_sector"] = companies_by_sector(SECTORS[language])
+    return dict(sorted(built.items()))
 
 
 def output_path(locale):
-    return os.path.join(OUTPUT_DIR, f"occupations_{locale}.json")
+    return os.path.join(OUTPUT_DIR, f"occupations_{locale}.json.gz")
 
 
 def main():
     for locale, data in build_occupations().items():
-        with open(output_path(locale), "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
-            f.write("\n")
+        text = json.dumps(data, ensure_ascii=False, separators=(",", ":")) + "\n"
+        with open(output_path(locale), "wb") as raw, gzip.GzipFile(fileobj=raw, mode="wb", mtime=0) as f:
+            f.write(text.encode("utf-8"))
         print(f"{locale}: {len(data['occupations'])} occupations, {len(data['sectors'])} sectors, "
               f"{len(data['strings'])} strings → {output_path(locale)}")
 
