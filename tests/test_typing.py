@@ -11,7 +11,15 @@ from typing import assert_type
 
 from faker import Faker
 
-from faker_jobs import CompanyProfile, JobPosting, JobsProvider, LocationRecord, RoleRecord
+from faker_jobs import (
+    CompanyProfile,
+    JobPosting,
+    JobsProvider,
+    LocationRecord,
+    OccupationPosting,
+    OccupationRecord,
+    RoleRecord,
+)
 
 
 def make_faker() -> Faker:
@@ -40,6 +48,14 @@ class TestTypedDictsMatchRuntime(unittest.TestCase):
         self.assertEqual(set(posting["location"]), set(LocationRecord.__annotations__))
         self.assertEqual(set(posting["company"]), set(CompanyProfile.__annotations__))
 
+    def test_occupation_record_keys(self) -> None:
+        self.assertEqual(set(self.fake.job_occupation_record()), set(OccupationRecord.__annotations__))
+
+    def test_occupation_posting_keys(self) -> None:
+        posting = self.fake.job_occupation_posting()
+        self.assertEqual(set(posting), set(OccupationPosting.__annotations__))
+        self.assertEqual(set(posting["occupation"]), set(OccupationRecord.__annotations__))
+
 
 class TestDocumentedTypedUsage(unittest.TestCase):
     """The two ways of getting typed results documented in the README.
@@ -62,6 +78,9 @@ class TestDocumentedTypedUsage(unittest.TestCase):
         assert_type(posting["job_posting_date"], datetime.date)
         assert_type(jobs.job_salary_bounds(), tuple[int, int])
         assert_type(jobs.job_title(), str)
+        assert_type(jobs.job_occupation_record(), OccupationRecord)
+        assert_type(jobs.job_occupation_skills(), list[str])
+        assert_type(jobs.job_occupation_posting()["occupation"], OccupationRecord)
 
 
 if __name__ == "__main__":

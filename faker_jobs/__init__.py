@@ -11,6 +11,12 @@ postings): 147 job titles, 376 roles, 888 companies, 216 locations (one city
 per country, geocoded). Roles are picked in proportion to how often they are
 posted in that dataset. Contact names and phone numbers come from the Faker
 locale, so they are localized; everything else is in English.
+
+The `job_occupation*` and `job_activity_sector*` methods use a second,
+locale-aware source: the 1,923 job sheets of the French ROME 4.0 directory
+(France Travail) for French locales, and the ~2,000 ESCO occupations mapped
+to them (European Commission) for every other locale. Each occupation comes
+with its job titles, activity sectors, skills, knowledge and soft skills.
 """
 import difflib
 import datetime as _datetime
@@ -23,8 +29,13 @@ from faker.providers import BaseProvider
 
 __version__ = "0.1.0"
 
-_DATA_PATH = os.path.join(os.path.dirname(__file__), "data", "jobs_data.json")
+_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+_DATA_PATH = os.path.join(_DATA_DIR, "jobs_data.json")
 _data_cache: dict[str, Any] | None = None
+
+# Locales with their own occupation data; every other locale uses the first.
+OCCUPATION_LOCALES = ("en_US", "fr_FR")
+_occupation_cache: dict[str, dict[str, Any]] = {}
 
 
 def _suggest_similar(value: str, options: list[str], n: int = 3) -> list[str]:
@@ -71,6 +82,62 @@ class CompanyProfile(TypedDict):
     website: str | None
     ticker: str | None
     ceo: str | None
+
+
+class OccupationRecord(TypedDict):
+    """An occupation, as returned by `JobsProvider.job_occupation_record()`.
+
+    In French locales it is a ROME 4.0 job sheet (`code` like 'M1805'), in
+    the others an ESCO occupation (`code` is its ESCO concept id).
+    `job_title` is one of its job titles, picked at random; `sector` is the
+    requested sector, or else its main one. `description` is None for ROME
+    sheets (the source has none)."""
+
+    code: str
+    title: str
+    job_title: str
+    domain: str
+    sector: str
+    sectors: list[str]
+    description: str | None
+    skills: list[str]
+    knowledge: list[str]
+    soft_skills: list[str]
+
+
+class OccupationPosting(TypedDict):
+    """A job posting built on an occupation, as returned by
+    `JobsProvider.job_occupation_posting()`.
+
+    `job_title`, `skills` and the company follow the occupation and its
+    sector; the other conditions are drawn as in `JobPosting` (salaries in
+    `salary_currency`, from the Kaggle data). `company_sector` is the
+    activity sector the company was picked from, or None when no packaged
+    company is in the occupation's sectors: the company is then a name made
+    up by the Faker locale, with every other profile field None."""
+
+    job_id: int
+    job_title: str
+    occupation: OccupationRecord
+    skills: list[str]
+    qualification: str
+    experience: str
+    experience_min: int
+    experience_max: int
+    salary_range: str
+    salary_min: int
+    salary_max: int
+    salary_currency: str
+    work_type: str
+    benefits: list[str]
+    location: LocationRecord
+    company: CompanyProfile
+    company_sector: str | None
+    company_size: int
+    job_portal: str
+    job_posting_date: _datetime.date
+    contact_person: str
+    contact: str
 
 
 class JobPosting(TypedDict):
@@ -151,6 +218,59 @@ def _build_index(raw: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _load_occupations(locale: str) -> dict[str, Any]:
+    if locale not in _occupation_cache:
+        with open(os.path.join(_DATA_DIR, f"occupations_{locale}.json"), encoding="utf-8") as f:
+            raw = json.load(f)
+        _occupation_cache[locale] = _build_occupation_index(raw)
+    return _occupation_cache[locale]
+
+
+def _build_occupation_index(raw: dict[str, Any]) -> dict[str, Any]:
+    # Labels are stored once in `strings`; records refer to them by index.
+    strings = raw["strings"]
+    occupations = [
+        {
+            **record,
+            "domain": strings[record["domain"]],
+            **{field: [strings[i] for i in record[field]]
+               for field in ("sectors", "skills", "knowledge", "soft_skills")},
+        }
+        for record in raw["occupations"]
+    ]
+    by_sector: dict[str, list[dict[str, Any]]] = {sector: [] for sector in raw["sectors"]}
+    for occupation in occupations:
+        for sector in occupation["sectors"]:
+            by_sector[sector].append(occupation)
+    return {
+        "meta": raw["meta"],
+        "sectors": sorted(raw["sectors"]),
+        "occupations": occupations,
+        "occupation_by_code": {occupation["code"].lower(): occupation for occupation in occupations},
+        "occupations_by_sector": by_sector,
+        "sector_by_name": {sector.lower(): sector for sector in raw["sectors"]},
+        "companies_by_sector": raw["companies_by_sector"],
+    }
+
+
+def _generator_locale(generator: Any) -> str | None:
+    """The locale of a Faker generator (or of the first locale of a Faker proxy)."""
+    config = getattr(generator, "_Generator__config", None)
+    if isinstance(config, dict) and config.get("locale"):
+        return str(config["locale"])
+    locales = getattr(generator, "locales", None)
+    if locales:
+        return str(locales[0])
+    return None
+
+
+def _occupation_locale(locale: str | None) -> str:
+    """The occupation data used for a Faker locale: French for 'fr', 'fr_FR', 'fr_CA'..., else English."""
+    if locale and locale.replace("-", "_").split("_")[0].lower() == "fr":
+        return "fr_FR"
+    return OCCUPATION_LOCALES[0]
+
+
 def _check_count(name: str, value: object) -> None:
     if isinstance(value, bool) or not isinstance(value, int) or value < 0:
         raise ValueError(f"{name} must be a non-negative integer, got {value!r}")
@@ -163,9 +283,22 @@ class JobsProvider(BaseProvider):
     `job()` (a random job title from Faker's job provider) or `company()`.
     """
 
+    #: Force the occupation data ('en_US' or 'fr_FR') whatever the Faker
+    #: locale, e.g. in a subclass. None (default) follows the Faker locale.
+    occupations_locale: str | None = None
+
     @property
     def _data(self) -> dict[str, Any]:
         return _load_data()
+
+    @property
+    def _occupations(self) -> dict[str, Any]:
+        locale = self.occupations_locale
+        if locale is None:
+            locale = _occupation_locale(_generator_locale(self.generator))
+        elif locale not in OCCUPATION_LOCALES:
+            raise ValueError(f"occupations_locale must be one of {OCCUPATION_LOCALES}, got {locale!r}")
+        return _load_occupations(locale)
 
     # -- lookup helpers ---------------------------------------------------------
 
@@ -433,6 +566,157 @@ class JobsProvider(BaseProvider):
     def job_company_size(self) -> int:
         """Return a random company size (number of employees)."""
         return self.random_int(*self._data["ranges"]["company_size"])
+
+    # -- occupations (ROME 4.0 / ESCO, locale-aware) -----------------------------
+
+    @property
+    def job_activity_sectors(self) -> list[str]:
+        """list: every activity sector of the occupations (35, e.g.
+        'Healthcare', or 'Santé' in French locales), sorted.
+
+        Not the same list as `job_sectors`, the sectors of the companies."""
+        return list(self._occupations["sectors"])
+
+    @property
+    def job_occupation_codes(self) -> list[str]:
+        """list: every occupation code (ROME codes like 'M1805' in French
+        locales, ESCO concept ids otherwise), sorted."""
+        return [occupation["code"] for occupation in self._occupations["occupations"]]
+
+    def _resolve_activity_sector(self, sector: str) -> str:
+        data = self._occupations
+        name = data["sector_by_name"].get(str(sector).strip().lower())
+        if name is None:
+            similar = _suggest_similar(sector, data["sectors"])
+            msg = f"Unknown activity sector: {sector!r}"
+            if similar:
+                msg += f". Did you mean: {', '.join(similar)}?"
+            else:
+                msg += f". Available sectors: {', '.join(data['sectors'][:5])}..."
+            raise ValueError(msg)
+        return name
+
+    def _pick_occupation(self, code: str | None = None, sector: str | None = None) -> dict[str, Any]:
+        data = self._occupations
+        if code is not None:
+            found = data["occupation_by_code"].get(str(code).strip().lower())
+            if found is None:
+                raise ValueError(f"Unknown occupation code: {code!r} (see job_occupation_codes)")
+            if sector is not None and self._resolve_activity_sector(sector) not in found["sectors"]:
+                raise ValueError(f"Occupation {code!r} is not in activity sector {sector!r}")
+            return found
+        if sector is None:
+            return self.random_element(data["occupations"])
+        return self.random_element(data["occupations_by_sector"][self._resolve_activity_sector(sector)])
+
+    def job_activity_sector(self) -> str:
+        """Return a random activity sector (see `job_activity_sectors`)."""
+        return self.random_element(self._occupations["sectors"])
+
+    def job_occupation(self, sector: str | None = None) -> str:
+        """Return the name of a random occupation (e.g. 'nurse responsible
+        for general care', 'Infirmier / Infirmière de soins généraux' in
+        French locales), optionally from an activity sector."""
+        return self._pick_occupation(sector=sector)["title"]
+
+    def job_occupation_title(self, sector: str | None = None) -> str:
+        """Return a random job title as written in a job posting (one of the
+        ~14,000 ROME or ESCO job titles), optionally from an activity sector."""
+        return self.random_element(self._pick_occupation(sector=sector)["titles"])
+
+    def job_occupation_record(self, code: str | None = None, sector: str | None = None) -> OccupationRecord:
+        """Return a dict describing the given occupation (by `code`) or a
+        random one, optionally from an activity sector: its name, a job
+        title, domain, sectors, description, skills, knowledge and soft skills."""
+        found = self._pick_occupation(code=code, sector=sector)
+        return {
+            "code": found["code"],
+            "title": found["title"],
+            "job_title": self.random_element(found["titles"]),
+            "domain": found["domain"],
+            "sector": self._resolve_activity_sector(sector) if sector is not None else found["sectors"][0],
+            "sectors": list(found["sectors"]),
+            "description": found["description"],
+            "skills": list(found["skills"]),
+            "knowledge": list(found["knowledge"]),
+            "soft_skills": list(found["soft_skills"]),
+        }
+
+    def job_occupation_skills(
+        self, code: str | None = None, count: int = 5, sector: str | None = None
+    ) -> list[str]:
+        """Return `count` distinct skills of the given occupation (by `code`)
+        or of a random one (optionally from an activity sector), e.g.
+        ['administer medication', ...]. Returns all of them when the
+        occupation has fewer than `count`."""
+        _check_count("count", count)
+        skills = self._pick_occupation(code=code, sector=sector)["skills"]
+        return self.generator.random.sample(skills, min(count, len(skills)))
+
+    def _occupation_company(self, sectors: list[str]) -> tuple[CompanyProfile, str | None]:
+        """A company from the first of `sectors` that has some, and that sector;
+        else a company name from the Faker locale and None."""
+        by_sector = self._occupations["companies_by_sector"]
+        for sector in sectors:
+            if by_sector.get(sector):
+                return self.job_company_profile(company=self.random_element(by_sector[sector])), sector
+        return {
+            "company": self.generator.company(),
+            "sector": None, "industry": None, "city": None, "state": None,
+            "zip": None, "website": None, "ticker": None, "ceo": None,
+        }, None
+
+    def job_occupation_posting(
+        self,
+        code: str | None = None,
+        sector: str | None = None,
+        country: str | None = None,
+        skills: int = 5,
+        weighted: bool = True,
+    ) -> OccupationPosting:
+        """Return a full random job posting built on an occupation (see
+        `OccupationPosting`), in the language of the Faker locale.
+
+        - `code` / `sector` choose the occupation (see `job_occupation_record`).
+        - The hiring company is in the occupation's sector (the requested
+          one, else its main one, else its other sectors), or made up by
+          the Faker locale when no packaged company fits.
+        - `skills`: how many of the occupation's skills to list (default 5).
+        - `country` sets the job location; `weighted` applies to benefits.
+
+        Qualifications, salaries, benefits, work types and portals come
+        from the Kaggle data, in English whatever the locale.
+        """
+        _check_count("skills", skills)
+        occupation = self.job_occupation_record(code=code, sector=sector)
+        company_sectors = [occupation["sector"]] + [s for s in occupation["sectors"] if s != occupation["sector"]]
+        company, company_sector = self._occupation_company(company_sectors)
+        experience_min, experience_max = self.job_experience_range()
+        salary_min, salary_max = self.job_salary_bounds()
+        return {
+            "job_id": self.job_id(),
+            "job_title": occupation["job_title"],
+            "occupation": occupation,
+            "skills": self.generator.random.sample(occupation["skills"], min(skills, len(occupation["skills"]))),
+            "qualification": self.job_qualification(),
+            "experience": f"{experience_min} to {experience_max} Years",
+            "experience_min": experience_min,
+            "experience_max": experience_max,
+            "salary_range": self._format_salary(salary_min, salary_max),
+            "salary_min": salary_min,
+            "salary_max": salary_max,
+            "salary_currency": self._data["meta"]["salary_currency"],
+            "work_type": self.job_work_type(),
+            "benefits": self.job_benefits(weighted=weighted),
+            "location": self.job_location(country=country),
+            "company": company,
+            "company_sector": company_sector,
+            "company_size": self.job_company_size(),
+            "job_portal": self.job_portal(),
+            "job_posting_date": self.job_posting_date(),
+            "contact_person": self.generator.name(),
+            "contact": self.generator.phone_number(),
+        }
 
     # -- postings ---------------------------------------------------------------
 

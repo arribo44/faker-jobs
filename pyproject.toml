@@ -27,7 +27,7 @@ classifiers = [
 
 [project.optional-dependencies]
 test = ["pytest"]
-dev = ["pytest", "ruff", "build", "mypy"]
+dev = ["pytest", "ruff", "build", "mypy", "openpyxl"]
 
 [project.urls]
 Homepage = "https://github.com/arribo44/faker-jobs"
