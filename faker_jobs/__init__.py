@@ -178,9 +178,20 @@ class OccupationPosting(TypedDict):
 class JobPosting(TypedDict):
     """A full job posting, as returned by `JobsProvider.job_posting()`.
 
-    Salaries are yearly amounts in `salary_currency` (USD, as in the source
-    data); `salary_range` is their compact text form ("$59K-$104K")."""
+    `source` says what it was built on:
 
+    - 'occupations' (default): a ROME / ESCO occupation, in the language of
+      the Faker locale, as `job_occupation_posting()` (whose record is in
+      `occupation`). `role` is the occupation's name, `responsibilities`
+      its skills (activities), `skills` its knowledge and soft skills,
+      `description` its ESCO description (or, for ROME sheets, which have
+      none, its main activities).
+    - 'kaggle': a role of the Kaggle data, in English; `occupation` is None.
+      Salaries are yearly amounts in `salary_currency` (USD, as in the
+      source data); `salary_range` is their compact text form ("$59K-$104K")."""
+
+    source: str
+    occupation: OccupationRecord | None
     job_id: int
     job_title: str
     role: str
@@ -962,21 +973,43 @@ class JobsProvider(BaseProvider):
         country: str | None = None,
         sector: str | None = None,
         weighted: bool = True,
+        source: str = "occupations",
+        code: str | None = None,
     ) -> JobPosting:
         """Return a full random job posting as a dict (see `JobPosting`).
 
+        `source='occupations'` (default) builds it on a ROME / ESCO
+        occupation, in the language of the Faker locale (see
+        `job_occupation_posting`): every trade, picked by demand.
+        - `code` / `sector` choose the occupation (`sector` is an activity
+          sector, see `job_activity_sectors`).
+
+        `source='kaggle'` builds it on a role of the Kaggle data, in English
+        (office jobs, worldwide), as before 0.2:
         - `job_title` / `role` restrict the role (see `job_role_record`).
-        - `country` sets the job location (see `job_location`).
         - `sector` restricts the hiring company (see `job_company_profile`).
-        - `weighted` (default True) picks popular roles and benefits more
-          often; False makes both uniform.
+
+        For both:
+        - `country` sets the job location (see `job_location`).
+        - `weighted` (default True) picks popular occupations / roles and
+          benefits more often; False makes them uniform.
 
         The contact person and phone number come from the Faker locale.
         """
+        if source == "occupations":
+            if job_title is not None or role is not None:
+                raise ValueError("job_title and role are Kaggle values: pass source='kaggle' to use them")
+            return self._occupation_job_posting(code, sector, country, weighted)
+        if source != "kaggle":
+            raise ValueError(f"source must be 'occupations' or 'kaggle', got {source!r}")
+        if code is not None:
+            raise ValueError("code is an occupation code: it needs source='occupations'")
         found = self._pick_role(job_title=job_title, role=role, weighted=weighted)
         experience_min, experience_max = self.job_experience_range()
         salary_min, salary_max = self.job_salary_bounds()
         return {
+            "source": "kaggle",
+            "occupation": None,
             "job_id": self.job_id(),
             "job_title": found["job_title"],
             "role": found["role"],
@@ -1000,4 +1033,40 @@ class JobsProvider(BaseProvider):
             "job_posting_date": self.job_posting_date(),
             "contact_person": self.generator.name(),
             "contact": self.generator.phone_number(),
+        }
+
+    def _occupation_job_posting(
+        self, code: str | None, sector: str | None, country: str | None, weighted: bool
+    ) -> JobPosting:
+        """`job_posting(source='occupations')`: an occupation posting in the `JobPosting` shape."""
+        posting = self.job_occupation_posting(code=code, sector=sector, country=country, weighted=weighted)
+        occupation = posting["occupation"]
+        activities = posting["skills"]
+        skills = occupation["knowledge"][:5] + occupation["soft_skills"][:3]
+        return {
+            "source": "occupations",
+            "occupation": occupation,
+            "job_id": posting["job_id"],
+            "job_title": posting["job_title"],
+            "role": occupation["title"],
+            "description": occupation["description"] or "; ".join(activities),
+            "skills": ", ".join(skills or activities),
+            "responsibilities": "; ".join(activities),
+            "qualification": posting["qualification"],
+            "experience": posting["experience"],
+            "experience_min": posting["experience_min"],
+            "experience_max": posting["experience_max"],
+            "salary_range": posting["salary_range"],
+            "salary_min": posting["salary_min"],
+            "salary_max": posting["salary_max"],
+            "salary_currency": posting["salary_currency"],
+            "work_type": posting["work_type"],
+            "benefits": posting["benefits"],
+            "location": posting["location"],
+            "company": posting["company"],
+            "company_size": posting["company_size"],
+            "job_portal": posting["job_portal"],
+            "job_posting_date": posting["job_posting_date"],
+            "contact_person": posting["contact_person"],
+            "contact": posting["contact"],
         }

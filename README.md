@@ -16,14 +16,15 @@ occupations** mapped to them in English, German, Spanish and Italian, with **~14
 
 Job data from the Kaggle dataset (titles, roles, descriptions, benefits...)
 is in **English**, whatever the locale. Contact names and phone numbers in
-`job_posting()` come from the Faker locale, so they are localized (`fr_FR` ->
+postings come from the Faker locale, so they are localized (`fr_FR` ->
 "Luc Renaud", "04 97 52 87 61").
 
 [Occupations](#-occupations-rome--esco) follow the locale: **French** (ROME
 4.0) in French locales (`fr_FR`, `fr_CA`, `fr_BE`...), **German**, **Spanish**
 or **Italian** (ESCO) in those locales (`de_DE`, `de_AT`, `es_ES`, `es_MX`,
-`it_IT`...), **English** (ESCO) in every other one. In French locales, `job_occupation_posting()` is entirely
-French (contract, salary in EUR, diplomas, place, job boards).
+`it_IT`...), **English** (ESCO) in every other one. `job_posting()` is built
+on them by default. In French locales, postings are entirely French
+(contract, salary in EUR, diplomas, place, job boards).
 
 ---
 
@@ -84,7 +85,7 @@ fake.job_responsibilities()
 Job titles and roles are picked **in proportion to how often they are
 posted** in the source data: UX/UI designers come up ~4.7 times more often
 than the median job title. Pass `weighted=False` to `job_title()`,
-`job_role()`, `job_role_record()` or `job_posting()` for a uniform pick.
+`job_role()`, `job_role_record()` or `job_posting(source="kaggle")` for a uniform pick.
 
 ### 🎓 Qualifications, experience, salary
 
@@ -289,7 +290,7 @@ wastewater plant manager may work for a waste treatment company.
 
 ROME sheets have no description (`None`). The occupation methods are
 independent from the Kaggle-based methods: activity sectors (occupations) are not `job_sectors`
-(companies), and `job_posting()` is unchanged.
+(companies).
 
 An ESCO occupation takes the sectors that cover at least 25% of the ROME job
 titles mapped to it. Sectors follow ROME, which lists secondary sectors too:
@@ -320,10 +321,43 @@ class FrenchJobsProvider(JobsProvider):
 fake.job_id()                           # 2482944066971281
 fake.job_posting_date()                 # a date within the last two years
 fake.job_posting_date(start_date="-30d")   # anything Faker's date_between() accepts
+```
+
+`job_posting()` builds a posting on a ROME / ESCO
+[occupation](#-occupations-rome--esco), in the language of the Faker locale
+(every trade, picked by demand), with the same keys as the Kaggle postings:
+
+```python
+fake = Faker("fr_FR")
+fake.add_provider(JobsProvider)
 
 fake.job_posting()
-fake.job_posting(job_title="Web Developer", country="France", sector="Retail")
+fake.job_posting(sector="Santé", country="France")   # an activity sector
+fake.job_posting(code="J1506")                       # a given occupation
 # {
+#     'source': 'occupations',
+#     'occupation': {'code': 'J1506', 'title': 'Infirmier / Infirmière en soins généraux (IDE)', ...},
+#     'job_title': 'Infirmier en gériatrie (H/F)',
+#     'role': 'Infirmier / Infirmière en soins généraux (IDE)',   # the occupation
+#     'description': ...,        # ESCO description; for ROME sheets (none), the main activities
+#     'responsibilities': 'Appliquer un protocole de soin; ...',   # the occupation's skills (activities)
+#     'skills': "Connaissance de l'écosystème sanitaire, ..., Etre force de proposition",   # knowledge, soft skills
+#     'salary_range': '27 000 € - 33 000 € brut/an', 'salary_currency': 'EUR', 'work_type': 'CDI',
+#     ...                        # the other keys as below
+# }
+```
+
+It is `job_occupation_posting()` in the `JobPosting` shape: use that one for
+the NAF code and company sector. `source="kaggle"` gives the postings of the
+Kaggle data, in English (office jobs, worldwide), as before 0.2; `job_title`
+and `role` need it:
+
+```python
+fake.job_posting(source="kaggle")
+fake.job_posting(job_title="Web Developer", country="France", sector="Retail", source="kaggle")
+# {
+#     'source': 'kaggle',
+#     'occupation': None,
 #     'job_id': 9486177616759356,
 #     'job_title': 'UX/UI Designer',
 #     'role': 'Interaction Designer',

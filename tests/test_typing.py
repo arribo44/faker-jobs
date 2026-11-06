@@ -43,10 +43,14 @@ class TestTypedDictsMatchRuntime(unittest.TestCase):
         self.assertEqual(set(self.fake.job_company_profile()), set(CompanyProfile.__annotations__))
 
     def test_job_posting_keys(self) -> None:
-        posting = self.fake.job_posting()
-        self.assertEqual(set(posting), set(JobPosting.__annotations__))
-        self.assertEqual(set(posting["location"]), set(LocationRecord.__annotations__))
-        self.assertEqual(set(posting["company"]), set(CompanyProfile.__annotations__))
+        for source in ("occupations", "kaggle"):
+            posting = self.fake.job_posting(source=source)
+            self.assertEqual(set(posting), set(JobPosting.__annotations__))
+            self.assertEqual(set(posting["location"]), set(LocationRecord.__annotations__))
+            self.assertEqual(set(posting["company"]), set(CompanyProfile.__annotations__))
+        occupation = self.fake.job_posting()["occupation"]
+        assert occupation is not None
+        self.assertEqual(set(occupation), set(OccupationRecord.__annotations__))
 
     def test_occupation_record_keys(self) -> None:
         self.assertEqual(set(self.fake.job_occupation_record()), set(OccupationRecord.__annotations__))

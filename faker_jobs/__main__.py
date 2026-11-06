@@ -54,8 +54,11 @@ def demo(locale: str) -> None:
           f"demand {occupation_posting['occupation']['demand']}")
 
     print("\n--- Job posting ---")
-    posting = jobs.job_posting()
-    print(f"  #{posting['job_id']} {posting['role']} ({posting['work_type']}) at {posting['company']['company']}")
+    for source in ("occupations", "kaggle"):
+        posting = jobs.job_posting(source=source)
+        print(f"  [{source}] #{posting['job_id']} {posting['job_title']} ({posting['work_type']}) "
+              f"at {posting['company']['company']}")
+    print(f"  {posting['role']}: {posting['responsibilities'][:80]}...")
     print(f"  {posting['location']['city']}, {posting['location']['country']} - {posting['salary_range']}")
     print(f"  Posted {posting['job_posting_date']} on {posting['job_portal']}, "
           f"contact: {posting['contact_person']} {posting['contact']}")
