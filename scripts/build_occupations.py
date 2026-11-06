@@ -235,6 +235,8 @@ def package(meta, sectors, occupations):
     return {"meta": meta, "sectors": sorted(sectors), "strings": pool.strings, "occupations": records}
 
 
+OFFICE_DOMAIN_CODES = {"C", "E", "M"}
+
 ROME_ATTRIBUTES = ("qualifications", "executive", "regulated", "riasec", "transitions")
 
 # Job conditions of the French postings (job_occupation_posting() in French
@@ -261,13 +263,28 @@ CONDITIONS_FR = {
         "executive": ["Bac+5 (Master, école d'ingénieur ou de commerce)", "Bac+3 (Licence, BUT)"],
         "other": ["CAP / BEP", "Bac pro", "Bac", "Bac+2 (BTS, DUT)"],
     },
-    "benefits": [
-        "Mutuelle d'entreprise", "Tickets restaurant", "RTT", "Prime annuelle", "13e mois",
-        "Intéressement et participation", "Plan d'épargne entreprise (PEE)", "Télétravail partiel",
-        "Remboursement à 50 % du titre de transport", "Comité social et économique (CSE)",
-        "Formation continue", "Horaires flexibles", "Prime de vacances", "Chèques cadeaux",
-        "Véhicule de fonction", "Forfait mobilités durables",
-    ],
+    # Benefit -> who can get it: "requires" is "office" (an office job or an
+    # executive one: see office_domains), "executive", or None for every job;
+    # "not_for" lists contract types that never get it (a freelancer is not an
+    # employee: no employee benefits).
+    "benefits": {
+        "Mutuelle d'entreprise": {"requires": None, "not_for": ["Freelance"]},
+        "Tickets restaurant": {"requires": None, "not_for": ["Freelance"]},
+        "RTT": {"requires": None, "not_for": ["Stage", "Freelance"]},
+        "Prime annuelle": {"requires": None, "not_for": ["Stage", "Freelance"]},
+        "13e mois": {"requires": None, "not_for": ["Stage", "Freelance"]},
+        "Intéressement et participation": {"requires": None, "not_for": ["Stage", "Freelance", "Intérim"]},
+        "Plan d'épargne entreprise (PEE)": {"requires": None, "not_for": ["Stage", "Freelance", "Intérim"]},
+        "Télétravail partiel": {"requires": "office", "not_for": []},
+        "Remboursement à 50 % du titre de transport": {"requires": None, "not_for": ["Freelance"]},
+        "Comité social et économique (CSE)": {"requires": None, "not_for": ["Freelance"]},
+        "Formation continue": {"requires": None, "not_for": ["Freelance"]},
+        "Horaires flexibles": {"requires": "office", "not_for": []},
+        "Prime de vacances": {"requires": None, "not_for": ["Stage", "Freelance"]},
+        "Chèques cadeaux": {"requires": None, "not_for": ["Freelance"]},
+        "Véhicule de fonction": {"requires": "executive", "not_for": ["Stage", "Alternance", "Freelance"]},
+        "Forfait mobilités durables": {"requires": None, "not_for": ["Freelance"]},
+    },
     "benefits_per_posting": 4,
     # Job boards for every posting, plus those for executive ("cadre") jobs only.
     "job_portals": {
@@ -292,7 +309,11 @@ def build_fr(sectors, jobs):
         **{field: job[field] for field in ROME_ATTRIBUTES},
     } for job in jobs.values()]
     meta = {"source": ROME_SOURCE, "language": "fr"}
-    return {**package(meta, sectors.values(), occupations), "conditions": CONDITIONS_FR}
+    # Office jobs (remote work, flexible hours): the domains of banking,
+    # insurance and real estate (C), communication and media (E), business support (M).
+    office_domains = sorted({job["domain"] for job in jobs.values() if job["domain_code"] in OFFICE_DOMAIN_CODES})
+    conditions = {**CONDITIONS_FR, "office_domains": office_domains}
+    return {**package(meta, sectors.values(), occupations), "conditions": conditions}
 
 
 def link_esco_to_rome(jobs):
