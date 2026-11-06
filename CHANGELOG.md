@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.4.0] - 2026-11-06
+
 ### Changed
 - **Breaking**: in German, Spanish, French and Italian locales the generic methods no longer return the English Kaggle data. `job_title()` / `job_titles` give the job titles of the occupations, `job_role()` / `job_roles` the occupation names, `job_role_record()` (and `job_description`, `job_skills`, `job_responsibilities`) the occupation texts as in `job_posting()`; `job_qualification()`, `job_experience()`, `job_salary_range()`, `job_salary_bounds()`, `job_work_type()`, `job_benefits()` and `job_portal()` the local conditions; `job_location()` a place of the locale's country by default; `job_company()`, `job_company_profile()` and `job_sectors` a company made up by the locale in an activity sector (with a NAF activity in French locales). English locales are unchanged. Set `use_kaggle_data = True` on a `JobsProvider` subclass for the previous behaviour.
 - **Breaking**: German, Spanish and Italian postings (`job_occupation_posting()`, `job_posting()`) get a company made up by the locale, in the occupation's sector, instead of an American Kaggle company.
