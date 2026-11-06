@@ -32,14 +32,26 @@ class TestOccupationLocale(unittest.TestCase):
         for locale in ("fr_FR", "fr_CA", "fr_CH", "fr-BE"):
             self.assertEqual(_occupation_locale(locale), "fr_FR", msg=locale)
 
-    def test_other_locales_use_esco(self):
-        for locale in ("en_US", "en_GB", "de_DE", None):
+    def test_esco_languages(self):
+        for locale, expected in (("de_DE", "de_DE"), ("de_AT", "de_DE"), ("es_MX", "es_ES"), ("it-CH", "it_IT")):
+            self.assertEqual(_occupation_locale(locale), expected, msg=locale)
+
+    def test_other_locales_use_english(self):
+        for locale in ("en_US", "en_GB", "nl_NL", "pt_BR", None):
             self.assertEqual(_occupation_locale(locale), "en_US", msg=locale)
 
     def test_faker_locale_selects_the_data(self):
         self.assertIn("Santé", make_provider("fr_FR").job_activity_sectors)
         self.assertIn("Healthcare", make_provider("en_US").job_activity_sectors)
-        self.assertIn("Healthcare", make_provider("de_DE").job_activity_sectors)
+        self.assertIn("Healthcare", make_provider("nl_NL").job_activity_sectors)
+        self.assertIn("Gesundheitswesen", make_provider("de_DE").job_activity_sectors)
+        self.assertIn("Sanidad", make_provider("es_ES").job_activity_sectors)
+        self.assertIn("Sanità", make_provider("it_IT").job_activity_sectors)
+
+    def test_esco_ids_are_shared_by_the_esco_languages(self):
+        codes = set(make_provider("en_US").job_occupation_codes)
+        for locale in ("de_DE", "es_ES", "it_IT"):
+            self.assertEqual(set(make_provider(locale).job_occupation_codes), codes, msg=locale)
 
     def test_rome_codes_in_french_esco_ids_otherwise(self):
         self.assertIn("M1805", make_provider("fr_FR").job_occupation_codes)
@@ -62,7 +74,7 @@ class TestOccupationLocale(unittest.TestCase):
 
     def test_bad_occupations_locale(self):
         class BadJobs(JobsProvider):
-            occupations_locale = "de_DE"
+            occupations_locale = "nl_NL"
 
         # Faker reads the provider's properties on registration: the error shows up there.
         with self.assertRaisesRegex(ValueError, "occupations_locale"):
@@ -322,6 +334,13 @@ class TestGenderForm(unittest.TestCase):
                       "Analyste biologie/microbiologie en industrie"):
             self.assertEqual(_gender_form(title, "F"), title)
 
+    def test_esco_style(self):
+        title = "Technischer Leiter für Bühne/Technische Leiterin für Bühne"
+        self.assertEqual(_gender_form(title, "M", "esco"), "Technischer Leiter für Bühne")
+        self.assertEqual(_gender_form(title, "F", "esco"), "Technische Leiterin für Bühne")
+        for title in ("Inspizientin", "a/b/c", "IT/"):
+            self.assertEqual(_gender_form(title, "F", "esco"), title)
+
 
 class TestEscoOccupations(OccupationTests, unittest.TestCase):
     locale = "en_US"
@@ -341,6 +360,53 @@ class TestEscoOccupations(OccupationTests, unittest.TestCase):
         posting = self.fake.job_occupation_posting()
         self.assertEqual(posting["salary_currency"], "USD")
         self.assertEqual(posting["occupation"]["qualifications"], [])
+
+
+class EscoLanguageTests(OccupationTests):
+    """German, Spanish and Italian ESCO occupations."""
+
+    suffix = None
+
+    def test_descriptions_and_skills_in_the_language(self):
+        english = make_faker("en_US")
+        code = self.provider.job_occupation_codes[0]
+        record = self.fake.job_occupation_record(code=code)
+        self.assertTrue(record["description"] and record["skills"])
+        self.assertNotEqual(record["skills"], english.job_occupation_record(code=code)["skills"])
+
+    def test_gendered_titles(self):
+        for _ in range(50):
+            title = self.fake.job_occupation_title(gender="F")
+            self.assertTrue(title and not title.startswith("/") and not title.endswith("/"))
+
+    def _posted_title_source(self, job_title, code):
+        # "Busfahrer (m/w/d)": the masculine form of the preferred label.
+        if not self.suffix:
+            return job_title
+        self.assertTrue(job_title.endswith(f" {self.suffix}"), msg=job_title)
+        record = self.provider._occupations["occupation_by_code"][code.lower()]
+        self.assertEqual(job_title.removesuffix(f" {self.suffix}"), _gender_form(record["title"], "M", "esco"))
+        return record["title"]
+
+    def test_posting_title(self):
+        for _ in range(30):
+            title = self.fake.job_occupation_posting()["job_title"]
+            if self.suffix:
+                self.assertTrue(title.endswith(f" {self.suffix}"), msg=title)
+
+
+class TestGermanOccupations(EscoLanguageTests, unittest.TestCase):
+    locale = "de_DE"
+    suffix = "(m/w/d)"
+
+
+class TestSpanishOccupations(EscoLanguageTests, unittest.TestCase):
+    locale = "es_ES"
+
+
+class TestItalianOccupations(EscoLanguageTests, unittest.TestCase):
+    locale = "it_IT"
+    suffix = "(m/f)"
 
 
 if __name__ == "__main__":

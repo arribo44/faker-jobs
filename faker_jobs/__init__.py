@@ -15,10 +15,12 @@ locale, so they are localized; everything else is in English.
 The `job_occupation*` and `job_activity_sector*` methods use a second,
 locale-aware source: the 1,923 job sheets of the French ROME 4.0 directory
 (France Travail) for French locales, and the ~2,000 ESCO occupations mapped
-to them (European Commission) for every other locale. Each occupation comes
+to them (European Commission), in German, Spanish or Italian for those
+locales and in English for every other one. Each occupation comes
 with its job titles, activity sectors, skills, knowledge and soft skills.
 """
 import difflib
+import gzip
 import datetime as _datetime
 import itertools
 import json
@@ -33,8 +35,9 @@ _DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 _DATA_PATH = os.path.join(_DATA_DIR, "jobs_data.json")
 _data_cache: dict[str, Any] | None = None
 
-# Locales with their own occupation data; every other locale uses the first.
-OCCUPATION_LOCALES = ("en_US", "fr_FR")
+# Locales with their own occupation data, and the one used for every other locale.
+OCCUPATION_LOCALES = ("de_DE", "en_US", "es_ES", "fr_FR", "it_IT")
+DEFAULT_OCCUPATION_LOCALE = "en_US"
 _occupation_cache: dict[str, dict[str, Any]] = {}
 
 
@@ -88,7 +91,8 @@ class OccupationRecord(TypedDict):
     """An occupation, as returned by `JobsProvider.job_occupation_record()`.
 
     In French locales it is a ROME 4.0 job sheet (`code` like 'M1805'), in
-    the others an ESCO occupation (`code` is its ESCO concept id).
+    the others an ESCO occupation (`code` is its ESCO concept id, the same
+    in English, German, Spanish and Italian).
     `job_title` is one of its job titles, picked at random; `sector` is the
     requested sector, or else its main one. `description` is None for ROME
     sheets (the source has none).
@@ -127,7 +131,9 @@ class OccupationPosting(TypedDict):
     `work_type`, yearly gross salary in EUR, French diplomas, a place in
     France, French job boards) and the job title reads "Conducteur de
     poids lourd (H/F)"; in other locales they are drawn as in `JobPosting`
-    (salaries in USD, from the Kaggle data). `company_sector` is the
+    (salaries in USD, from the Kaggle data), and the job title reads
+    "Busfahrer (m/w/d)" in German locales, "autista di autobus (m/f)" in
+    Italian ones (Spanish ones keep both forms). `company_sector` is the
     activity sector the company was picked from, or None when no packaged
     company is in the occupation's sectors: the company is then a name made
     up by the Faker locale, with every other profile field None."""
@@ -236,7 +242,7 @@ def _build_index(raw: dict[str, Any]) -> dict[str, Any]:
 
 def _load_occupations(locale: str) -> dict[str, Any]:
     if locale not in _occupation_cache:
-        with open(os.path.join(_DATA_DIR, f"occupations_{locale}.json"), encoding="utf-8") as f:
+        with gzip.open(os.path.join(_DATA_DIR, f"occupations_{locale}.json.gz"), "rt", encoding="utf-8") as f:
             raw = json.load(f)
         _occupation_cache[locale] = _build_occupation_index(raw)
     return _occupation_cache[locale]
@@ -267,11 +273,12 @@ def _build_occupation_index(raw: dict[str, Any]) -> dict[str, Any]:
         "sector_by_name": {sector.lower(): sector for sector in raw["sectors"]},
         "companies_by_sector": raw["companies_by_sector"],
         "conditions": raw.get("conditions"),
-        "gendered_titles": raw["meta"]["language"] == "fr",
+        # None (titles are not gendered) or {"titles": "rome" | "esco", "posting_suffix": str | None}.
+        "gender": raw["meta"].get("gender"),
     }
 
 
-def _gender_form(title: str, gender: str) -> str:
+def _gender_form(title: str, gender: str, style: str = "rome") -> str:
     """The masculine ('M') or feminine ('F') form of a French ROME job title
     written with both, e.g. "Conducteur / Conductrice d'engins agricoles"
     -> "Conducteur d'engins agricoles" / "Conductrice d'engins agricoles".
@@ -280,7 +287,15 @@ def _gender_form(title: str, gender: str) -> str:
     after it, which are the feminine one; the rest is common to both. Words
     before the first gendered one are common too ("Garde forestier /
     Forestière"). Titles in another shape (no or several " / ") are
-    returned unchanged."""
+    returned unchanged.
+
+    `style='esco'`: ESCO titles in German, Spanish or Italian write both
+    full forms around one "/" ("Busfahrer/Busfahrerin")."""
+    if style == "esco":
+        parts = title.split("/")
+        if len(parts) != 2 or not all(part.strip() for part in parts):
+            return title
+        return parts[0 if gender == "M" else 1].strip()
     if title.count(" / ") != 1:
         return title
     left, right = title.split(" / ")
@@ -313,10 +328,12 @@ def _generator_locale(generator: Any) -> str | None:
 
 
 def _occupation_locale(locale: str | None) -> str:
-    """The occupation data used for a Faker locale: French for 'fr', 'fr_FR', 'fr_CA'..., else English."""
-    if locale and locale.replace("-", "_").split("_")[0].lower() == "fr":
-        return "fr_FR"
-    return OCCUPATION_LOCALES[0]
+    """The occupation data used for a Faker locale, by language: French for
+    'fr', 'fr_FR', 'fr_CA'..., German for 'de_DE', 'de_AT'..., Spanish,
+    Italian; else English."""
+    language = locale.replace("-", "_").split("_")[0].lower() if locale else None
+    return next((known for known in OCCUPATION_LOCALES if known.startswith(f"{language}_")),
+                DEFAULT_OCCUPATION_LOCALE)
 
 
 def _check_count(name: str, value: object) -> None:
@@ -331,7 +348,7 @@ class JobsProvider(BaseProvider):
     `job()` (a random job title from Faker's job provider) or `company()`.
     """
 
-    #: Force the occupation data ('en_US' or 'fr_FR') whatever the Faker
+    #: Force the occupation data (one of OCCUPATION_LOCALES) whatever the Faker
     #: locale, e.g. in a subclass. None (default) follows the Faker locale.
     occupations_locale: str | None = None
 
@@ -672,13 +689,16 @@ class JobsProvider(BaseProvider):
         titles), optionally from an activity sector.
 
         French titles name both forms ("Conducteur / Conductrice de bus"),
-        as ROME does; `gender='M'` or `'F'` gives only the masculine or
-        feminine one. English titles are not gendered: `gender` is ignored."""
+        as ROME does, and so do most German, Spanish and Italian ones
+        ("Busfahrer/Busfahrerin"), as ESCO does; `gender='M'` or `'F'`
+        gives only the masculine or feminine one. English titles are not
+        gendered: `gender` is ignored."""
         if gender not in (None, "M", "F"):
             raise ValueError(f"gender must be None, 'M' or 'F', got {gender!r}")
         title = self.random_element(self._pick_occupation(sector=sector)["titles"])
-        if gender is not None and self._occupations["gendered_titles"]:
-            return _gender_form(title, gender)
+        style = self._occupations["gender"]
+        if gender is not None and style is not None:
+            return _gender_form(title, gender, style["titles"])
         return title
 
     def job_occupation_record(self, code: str | None = None, sector: str | None = None) -> OccupationRecord:
@@ -760,11 +780,19 @@ class JobsProvider(BaseProvider):
         company, company_sector = self._occupation_company(occupation["sector"])
         conditions = self._occupations["conditions"]
         if conditions is None:
-            job_title = occupation["job_title"]
             terms = self._kaggle_terms(country, weighted)
         else:
-            job_title = _gender_form(occupation["job_title"], "M") + " (H/F)"
             terms = self._french_terms(occupation, conditions, country)
+        job_title = occupation["job_title"]
+        style = self._occupations["gender"]
+        if style is not None and style["posting_suffix"]:
+            # Masculine form and the mark for every gender: "Busfahrer (m/w/d)".
+            # ESCO alternative labels have a single form, sometimes the
+            # feminine one ("Inspizientin"): start from the preferred label.
+            if style["titles"] == "esco":
+                job_title = occupation["title"]
+            job_title = f'{_gender_form(job_title, "M", style["titles"])} {style["posting_suffix"]}'
+
         return {
             "job_id": self.job_id(),
             "job_title": job_title,

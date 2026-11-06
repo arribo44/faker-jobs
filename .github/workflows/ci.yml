@@ -51,6 +51,6 @@ jobs:
       - run: python -m build
       - name: Check the wheel ships the data
         run: |
-          for f in jobs_data.json occupations_en_US.json occupations_fr_FR.json; do
+          for f in jobs_data.json occupations_{de_DE,en_US,es_ES,fr_FR,it_IT}.json.gz; do
             unzip -l dist/*.whl | grep -q "faker_jobs/data/$f"
           done

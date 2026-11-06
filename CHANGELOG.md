@@ -20,7 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `job_occupation_title(gender="M"|"F")`: the masculine or feminine form of a French job title.
   - French benefits fit the job and contract: remote work and flexible hours for office or executive jobs, company car for executives, no bonus or profit-sharing for interns, no employee benefit for freelancers.
   - `job_occupation_posting()` picks the company in the occupation's own sector only (no longer in its secondary sectors, which gave odd matches); otherwise the company name comes from the Faker locale.
-  - `scripts/fetch_esco.py` (ESCO API → cache) and `scripts/build_occupations.py` (→ `faker_jobs/data/occupations_{en_US,fr_FR}.json`); `openpyxl` added to the `dev` extra.
+  - German, Spanish and Italian occupations (`de_*`, `es_*`, `it_*` locales): the same ESCO occupations with their labels, description, skills and knowledge in the language, ROME sectors, domains and soft skills translated by hand (`scripts/rome_labels.py`); `job_occupation_title(gender=...)` splits their "Busfahrer/Busfahrerin" titles, and postings read "Busfahrer (m/w/d)" (German) or "(m/f)" (Italian). Other conditions stay the Kaggle ones, in English.
+  - `scripts/fetch_esco.py` (ESCO API → cache) and `scripts/build_occupations.py` (→ `faker_jobs/data/occupations_{de_DE,en_US,es_ES,fr_FR,it_IT}.json.gz`, gzipped JSON); `openpyxl` added to the `dev` extra.
 - Multiple cities per country in location data: 216 → 457 locations total, covering major cities worldwide (e.g., France now has Paris, Marseille, Lyon, Toulouse, Nice, etc.; USA has 20 major cities).
 - Improved error messages with fuzzy matching: when a user mistypes a parameter value (sector, company, job title, role, qualification, or country), the error message now suggests the closest matches.
 - New read-only properties: `job_companies` (list of all company names) and `job_roles` (list of all role names).

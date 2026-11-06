@@ -41,7 +41,7 @@ include = ["faker_jobs*"]
 
 [tool.setuptools.package-data]
 "faker_jobs" = ["py.typed"]
-"faker_jobs.data" = ["*.json"]
+"faker_jobs.data" = ["*.json", "*.json.gz"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

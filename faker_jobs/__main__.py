@@ -59,7 +59,7 @@ def demo(locale: str) -> None:
 
 
 def main() -> None:
-    for locale in ["en_US", "fr_FR"]:
+    for locale in ["en_US", "fr_FR", "de_DE"]:
         demo(locale)
 
 
