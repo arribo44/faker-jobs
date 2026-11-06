@@ -190,12 +190,41 @@ class OccupationTests:
             self.assertTrue(set(posting["skills"]) <= set(occupation["skills"]))
             self.assertEqual(len(posting["skills"]), min(5, len(occupation["skills"])))
 
+    def test_demand_weighting(self):
+        data = self.provider._occupations
+        record = self.fake.job_occupation_record()
+        self.assertIsInstance(record["demand"], int)
+        self.assertGreaterEqual(record["demand"], 1)
+        # Weighted picks favour high-demand occupations; uniform ones do not.
+        median = sorted(o["weight"] for o in data["occupations"])[len(data["occupations"]) // 2]
+        weighted = [self.fake.job_occupation_record()["demand"] for _ in range(300)]
+        uniform = [self.fake.job_occupation_record(weighted=False)["demand"] for _ in range(300)]
+        self.assertGreater(sum(d > median for d in weighted), 240)
+        self.assertLess(sum(d > median for d in uniform), 200)
+
+    def test_weighted_pick_in_a_sector(self):
+        sector = self.provider.job_activity_sectors[0]
+        for weighted in (True, False):
+            record = self.fake.job_occupation_record(sector=sector, weighted=weighted)
+            self.assertIn(sector, record["sectors"])
+
     def _posted_title_source(self, job_title, code):
         """The occupation title a posting's job title was made from (overridden in French)."""
         return job_title
 
     def _titles(self, code):
         return self.provider._occupations["occupation_by_code"][code.lower()]["titles"]
+
+    def test_posting_options(self):
+        posting = self.fake.job_occupation_posting(country="France", skills=2)
+        self.assertEqual(posting["location"]["country"], "France")
+        self.assertLessEqual(len(posting["skills"]), 2)
+        with self.assertRaises(ValueError):
+            self.fake.job_occupation_posting(skills=-1)
+
+
+class KaggleCompanyTests:
+    """Postings of the ESCO locales: Kaggle companies of the occupation's sector."""
 
     def test_posting_company_fits_the_occupation(self):
         fitted = 0
@@ -227,12 +256,8 @@ class OccupationTests:
         self.assertIsNone(posting["company_sector"])
         self.assertIsNone(posting["company"]["ticker"])
 
-    def test_posting_options(self):
-        posting = self.fake.job_occupation_posting(country="France", skills=2)
-        self.assertEqual(posting["location"]["country"], "France")
-        self.assertLessEqual(len(posting["skills"]), 2)
-        with self.assertRaises(ValueError):
-            self.fake.job_occupation_posting(skills=-1)
+    def test_no_naf_code(self):
+        self.assertIsNone(self.fake.job_occupation_posting()["company_naf"])
 
 
 class TestRomeOccupations(OccupationTests, unittest.TestCase):
@@ -247,6 +272,20 @@ class TestRomeOccupations(OccupationTests, unittest.TestCase):
 
     def test_1923_occupations(self):
         self.assertEqual(len(self.provider.job_occupation_codes), 1923)
+
+    def test_french_company_has_a_naf_activity_of_the_sector(self):
+        naf = self.provider._occupations["conditions"]["naf_by_sector"]
+        self.assertEqual(set(naf), set(self.provider.job_activity_sectors))
+        for _ in range(50):
+            posting = self.fake.job_occupation_posting()
+            company, sector = posting["company"], posting["occupation"]["sector"]
+            self.assertEqual(posting["company_sector"], sector)
+            self.assertEqual(company["sector"], sector)
+            self.assertIn([posting["company_naf"], company["industry"]], naf[sector])
+            self.assertRegex(posting["company_naf"], r"^\d\d\.\d\d[A-Z]$")
+            self.assertEqual(company["city"], posting["location"]["city"])
+            self.assertTrue(company["company"] and company["ceo"])
+        self.assertIn(["86.10Z", "Activités hospitalières"], naf["Santé"])
 
     def _posted_title_source(self, job_title, code):
         # "Conducteur routier régional (H/F)" comes from "Conducteur routier régional / Conductrice ...".
@@ -342,7 +381,7 @@ class TestGenderForm(unittest.TestCase):
             self.assertEqual(_gender_form(title, "F", "esco"), title)
 
 
-class TestEscoOccupations(OccupationTests, unittest.TestCase):
+class TestEscoOccupations(KaggleCompanyTests, OccupationTests, unittest.TestCase):
     locale = "en_US"
 
     def test_esco_occupations_have_english_descriptions(self):
@@ -362,7 +401,7 @@ class TestEscoOccupations(OccupationTests, unittest.TestCase):
         self.assertEqual(posting["occupation"]["qualifications"], [])
 
 
-class EscoLanguageTests(OccupationTests):
+class EscoLanguageTests(KaggleCompanyTests, OccupationTests):
     """German, Spanish and Italian ESCO occupations."""
 
     suffix = None

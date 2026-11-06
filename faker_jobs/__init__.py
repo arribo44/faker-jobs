@@ -103,7 +103,13 @@ class OccupationRecord(TypedDict):
     `transitions` (any of 'ecological', 'digital', 'demographic': jobs
     ROME flags as part of that transition). `qualifications` are the French
     diplomas listed by the ROME sheet (CAP, Bac pro, BTS, Master...); empty
-    for ESCO occupations."""
+    for ESCO occupations.
+
+    `demand` estimates the yearly recruitment projects in France (France
+    Travail's BMO 2026 survey, by job family, shared between the ROME sheets
+    of the family by the DARES FAP 2021 → ROME table; ROME 4.0 sheets
+    missing from that table get the mean of their ROME group). French
+    figures in every locale: a rough popularity weight, not a statistic."""
 
     code: str
     title: str
@@ -120,6 +126,7 @@ class OccupationRecord(TypedDict):
     regulated: bool
     riasec: list[str]
     transitions: list[str]
+    demand: int
 
 
 class OccupationPosting(TypedDict):
@@ -133,10 +140,15 @@ class OccupationPosting(TypedDict):
     poids lourd (H/F)"; in other locales they are drawn as in `JobPosting`
     (salaries in USD, from the Kaggle data), and the job title reads
     "Busfahrer (m/w/d)" in German locales, "autista di autobus (m/f)" in
-    Italian ones (Spanish ones keep both forms). `company_sector` is the
-    activity sector the company was picked from, or None when no packaged
-    company is in the occupation's sectors: the company is then a name made
-    up by the Faker locale, with every other profile field None."""
+    Italian ones (Spanish ones keep both forms).
+
+    In French locales the company is made up by the Faker locale, in the
+    occupation's sector: `company_naf` is its NAF rév. 2 activity code
+    (e.g. '86.10Z'), whose label is the company's `industry`. Elsewhere it
+    is one of the Kaggle companies of the occupation's sector
+    (`company_sector`), or, when none is in that sector, a name made up by
+    the Faker locale with every other profile field None and
+    `company_sector` None; `company_naf` is None."""
 
     job_id: int
     job_title: str
@@ -155,6 +167,7 @@ class OccupationPosting(TypedDict):
     location: LocationRecord
     company: CompanyProfile
     company_sector: str | None
+    company_naf: str | None
     company_size: int
     job_portal: str
     job_posting_date: _datetime.date
@@ -264,14 +277,22 @@ def _build_occupation_index(raw: dict[str, Any]) -> dict[str, Any]:
     for occupation in occupations:
         for sector in occupation["sectors"]:
             by_sector[sector].append(occupation)
+
+    def cum_weights(rows: list[dict[str, Any]]) -> list[int]:
+        # Demand weight = estimated recruitment projects (BMO 2026).
+        return list(itertools.accumulate(row["weight"] for row in rows))
+
     return {
         "meta": raw["meta"],
         "sectors": sorted(raw["sectors"]),
         "occupations": occupations,
         "occupation_by_code": {occupation["code"].lower(): occupation for occupation in occupations},
         "occupations_by_sector": by_sector,
+        "cum_weights": cum_weights(occupations),
+        "cum_weights_by_sector": {sector: cum_weights(rows) for sector, rows in by_sector.items()},
         "sector_by_name": {sector.lower(): sector for sector in raw["sectors"]},
-        "companies_by_sector": raw["companies_by_sector"],
+        # Kaggle companies by sector (not in French locales: see _french_company).
+        "companies_by_sector": raw.get("companies_by_sector", {}),
         "conditions": raw.get("conditions"),
         # None (titles are not gendered) or {"titles": "rome" | "esco", "posting_suffix": str | None}.
         "gender": raw["meta"].get("gender"),
@@ -661,7 +682,9 @@ class JobsProvider(BaseProvider):
             raise ValueError(msg)
         return name
 
-    def _pick_occupation(self, code: str | None = None, sector: str | None = None) -> dict[str, Any]:
+    def _pick_occupation(
+        self, code: str | None = None, sector: str | None = None, weighted: bool = True
+    ) -> dict[str, Any]:
         data = self._occupations
         if code is not None:
             found = data["occupation_by_code"].get(str(code).strip().lower())
@@ -671,22 +694,37 @@ class JobsProvider(BaseProvider):
                 raise ValueError(f"Occupation {code!r} is not in activity sector {sector!r}")
             return found
         if sector is None:
-            return self.random_element(data["occupations"])
-        return self.random_element(data["occupations_by_sector"][self._resolve_activity_sector(sector)])
+            rows, cum_weights = data["occupations"], data["cum_weights"]
+        else:
+            name = self._resolve_activity_sector(sector)
+            rows, cum_weights = data["occupations_by_sector"][name], data["cum_weights_by_sector"][name]
+        if weighted:
+            return self.generator.random.choices(rows, cum_weights=cum_weights)[0]
+        return self.generator.random.choice(rows)
 
     def job_activity_sector(self) -> str:
         """Return a random activity sector (see `job_activity_sectors`)."""
         return self.random_element(self._occupations["sectors"])
 
-    def job_occupation(self, sector: str | None = None) -> str:
+    def job_occupation(self, sector: str | None = None, weighted: bool = True) -> str:
         """Return the name of a random occupation (e.g. 'nurse responsible
         for general care', 'Infirmier / Infirmière de soins généraux' in
-        French locales), optionally from an activity sector."""
-        return self._pick_occupation(sector=sector)["title"]
+        French locales), optionally from an activity sector.
 
-    def job_occupation_title(self, sector: str | None = None, gender: str | None = None) -> str:
+        By default occupations are picked in proportion to their demand in
+        France (recruitment projects of the BMO 2026 survey, see
+        `OccupationRecord.demand`), in every locale: cooks and care
+        assistants come up more often than air traffic controllers.
+        `weighted=False` picks uniformly. The same goes for the other
+        `job_occupation*` methods."""
+        return self._pick_occupation(sector=sector, weighted=weighted)["title"]
+
+    def job_occupation_title(
+        self, sector: str | None = None, gender: str | None = None, weighted: bool = True
+    ) -> str:
         """Return a random job title (one of the ~14,000 ROME or ESCO job
-        titles), optionally from an activity sector.
+        titles), optionally from an activity sector; `weighted` as in
+        `job_occupation`.
 
         French titles name both forms ("Conducteur / Conductrice de bus"),
         as ROME does, and so do most German, Spanish and Italian ones
@@ -695,17 +733,20 @@ class JobsProvider(BaseProvider):
         gendered: `gender` is ignored."""
         if gender not in (None, "M", "F"):
             raise ValueError(f"gender must be None, 'M' or 'F', got {gender!r}")
-        title = self.random_element(self._pick_occupation(sector=sector)["titles"])
+        title = self.random_element(self._pick_occupation(sector=sector, weighted=weighted)["titles"])
         style = self._occupations["gender"]
         if gender is not None and style is not None:
             return _gender_form(title, gender, style["titles"])
         return title
 
-    def job_occupation_record(self, code: str | None = None, sector: str | None = None) -> OccupationRecord:
+    def job_occupation_record(
+        self, code: str | None = None, sector: str | None = None, weighted: bool = True
+    ) -> OccupationRecord:
         """Return a dict describing the given occupation (by `code`) or a
-        random one, optionally from an activity sector: its name, a job
-        title, domain, sectors, description, skills, knowledge and soft skills."""
-        found = self._pick_occupation(code=code, sector=sector)
+        random one, optionally from an activity sector (`weighted` as in
+        `job_occupation`): its name, a job title, domain, sectors,
+        description, skills, knowledge and soft skills."""
+        found = self._pick_occupation(code=code, sector=sector, weighted=weighted)
         return {
             "code": found["code"],
             "title": found["title"],
@@ -722,17 +763,18 @@ class JobsProvider(BaseProvider):
             "regulated": found["regulated"],
             "riasec": list(found["riasec"]),
             "transitions": list(found["transitions"]),
+            "demand": found["weight"],
         }
 
     def job_occupation_skills(
-        self, code: str | None = None, count: int = 5, sector: str | None = None
+        self, code: str | None = None, count: int = 5, sector: str | None = None, weighted: bool = True
     ) -> list[str]:
         """Return `count` distinct skills of the given occupation (by `code`)
         or of a random one (optionally from an activity sector), e.g.
         ['administer medication', ...]. Returns all of them when the
         occupation has fewer than `count`."""
         _check_count("count", count)
-        skills = self._pick_occupation(code=code, sector=sector)["skills"]
+        skills = self._pick_occupation(code=code, sector=sector, weighted=weighted)["skills"]
         return self.generator.random.sample(skills, min(count, len(skills)))
 
     def _occupation_company(self, sector: str) -> tuple[CompanyProfile, str | None]:
@@ -762,27 +804,33 @@ class JobsProvider(BaseProvider):
 
         - `code` / `sector` choose the occupation (see `job_occupation_record`).
         - The hiring company is in the occupation's sector (the requested
-          one, else its main one), or made up by the Faker locale when no
-          packaged company is in that sector.
+          one, else its main one): made up, with a NAF activity of that
+          sector, in French locales; else a Kaggle company of that sector,
+          or a name made up by the Faker locale when none is in it.
         - `skills`: how many of the occupation's skills to list (default 5).
         - `country` sets the job location (default: France in French
           locales, anywhere otherwise).
-        - `weighted` applies to the Kaggle benefits (non-French locales).
+        - `weighted` picks the occupation by demand (see `job_occupation`)
+          and, in non-French locales, the Kaggle benefits by popularity.
 
         In French locales the conditions are French and illustrative
         (contract, yearly gross salary in EUR by executive status, a diploma
         from the ROME sheet, French benefits that fit the job and contract,
-        French job boards); otherwise they
-        come from the Kaggle data, in English.
+        French job boards) and the company is made up, with a NAF activity
+        of the occupation's sector; otherwise they come from the Kaggle
+        data, in English.
         """
         _check_count("skills", skills)
-        occupation = self.job_occupation_record(code=code, sector=sector)
-        company, company_sector = self._occupation_company(occupation["sector"])
+        occupation = self.job_occupation_record(code=code, sector=sector, weighted=weighted)
         conditions = self._occupations["conditions"]
+        company_naf = None
         if conditions is None:
             terms = self._kaggle_terms(country, weighted)
+            company, company_sector = self._occupation_company(occupation["sector"])
         else:
             terms = self._french_terms(occupation, conditions, country)
+            company, company_naf = self._french_company(occupation["sector"], conditions, terms["location"])
+            company_sector = occupation["sector"]
         job_title = occupation["job_title"]
         style = self._occupations["gender"]
         if style is not None and style["posting_suffix"]:
@@ -811,12 +859,25 @@ class JobsProvider(BaseProvider):
             "location": terms["location"],
             "company": company,
             "company_sector": company_sector,
+            "company_naf": company_naf,
             "company_size": self.job_company_size(),
             "job_portal": terms["job_portal"],
             "job_posting_date": self.job_posting_date(),
             "contact_person": self.generator.name(),
             "contact": self.generator.phone_number(),
         }
+
+    def _french_company(
+        self, sector: str, conditions: dict[str, Any], location: LocationRecord
+    ) -> tuple[CompanyProfile, str]:
+        """A company made up by the Faker locale, with a NAF rév. 2 activity
+        of the occupation's sector, in the city of the posting."""
+        naf_code, naf_label = self.random_element(conditions["naf_by_sector"][sector])
+        return {
+            "company": self.generator.company(),
+            "sector": sector, "industry": naf_label, "city": location["city"], "state": None,
+            "zip": None, "website": None, "ticker": None, "ceo": self.generator.name(),
+        }, naf_code
 
     def _kaggle_terms(self, country: str | None, weighted: bool) -> dict[str, Any]:
         """Posting conditions from the Kaggle data (as in `job_posting`)."""

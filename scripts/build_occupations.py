@@ -16,13 +16,19 @@ Inputs (DATAS/ is not published):
 - DATAS/metiers/rome-4-0-métiers-×-secteurs-d-activité.xlsx (ROME v62)
 - DATAS/esco/EURESmapping_occs_FR_v1.0.9.csv (ROME 4.0 → ESCO 1.0.9)
 - DATAS/esco/esco_occupations_v1.0.9[_de|_es|_it].json (see fetch_esco.py)
+- DATAS/bmo/Base-open-data-BMO-2026.xlsx (France Travail, "Besoins en
+  Main-d'Œuvre" 2026: recruitment projects by job family, FAP 2021) and
+  DATAS/bmo/Dares_FAP2021_Table_passage_ROME.xlsx (DARES, FAP 2021 → ROME):
+  the demand weight of each occupation (see bmo_weights())
+- DATAS/naf/naf2008_liste_n5.xls (INSEE, NAF rév. 2 sub-classes): the
+  activity codes of the French companies (see NAF_BY_SECTOR)
 - faker_jobs/data/jobs_data.json: companies, matched to the ROME sectors
   (re-run this script after build_data.py)
 
 The outputs are gzipped JSON (~4x smaller installed), written with a fixed
 timestamp so that an unchanged build gives the same bytes.
 
-Requires openpyxl (`pip install -e ".[dev]"`). Re-run whenever an input changes.
+Requires openpyxl and xlrd (`pip install -e ".[dev]"`). Re-run whenever an input changes.
 """
 import collections
 import gzip
@@ -43,6 +49,12 @@ OUTPUT_DIR = os.path.join(ROOT, "faker_jobs", "data")
 JOBS_DATA_PATH = os.path.join(OUTPUT_DIR, "jobs_data.json")
 LOCALES = ("de_DE", "en_US", "es_ES", "fr_FR", "it_IT")
 
+BMO_PATH = os.path.join(ROOT, "DATAS", "bmo", "Base-open-data-BMO-2026.xlsx")
+FAP_ROME_PATH = os.path.join(ROOT, "DATAS", "bmo", "Dares_FAP2021_Table_passage_ROME.xlsx")
+BMO_SOURCE = ("demand weights: BMO 2026 (France Travail) and FAP 2021 → ROME table (DARES), "
+              "Licence Ouverte / Etalab 2.0")
+NAF_PATH = os.path.join(ROOT, "DATAS", "naf", "naf2008_liste_n5.xls")
+NAF_SOURCE = "NAF rév. 2 (INSEE), Licence Ouverte / Etalab 2.0"
 ROME_SOURCE = "ROME 4.0 v62 (France Travail, 19/10/2026), Licence Ouverte / Etalab 2.0"
 ESCO_SOURCE = ("ESCO 1.0.9 (© European Union), reused under Commission Decision 2011/833/EU; "
                "ROME 4.0 → ESCO crosswalk by France Travail (19.11.2025)")
@@ -141,6 +153,76 @@ def load_rome(sheets):
     return sectors, jobs
 
 
+def read_bmo():
+    """{BMO job code (FAP 2021, 5 characters): recruitment projects in France, all areas summed}.
+
+    Areas with too few answers are masked ('*') in the open data: they count as 0."""
+    import openpyxl
+    workbook = openpyxl.load_workbook(BMO_PATH, read_only=True)
+    try:
+        rows = workbook["BMO_2026_open_data"].iter_rows(min_row=2, values_only=True)
+        projects = collections.Counter()
+        for row in rows:
+            code, value = row[1], row[12]  # 'Code métier BMO', 'met' (recruitment projects)
+            if code and value not in (None, "*"):
+                projects[code] += float(value)
+        return projects
+    finally:
+        workbook.close()
+
+
+def read_fap_rome():
+    """{FAP 2021 code (finest level, e.g. 'A0X41f'): ROME codes}, from the DARES table."""
+    import openpyxl
+    workbook = openpyxl.load_workbook(FAP_ROME_PATH, read_only=True)
+    try:
+        table = collections.defaultdict(set)
+        for fap, _label, rome, _qualification, _rome_label in workbook["FAP_ROME_niveau_FAP341"].iter_rows(
+                min_row=2, values_only=True):
+            if fap and rome:
+                table[fap].add(rome)
+        return table
+    finally:
+        workbook.close()
+
+
+def bmo_weights(jobs, projects, fap_rome):
+    """{ROME code: estimated recruitment projects}, the demand weight of each job sheet.
+
+    The projects of a BMO job (a FAP 2021 family like 'A0X41') are shared
+    evenly between the ROME codes of its finer families ('A0X41a',
+    'A0X41b'...). The DARES table only knows the ROME codes that predate
+    ROME 4.0 (532 of them): a newer sheet gets the mean weight of the known
+    sheets of its ROME group (same first 3 characters, e.g. 'M18'), or the
+    median weight when its group has none. The weights are then scaled so
+    that they add up to the BMO total. An estimate, not a statistic."""
+    weights = collections.Counter()
+    for bmo_code, n in projects.items():
+        codes = set().union(*(romes for fap, romes in fap_rome.items() if fap.startswith(bmo_code)))
+        if not codes:
+            raise ValueError(f"BMO job {bmo_code} has no ROME code in the FAP 2021 table")
+        for code in codes:
+            weights[code] += n / len(codes)
+    unknown = set(weights) - set(jobs)
+    if unknown:
+        raise ValueError(f"ROME codes of the FAP 2021 table not in ROME 4.0: {sorted(unknown)}")
+    by_group = collections.defaultdict(list)
+    for code, weight in weights.items():
+        by_group[code[:3]].append(weight)
+    known = sorted(weights.values())
+    median = known[len(known) // 2]
+    estimated = {}
+    for code in jobs:
+        if code in weights:
+            estimated[code] = weights[code]
+        elif by_group.get(code[:3]):
+            estimated[code] = sum(by_group[code[:3]]) / len(by_group[code[:3]])
+        else:
+            estimated[code] = median
+    scale = sum(projects.values()) / sum(estimated.values())
+    return {code: weight * scale for code, weight in estimated.items()}
+
+
 class Pool:
     """Interns repeated strings (skills, sectors...): records store indexes into one list."""
 
@@ -178,6 +260,8 @@ def package(meta, sectors, occupations):
             "regulated": occupation["regulated"],
             "riasec": occupation["riasec"],
             "transitions": occupation["transitions"],
+            # Demand weight: estimated yearly recruitment projects in France (at least 1).
+            "weight": max(1, round(occupation["weight"])),
         })
     return {"meta": meta, "sectors": sorted(sectors), "strings": pool.strings, "occupations": records}
 
@@ -242,7 +326,75 @@ CONDITIONS_FR = {
 }
 
 
-def build_fr(sectors, jobs):
+# NAF rév. 2 activities of the companies of each ROME sector (French
+# postings: a company made up by Faker, with an activity that fits the
+# occupation). Prefixes of NAF codes: a division ("86"), a group ("86.2") or
+# a sub-class ("86.10Z"); every sub-class they cover is used. Hand-made.
+NAF_BY_SECTOR = {
+    "79": ["01", "02", "03"],                                   # Agriculture et élevage
+    "80": ["36", "37", "38", "39", "81.30Z"],                   # Environnement
+    "81": ["33", "81.10Z", "81.2"],                             # Maintenance, entretien et nettoyage
+    "82": ["91"],                                               # Culture et patrimoine
+    "83": ["10", "11", "12"],                                   # Industrie - Alimentaire
+    "84": ["22", "23", "27", "28", "30", "32"],                 # Industries
+    "85": ["86", "87.1", "75.00Z"],                             # Santé
+    "86": ["88.10A", "96.02", "96.04Z", "97.00Z"],              # Service à la personne
+    "87": ["32.1", "32.20Z", "59", "60", "74.20Z", "90"],       # Artisanat d'art, audiovisuel et spectacle
+    "88": ["46", "47"],                                         # Commerce et distribution
+    "89": ["17", "18"],                                         # Industrie - Papier et imprimerie
+    "90": ["13", "14", "15"],                                   # Industrie - Textile et mode
+    "91": ["64", "65", "66"],                                   # Finance, banque et assurance
+    "92": ["68"],                                               # Immobilier
+    "93": ["92", "93"],                                         # Sport, animation et loisir
+    "94": ["70.21Z", "73"],                                     # Communication et marketing
+    "95": ["29", "45"],                                         # Automobile
+    "96": ["61", "62", "63", "95.1"],                           # Informatique et télécommunication
+    "97": ["58"],                                               # Édition
+    "98": ["71"],                                               # Architecture, études et normes
+    "99": ["41", "42", "43"],                                   # Bâtiment et travaux publics (BTP)
+    "100": ["24", "25"],                                        # Industrie - Métallurgie
+    "101": ["55.20Z", "55.30Z", "79"],                          # Tourisme
+    "102": ["55.10Z", "56"],                                    # Hôtellerie et restauration
+    "103": ["70.10Z", "70.22Z", "78", "82"],                    # Gestion administrative et ressources humaines
+    "104": ["26"],                                              # Industrie - Électronique
+    "105": ["72"],                                              # Recherche
+    "106": ["19", "20", "21"],                                  # Industrie - Chimie
+    "107": ["16", "31"],                                        # Industrie - Bois
+    "108": ["05", "06", "35"],                                  # Énergie
+    "109": ["87.2", "87.3", "87.90", "88", "94.99Z"],           # Social
+    "110": ["69"],                                              # Activités juridiques et comptables
+    "111": ["80", "84"],                                        # Service public, défense et sécurité
+    "112": ["85"],                                              # Enseignement et formation
+    "113": ["49", "50", "51", "52", "53"],                      # Logistique et transport
+}
+
+
+def read_naf():
+    """{NAF rév. 2 sub-class code (e.g. '86.10Z'): label}, from the INSEE list."""
+    import xlrd
+    sheet = xlrd.open_workbook(NAF_PATH).sheet_by_index(0)
+    rows = (sheet.row_values(i) for i in range(sheet.nrows))
+    return {code: label.strip() for code, label, *_ in rows if re.fullmatch(r"\d\d\.\d\d[A-Z]", str(code))}
+
+
+def naf_by_sector(sectors, naf):
+    """{ROME sector name: [[NAF code, label], ...]}, from NAF_BY_SECTOR."""
+    missing = set(NAF_BY_SECTOR) ^ set(sectors)
+    if missing:
+        raise ValueError(f"NAF_BY_SECTOR out of sync with the ROME sectors: {sorted(missing)}")
+    result = {}
+    for sector_code, prefixes in NAF_BY_SECTOR.items():
+        codes = []
+        for prefix in prefixes:
+            matched = [code for code in naf if code.startswith(prefix)]
+            if not matched:
+                raise ValueError(f"NAF prefix {prefix!r} (sector {sector_code}) matches no NAF sub-class")
+            codes += matched
+        result[sectors[sector_code]] = [[code, naf[code]] for code in sorted(set(codes))]
+    return dict(sorted(result.items()))
+
+
+def build_fr(sectors, jobs, weights, naf):
     occupations = [{
         "code": job["code"],
         "title": job["title"],
@@ -254,12 +406,13 @@ def build_fr(sectors, jobs):
         "knowledge": job["knowledge"],
         "soft_skills": job["soft_skills"],
         **{field: job[field] for field in ROME_ATTRIBUTES},
+        "weight": weights[job["code"]],
     } for job in jobs.values()]
-    meta = {"source": ROME_SOURCE, "language": "fr", "gender": GENDER["fr"]}
+    meta = {"source": f"{ROME_SOURCE}; {BMO_SOURCE}; NAF: {NAF_SOURCE}", "language": "fr", "gender": GENDER["fr"]}
     # Office jobs (remote work, flexible hours): the domains of banking,
     # insurance and real estate (C), communication and media (E), business support (M).
     office_domains = sorted({job["domain"] for job in jobs.values() if job["domain_code"] in OFFICE_DOMAIN_CODES})
-    conditions = {**CONDITIONS_FR, "office_domains": office_domains}
+    conditions = {**CONDITIONS_FR, "office_domains": office_domains, "naf_by_sector": naf_by_sector(sectors, naf)}
     return {**package(meta, sectors.values(), occupations), "conditions": conditions}
 
 
@@ -294,13 +447,25 @@ def esco_sectors(jobs, counts):
     return sorted(kept, key=lambda code: (-weight[code], int(code)))
 
 
-def build_esco(jobs, language):
+def esco_weights(jobs, links, weights):
+    """{ESCO URI: demand weight}: each ROME sheet's weight shared between the
+    ESCO occupations its job titles are mapped to, by number of titles."""
+    titles_by_code = collections.Counter()
+    for counts in links.values():
+        titles_by_code.update(counts)
+    return {uri: sum(weights[code] * n / titles_by_code[code] for code, n in counts.items())
+            for uri, counts in links.items()}
+
+
+def build_esco(jobs, language, weights):
     """Occupations of an ESCO language, with the ROME sectors, domains and soft skills in it."""
     sector_labels, domain_labels, soft_skill_labels = SECTORS[language], DOMAINS[language], SOFT_SKILLS[language]
     with open(fetch_esco.cache_path(language), encoding="utf-8") as f:
         esco = json.load(f)
     occupations = []
-    for uri, counts in link_esco_to_rome(jobs).items():
+    links = link_esco_to_rome(jobs)
+    weight_by_uri = esco_weights(jobs, links, weights)
+    for uri, counts in links.items():
         if uri not in esco:
             raise ValueError(f"ESCO occupation {uri} missing from the {language} cache: "
                              f"re-run fetch_esco.py {language}")
@@ -329,8 +494,9 @@ def build_esco(jobs, language):
             "soft_skills": soft_skills,
             **{field: main_job[field] for field in ROME_ATTRIBUTES if field != "qualifications"},
             "qualifications": [],
+            "weight": weight_by_uri[uri],
         })
-    meta = {"source": ESCO_SOURCE + "; sectors, domains and soft skills: " + ROME_SOURCE,
+    meta = {"source": f"{ESCO_SOURCE}; sectors, domains and soft skills: {ROME_SOURCE}; {BMO_SOURCE}",
             "language": language, "gender": GENDER.get(language)}
     return package(meta, sector_labels.values(), occupations)
 
@@ -401,10 +567,10 @@ def build_occupations():
             missing = codes ^ set(labels[language])
             if missing:
                 raise ValueError(f"rome_labels.{name}[{language!r}] out of sync with ROME: {sorted(missing)}")
-    built = {"fr_FR": build_fr(sectors, jobs)}
-    built["fr_FR"]["companies_by_sector"] = companies_by_sector(sectors)
+    weights = bmo_weights(jobs, read_bmo(), read_fap_rome())
+    built = {"fr_FR": build_fr(sectors, jobs, weights, read_naf())}
     for locale, language in ESCO_LOCALES.items():
-        built[locale] = build_esco(jobs, language)
+        built[locale] = build_esco(jobs, language, weights)
         built[locale]["companies_by_sector"] = companies_by_sector(SECTORS[language])
     return dict(sorted(built.items()))
 
