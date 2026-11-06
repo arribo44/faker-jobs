@@ -715,13 +715,14 @@ class JobsProvider(BaseProvider):
         skills = self._pick_occupation(code=code, sector=sector)["skills"]
         return self.generator.random.sample(skills, min(count, len(skills)))
 
-    def _occupation_company(self, sectors: list[str]) -> tuple[CompanyProfile, str | None]:
-        """A company from the first of `sectors` that has some, and that sector;
-        else a company name from the Faker locale and None."""
-        by_sector = self._occupations["companies_by_sector"]
-        for sector in sectors:
-            if by_sector.get(sector):
-                return self.job_company_profile(company=self.random_element(by_sector[sector])), sector
+    def _occupation_company(self, sector: str) -> tuple[CompanyProfile, str | None]:
+        """A company of `sector` and that sector, else a company name from the
+        Faker locale and None. Only the given sector: the secondary sectors of
+        an occupation would give odd matches (a nuclear decontamination
+        worker at an oil company)."""
+        companies = self._occupations["companies_by_sector"].get(sector)
+        if companies:
+            return self.job_company_profile(company=self.random_element(companies)), sector
         return {
             "company": self.generator.company(),
             "sector": None, "industry": None, "city": None, "state": None,
@@ -741,8 +742,8 @@ class JobsProvider(BaseProvider):
 
         - `code` / `sector` choose the occupation (see `job_occupation_record`).
         - The hiring company is in the occupation's sector (the requested
-          one, else its main one, else its other sectors), or made up by
-          the Faker locale when no packaged company fits.
+          one, else its main one), or made up by the Faker locale when no
+          packaged company is in that sector.
         - `skills`: how many of the occupation's skills to list (default 5).
         - `country` sets the job location (default: France in French
           locales, anywhere otherwise).
@@ -750,13 +751,13 @@ class JobsProvider(BaseProvider):
 
         In French locales the conditions are French and illustrative
         (contract, yearly gross salary in EUR by executive status, a diploma
-        from the ROME sheet, French benefits and job boards); otherwise they
+        from the ROME sheet, French benefits that fit the job and contract,
+        French job boards); otherwise they
         come from the Kaggle data, in English.
         """
         _check_count("skills", skills)
         occupation = self.job_occupation_record(code=code, sector=sector)
-        company_sectors = [occupation["sector"]] + [s for s in occupation["sectors"] if s != occupation["sector"]]
-        company, company_sector = self._occupation_company(company_sectors)
+        company, company_sector = self._occupation_company(occupation["sector"])
         conditions = self._occupations["conditions"]
         if conditions is None:
             job_title = occupation["job_title"]
@@ -808,6 +809,16 @@ class JobsProvider(BaseProvider):
             "job_portal": self.job_portal(),
         }
 
+    def _french_benefits(self, occupation: OccupationRecord, conditions: dict[str, Any], contract: str) -> list[str]:
+        """French benefits that fit the job: remote work and flexible hours for
+        office or executive jobs, a company car for executives, no bonus or
+        profit-sharing for interns..."""
+        office = occupation["executive"] or occupation["domain"] in conditions["office_domains"]
+        allowed = {"office": office, "executive": occupation["executive"], None: True}
+        eligible = [name for name, rule in conditions["benefits"].items()
+                    if allowed[rule["requires"]] and contract not in rule["not_for"]]
+        return self.generator.random.sample(eligible, min(conditions["benefits_per_posting"], len(eligible)))
+
     def _french_terms(
         self, occupation: OccupationRecord, conditions: dict[str, Any], country: str | None
     ) -> dict[str, Any]:
@@ -823,6 +834,7 @@ class JobsProvider(BaseProvider):
         salary_low_k, salary_high_k = bounds(conditions["salary_k"][level])
         contracts = conditions["contracts"]
         qualifications = occupation["qualifications"] or conditions["qualifications"][level]
+        contract = rng.choices(list(contracts), weights=list(contracts.values()))[0]
         portals = conditions["job_portals"]
         return {
             "qualification": self.random_element(qualifications),
@@ -834,8 +846,8 @@ class JobsProvider(BaseProvider):
             "salary_min": salary_low_k * 1000,
             "salary_max": salary_high_k * 1000,
             "salary_currency": conditions["currency"],
-            "work_type": rng.choices(list(contracts), weights=list(contracts.values()))[0],
-            "benefits": rng.sample(conditions["benefits"], conditions["benefits_per_posting"]),
+            "work_type": contract,
+            "benefits": self._french_benefits(occupation, conditions, contract),
             "location": self.job_location(country=conditions["country"] if country is None else country),
             "job_portal": self.random_element(portals["all"] + (portals["executive"] if level == "executive" else [])),
         }

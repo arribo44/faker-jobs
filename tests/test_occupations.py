@@ -194,7 +194,7 @@ class OccupationTests:
                 self.assertTrue(posting["company"]["company"])
             else:
                 fitted += 1
-                self.assertIn(posting["company_sector"], posting["occupation"]["sectors"])
+                self.assertEqual(posting["company_sector"], posting["occupation"]["sector"])
                 self.assertIn(posting["company"]["company"],
                               self.provider._occupations["companies_by_sector"][posting["company_sector"]])
         self.assertGreater(fitted, 25)
@@ -210,7 +210,7 @@ class OccupationTests:
     def test_posting_without_fitting_company_makes_one_up(self):
         sectors = self.provider._occupations["companies_by_sector"]
         lonely = next(occupation for occupation in self.provider._occupations["occupations"]
-                      if not any(sectors.get(sector) for sector in occupation["sectors"]))
+                      if not sectors.get(occupation["sectors"][0]))
         posting = self.fake.job_occupation_posting(code=lonely["code"])
         self.assertIsNone(posting["company_sector"])
         self.assertIsNone(posting["company"]["ticker"])
@@ -258,6 +258,24 @@ class TestRomeOccupations(OccupationTests, unittest.TestCase):
         masculine = self.fake.job_occupation_title(sector="Santé", gender="M")
         feminine = self.fake.job_occupation_title(sector="Santé", gender="F")
         self.assertNotIn(" / ", masculine + feminine)
+
+    def test_french_benefits_fit_the_job(self):
+        conditions = self.provider._occupations["conditions"]
+        office_only = {"Télétravail partiel", "Horaires flexibles"}
+        no_interns = {"Prime annuelle", "13e mois", "Intéressement et participation", "Véhicule de fonction"}
+        for _ in range(300):
+            posting = self.fake.job_occupation_posting()
+            occupation, benefits = posting["occupation"], set(posting["benefits"])
+            # Fewer when few fit (a freelancer gets no employee benefit).
+            self.assertLessEqual(len(benefits), conditions["benefits_per_posting"])
+            if posting["work_type"] == "CDI":
+                self.assertEqual(len(benefits), conditions["benefits_per_posting"])
+            if not occupation["executive"]:
+                self.assertNotIn("Véhicule de fonction", benefits)
+                if occupation["domain"] not in conditions["office_domains"]:
+                    self.assertFalse(benefits & office_only, msg=occupation["title"])
+            if posting["work_type"] == "Stage":
+                self.assertFalse(benefits & no_interns)
 
     def test_french_posting_conditions(self):
         portals = set()

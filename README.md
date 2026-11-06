@@ -208,9 +208,9 @@ JobsProvider(fake).job_occupation_codes   # ['A1101', 'A1201', ...] (1,923; 2,04
 
 `job_occupation_posting()` builds a full posting on an occupation: the job
 title, its skills and the hiring company fit together. The company is one of
-the packaged companies whose sector matches the occupation's sector (the
-requested one, else its main one, else its other ones); when none does
-(social work, public service, research...), it is a name made up by the
+the packaged companies whose sector is the occupation's sector (the
+requested one, else its main one); when none is (social work, public
+service, research..., about 1 posting in 5), it is a name made up by the
 Faker locale and `company_sector` is `None`.
 
 In French locales the whole posting is French: the job title follows the
@@ -230,7 +230,7 @@ fake.job_occupation_posting(sector="Logistique et transport")
 #     'salary_range': '24 000 € - 32 000 € brut/an', 'salary_min': 24000, 'salary_max': 32000,
 #     'salary_currency': 'EUR',
 #     'work_type': 'CDI',                       # CDI, CDD, Intérim, Alternance, Stage, Freelance
-#     'benefits': ['Intéressement et participation', 'Tickets restaurant', ...],
+#     'benefits': ['Intéressement et participation', 'Tickets restaurant', ...],   # fit the job and contract
 #     'location': {'city': 'Lyon', 'country': 'France', ...},
 #     'company': {'company': 'Transurban Group', 'sector': 'Transportation/Infrastructure', ...},
 #     'company_sector': 'Logistique et transport',
@@ -240,9 +240,14 @@ fake.job_occupation_posting(sector="Logistique et transport")
 # }
 ```
 
+Benefits fit the job: remote work and flexible hours only for office jobs
+(banking and insurance, communication, business support) or executive ones,
+a company car only for executives, no bonus or profit-sharing for interns,
+no employee benefit for freelancers.
+
 The French conditions are **illustrative**, made by hand to look plausible:
-contract weights and salary ranges (by executive status) are not
-statistics. In other locales, qualifications, salaries (USD), benefits, work
+contract weights, salary ranges (by executive status) and benefit rules are
+not statistics. In other locales, qualifications, salaries (USD), benefits, work
 types, portals and locations come from the Kaggle data, in English.
 
 ROME sheets have no description (`None`). The occupation methods are not
