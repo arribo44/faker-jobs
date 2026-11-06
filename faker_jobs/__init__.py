@@ -91,7 +91,15 @@ class OccupationRecord(TypedDict):
     the others an ESCO occupation (`code` is its ESCO concept id).
     `job_title` is one of its job titles, picked at random; `sector` is the
     requested sector, or else its main one. `description` is None for ROME
-    sheets (the source has none)."""
+    sheets (the source has none).
+
+    From ROME (for an ESCO occupation, from the ROME sheet holding most of
+    its job titles): `executive` (a "cadre" job), `regulated` (a regulated
+    profession), `riasec` (Holland codes, major first, e.g. ['R', 'C']) and
+    `transitions` (any of 'ecological', 'digital', 'demographic': jobs
+    ROME flags as part of that transition). `qualifications` are the French
+    diplomas listed by the ROME sheet (CAP, Bac pro, BTS, Master...); empty
+    for ESCO occupations."""
 
     code: str
     title: str
@@ -103,6 +111,11 @@ class OccupationRecord(TypedDict):
     skills: list[str]
     knowledge: list[str]
     soft_skills: list[str]
+    qualifications: list[str]
+    executive: bool
+    regulated: bool
+    riasec: list[str]
+    transitions: list[str]
 
 
 class OccupationPosting(TypedDict):
@@ -110,8 +123,11 @@ class OccupationPosting(TypedDict):
     `JobsProvider.job_occupation_posting()`.
 
     `job_title`, `skills` and the company follow the occupation and its
-    sector; the other conditions are drawn as in `JobPosting` (salaries in
-    `salary_currency`, from the Kaggle data). `company_sector` is the
+    sector. In French locales the conditions are French (contract type in
+    `work_type`, yearly gross salary in EUR, French diplomas, a place in
+    France, French job boards) and the job title reads "Conducteur de
+    poids lourd (H/F)"; in other locales they are drawn as in `JobPosting`
+    (salaries in USD, from the Kaggle data). `company_sector` is the
     activity sector the company was picked from, or None when no packaged
     company is in the occupation's sectors: the company is then a name made
     up by the Faker locale, with every other profile field None."""
@@ -234,7 +250,7 @@ def _build_occupation_index(raw: dict[str, Any]) -> dict[str, Any]:
             **record,
             "domain": strings[record["domain"]],
             **{field: [strings[i] for i in record[field]]
-               for field in ("sectors", "skills", "knowledge", "soft_skills")},
+               for field in ("sectors", "skills", "knowledge", "soft_skills", "qualifications")},
         }
         for record in raw["occupations"]
     ]
@@ -250,7 +266,39 @@ def _build_occupation_index(raw: dict[str, Any]) -> dict[str, Any]:
         "occupations_by_sector": by_sector,
         "sector_by_name": {sector.lower(): sector for sector in raw["sectors"]},
         "companies_by_sector": raw["companies_by_sector"],
+        "conditions": raw.get("conditions"),
+        "gendered_titles": raw["meta"]["language"] == "fr",
     }
+
+
+def _gender_form(title: str, gender: str) -> str:
+    """The masculine ('M') or feminine ('F') form of a French ROME job title
+    written with both, e.g. "Conducteur / Conductrice d'engins agricoles"
+    -> "Conducteur d'engins agricoles" / "Conductrice d'engins agricoles".
+
+    The words before " / " are the masculine form; they match as many words
+    after it, which are the feminine one; the rest is common to both. Words
+    before the first gendered one are common too ("Garde forestier /
+    Forestière"). Titles in another shape (no or several " / ") are
+    returned unchanged."""
+    if title.count(" / ") != 1:
+        return title
+    left, right = title.split(" / ")
+    if right.lower() in left.lower():
+        # "Homme sage-femme / Sage-femme": the feminine form is part of the masculine one.
+        return left if gender == "M" else right
+    masculine, feminine = left.split(), right.split()
+    # The first gendered word of the left side starts like the feminine form;
+    # if none does ("Homme / Femme de pied"), the whole left side is gendered.
+    start = next((i for i, word in enumerate(masculine) if word[:3].lower() == feminine[0][:3].lower()), 0)
+    common, gendered = masculine[:start], masculine[start:]
+    if len(feminine) < len(gendered):
+        return title
+    rest = feminine[len(gendered):]
+    feminine = feminine[:len(gendered)]
+    if common and gendered[0][0].islower():
+        feminine[0] = feminine[0][0].lower() + feminine[0][1:]
+    return " ".join(common + (gendered if gender == "M" else feminine) + rest)
 
 
 def _generator_locale(generator: Any) -> str | None:
@@ -619,10 +667,19 @@ class JobsProvider(BaseProvider):
         French locales), optionally from an activity sector."""
         return self._pick_occupation(sector=sector)["title"]
 
-    def job_occupation_title(self, sector: str | None = None) -> str:
-        """Return a random job title as written in a job posting (one of the
-        ~14,000 ROME or ESCO job titles), optionally from an activity sector."""
-        return self.random_element(self._pick_occupation(sector=sector)["titles"])
+    def job_occupation_title(self, sector: str | None = None, gender: str | None = None) -> str:
+        """Return a random job title (one of the ~14,000 ROME or ESCO job
+        titles), optionally from an activity sector.
+
+        French titles name both forms ("Conducteur / Conductrice de bus"),
+        as ROME does; `gender='M'` or `'F'` gives only the masculine or
+        feminine one. English titles are not gendered: `gender` is ignored."""
+        if gender not in (None, "M", "F"):
+            raise ValueError(f"gender must be None, 'M' or 'F', got {gender!r}")
+        title = self.random_element(self._pick_occupation(sector=sector)["titles"])
+        if gender is not None and self._occupations["gendered_titles"]:
+            return _gender_form(title, gender)
+        return title
 
     def job_occupation_record(self, code: str | None = None, sector: str | None = None) -> OccupationRecord:
         """Return a dict describing the given occupation (by `code`) or a
@@ -640,6 +697,11 @@ class JobsProvider(BaseProvider):
             "skills": list(found["skills"]),
             "knowledge": list(found["knowledge"]),
             "soft_skills": list(found["soft_skills"]),
+            "qualifications": list(found["qualifications"]),
+            "executive": found["executive"],
+            "regulated": found["regulated"],
+            "riasec": list(found["riasec"]),
+            "transitions": list(found["transitions"]),
         }
 
     def job_occupation_skills(
@@ -682,22 +744,56 @@ class JobsProvider(BaseProvider):
           one, else its main one, else its other sectors), or made up by
           the Faker locale when no packaged company fits.
         - `skills`: how many of the occupation's skills to list (default 5).
-        - `country` sets the job location; `weighted` applies to benefits.
+        - `country` sets the job location (default: France in French
+          locales, anywhere otherwise).
+        - `weighted` applies to the Kaggle benefits (non-French locales).
 
-        Qualifications, salaries, benefits, work types and portals come
-        from the Kaggle data, in English whatever the locale.
+        In French locales the conditions are French and illustrative
+        (contract, yearly gross salary in EUR by executive status, a diploma
+        from the ROME sheet, French benefits and job boards); otherwise they
+        come from the Kaggle data, in English.
         """
         _check_count("skills", skills)
         occupation = self.job_occupation_record(code=code, sector=sector)
         company_sectors = [occupation["sector"]] + [s for s in occupation["sectors"] if s != occupation["sector"]]
         company, company_sector = self._occupation_company(company_sectors)
+        conditions = self._occupations["conditions"]
+        if conditions is None:
+            job_title = occupation["job_title"]
+            terms = self._kaggle_terms(country, weighted)
+        else:
+            job_title = _gender_form(occupation["job_title"], "M") + " (H/F)"
+            terms = self._french_terms(occupation, conditions, country)
+        return {
+            "job_id": self.job_id(),
+            "job_title": job_title,
+            "occupation": occupation,
+            "skills": self.generator.random.sample(occupation["skills"], min(skills, len(occupation["skills"]))),
+            "qualification": terms["qualification"],
+            "experience": terms["experience"],
+            "experience_min": terms["experience_min"],
+            "experience_max": terms["experience_max"],
+            "salary_range": terms["salary_range"],
+            "salary_min": terms["salary_min"],
+            "salary_max": terms["salary_max"],
+            "salary_currency": terms["salary_currency"],
+            "work_type": terms["work_type"],
+            "benefits": terms["benefits"],
+            "location": terms["location"],
+            "company": company,
+            "company_sector": company_sector,
+            "company_size": self.job_company_size(),
+            "job_portal": terms["job_portal"],
+            "job_posting_date": self.job_posting_date(),
+            "contact_person": self.generator.name(),
+            "contact": self.generator.phone_number(),
+        }
+
+    def _kaggle_terms(self, country: str | None, weighted: bool) -> dict[str, Any]:
+        """Posting conditions from the Kaggle data (as in `job_posting`)."""
         experience_min, experience_max = self.job_experience_range()
         salary_min, salary_max = self.job_salary_bounds()
         return {
-            "job_id": self.job_id(),
-            "job_title": occupation["job_title"],
-            "occupation": occupation,
-            "skills": self.generator.random.sample(occupation["skills"], min(skills, len(occupation["skills"]))),
             "qualification": self.job_qualification(),
             "experience": f"{experience_min} to {experience_max} Years",
             "experience_min": experience_min,
@@ -709,13 +805,39 @@ class JobsProvider(BaseProvider):
             "work_type": self.job_work_type(),
             "benefits": self.job_benefits(weighted=weighted),
             "location": self.job_location(country=country),
-            "company": company,
-            "company_sector": company_sector,
-            "company_size": self.job_company_size(),
             "job_portal": self.job_portal(),
-            "job_posting_date": self.job_posting_date(),
-            "contact_person": self.generator.name(),
-            "contact": self.generator.phone_number(),
+        }
+
+    def _french_terms(
+        self, occupation: OccupationRecord, conditions: dict[str, Any], country: str | None
+    ) -> dict[str, Any]:
+        """Illustrative French posting conditions (see CONDITIONS_FR in scripts/build_occupations.py)."""
+        rng = self.generator.random
+        level = "executive" if occupation["executive"] else "other"
+
+        def bounds(spec: dict[str, list[int]]) -> tuple[int, int]:
+            low = self.random_int(*spec["low"])
+            return low, low + self.random_int(*spec["gap"])
+
+        experience_min, experience_max = bounds(conditions["experience"][level])
+        salary_low_k, salary_high_k = bounds(conditions["salary_k"][level])
+        contracts = conditions["contracts"]
+        qualifications = occupation["qualifications"] or conditions["qualifications"][level]
+        portals = conditions["job_portals"]
+        return {
+            "qualification": self.random_element(qualifications),
+            "experience": ("Débutant accepté" if experience_min == 0
+                           else f"{experience_min} à {experience_max} ans"),
+            "experience_min": experience_min,
+            "experience_max": experience_max,
+            "salary_range": f"{salary_low_k * 1000:,} € - {salary_high_k * 1000:,} € brut/an".replace(",", " "),
+            "salary_min": salary_low_k * 1000,
+            "salary_max": salary_high_k * 1000,
+            "salary_currency": conditions["currency"],
+            "work_type": rng.choices(list(contracts), weights=list(contracts.values()))[0],
+            "benefits": rng.sample(conditions["benefits"], conditions["benefits_per_posting"]),
+            "location": self.job_location(country=conditions["country"] if country is None else country),
+            "job_portal": self.random_element(portals["all"] + (portals["executive"] if level == "executive" else [])),
         }
 
     # -- postings ---------------------------------------------------------------
