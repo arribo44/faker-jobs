@@ -31,6 +31,9 @@ Shared vocabulary:
 - salary_format: the posting's salary text, with {min} / {max} formatted
   with the `thousands` separator;
 - experience_none / experience_range: texts for 0 years and for a range.
+- place_names (optional): {"country": local name, "cities": {English name:
+  local name}}, shown for the locations in the country (`country` is the
+  English name of the location data).
 """
 
 # Years of experience asked, by skill level: [min, max] of the minimum,
@@ -92,6 +95,8 @@ CONDITIONS = {
     },
     "de_DE": {
         "country": "Germany",
+        # Names shown in the postings of the country (the location data is in English).
+        "place_names": {"country": "Deutschland", "cities": {"Munich": "München", "Cologne": "Köln"}},
         "currency": "EUR",
         "contracts": {
             "Unbefristet": {"weight": 58, "kind": "permanent"},
@@ -133,6 +138,7 @@ CONDITIONS = {
     },
     "es_ES": {
         "country": "Spain",
+        "place_names": {"country": "España", "cities": {"Seville": "Sevilla"}},
         "currency": "EUR",
         "contracts": {
             "Indefinido": {"weight": 55, "kind": "permanent"},
@@ -172,6 +178,8 @@ CONDITIONS = {
     },
     "it_IT": {
         "country": "Italy",
+        "place_names": {"country": "Italia", "cities": {"Rome": "Roma", "Milan": "Milano", "Naples": "Napoli",
+                                                    "Turin": "Torino", "Genoa": "Genova", "Florence": "Firenze"}},
         "currency": "EUR",
         "contracts": {
             "Tempo indeterminato": {"weight": 50, "kind": "permanent"},

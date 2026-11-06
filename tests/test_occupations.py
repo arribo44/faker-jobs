@@ -442,7 +442,7 @@ class TestFrenchConditions(LocalConditionsTests, unittest.TestCase):
 
 
 class TestGermanConditions(LocalConditionsTests, unittest.TestCase):
-    locale, country, currency = "de_DE", "Germany", "EUR"
+    locale, country, currency = "de_DE", "Deutschland", "EUR"
 
     def test_german_wording(self):
         posting = self.fake.job_occupation_posting()
@@ -450,11 +450,11 @@ class TestGermanConditions(LocalConditionsTests, unittest.TestCase):
 
 
 class TestSpanishConditions(LocalConditionsTests, unittest.TestCase):
-    locale, country, currency = "es_ES", "Spain", "EUR"
+    locale, country, currency = "es_ES", "España", "EUR"
 
 
 class TestItalianConditions(LocalConditionsTests, unittest.TestCase):
-    locale, country, currency = "it_IT", "Italy", "EUR"
+    locale, country, currency = "it_IT", "Italia", "EUR"
 
     def test_italian_wording(self):
         self.assertTrue(self.fake.job_occupation_posting()["salary_range"].startswith("RAL "))
@@ -537,7 +537,25 @@ class TestEscoOccupations(KaggleCompanyTests, OccupationTests, unittest.TestCase
         self.assertEqual(posting["occupation"]["qualifications"], [])
 
 
-class EscoLanguageTests(KaggleCompanyTests, OccupationTests):
+class LocalCompanyTests:
+    """Postings of the German, Spanish and Italian locales: companies made up by the locale."""
+
+    def test_posting_company_is_made_up_in_the_sector(self):
+        kaggle = set(self.provider.job_companies)
+        for _ in range(30):
+            posting = self.fake.job_occupation_posting()
+            company = posting["company"]
+            self.assertEqual(posting["company_sector"], posting["occupation"]["sector"])
+            self.assertEqual(company["sector"], posting["occupation"]["sector"])
+            self.assertEqual(company["city"], posting["location"]["city"])
+            self.assertIsNone(company["ticker"])
+            self.assertNotIn(company["company"], kaggle)
+
+    def test_no_naf_code(self):
+        self.assertIsNone(self.fake.job_occupation_posting()["company_naf"])
+
+
+class EscoLanguageTests(LocalCompanyTests, OccupationTests):
     """German, Spanish and Italian ESCO occupations."""
 
     suffix = None

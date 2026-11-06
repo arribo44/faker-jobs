@@ -10,14 +10,20 @@ from faker import Faker
 from faker_jobs import JobsProvider
 
 
+class KaggleJobs(JobsProvider):
+    """The generic methods on the Kaggle data, in a French locale (as before 0.4)."""
+
+    use_kaggle_data = True
+
+
 class TestJobsProvider(unittest.TestCase):
     def setUp(self):
         # Fixed seed: every test sees the same draws on every run, so a
         # failure is reproducible instead of showing up once in a while.
         Faker.seed(20261104)
         self.fake = Faker("fr_FR")
-        self.fake.add_provider(JobsProvider)
-        self.provider = JobsProvider(self.fake)
+        self.fake.add_provider(KaggleJobs)
+        self.provider = KaggleJobs(self.fake)
 
     # -- registration -----------------------------------------------------------
 
