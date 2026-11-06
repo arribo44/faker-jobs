@@ -17,7 +17,7 @@ import fetch_esco  # noqa: E402
 
 SOURCES = (build_occupations.ROME_PATH, build_occupations.BMO_PATH, build_occupations.FAP_ROME_PATH,
            build_occupations.NAF_PATH, build_occupations.fetch_salaries.EUROSTAT_PATH,
-           build_occupations.fetch_salaries.BLS_PATH,
+           build_occupations.fetch_salaries.BLS_PATH, build_occupations.fetch_salaries.LFS_PATH,
            fetch_esco.MAPPING_PATH,
            *map(fetch_esco.cache_path, fetch_esco.LANGUAGES))
 
@@ -53,10 +53,61 @@ class TestBuildOccupations(unittest.TestCase):
 
     def test_demand_weights_add_up_to_the_bmo_total(self):
         _sectors, jobs = build_occupations.load_rome(build_occupations.read_rome())
-        projects = build_occupations.read_bmo()
-        weights = build_occupations.bmo_weights(jobs, projects, build_occupations.read_fap_rome())
+        projects, seasonal = build_occupations.read_bmo()
+        fap_rome = build_occupations.read_fap_rome()
+        weights = build_occupations.bmo_weights(jobs, projects, fap_rome)
         self.assertEqual(set(weights), set(jobs))
         self.assertAlmostEqual(sum(weights.values()), sum(projects.values()), delta=1)
+        shares = build_occupations.bmo_seasonal(jobs, projects, seasonal, fap_rome)
+        self.assertEqual(set(shares), set(jobs))
+        self.assertTrue(all(0 <= share <= 1 for share in shares.values()))
+        national = sum(seasonal.values()) / sum(projects.values())
+        self.assertAlmostEqual(sum(shares[c] * weights[c] for c in jobs) / sum(weights.values()), national, delta=0.05)
+
+
+
+class TestContractWeights(unittest.TestCase):
+    """contract_weights() needs no source data."""
+
+    contracts = {
+        "permanent": {"weight": 60, "kind": "permanent"},
+        "fixed-term": {"weight": 20, "kind": "temporary"},
+        "freelance": {"weight": 10, "kind": "freelance"},
+        "internship": {"weight": 10, "kind": "intern"},
+    }
+
+    def lfs(self, temporary, self_employed=None):
+        groups = [f"OC{g}" for g in "0123456789"]
+        return {
+            "employees": {"TOTAL": 1000, **dict.fromkeys(groups, 100)},
+            "temporary": {"TOTAL": 100, **{f"OC{g}": share for g, share in temporary.items()}},
+            "employed": {"TOTAL": 1000, **dict.fromkeys(groups, 100)},
+            "part_time": {"TOTAL": 100},
+            "self_employed": {"TOTAL": 100, **(self_employed or {})},
+        }
+
+    def test_national_mix_without_figures(self):
+        weights = build_occupations.contract_weights(self.contracts, None)
+        self.assertEqual(weights["1"], {name: spec["weight"] for name, spec in self.contracts.items()})
+
+    def test_mix_follows_the_group_shares(self):
+        # Group 1: 5 % temporary (half the national 10 %); group 9: 20 % (twice).
+        weights = build_occupations.contract_weights(self.contracts, self.lfs({"1": 5, "9": 20}))
+        self.assertEqual(weights["1"]["fixed-term"], 10)
+        self.assertEqual(weights["9"]["fixed-term"], 40)
+        self.assertEqual(weights["1"]["internship"], 10)
+        self.assertEqual(weights["1"]["freelance"], 0)   # not published: counts as 0
+        for mix in weights.values():
+            self.assertAlmostEqual(sum(mix.values()), 100)
+
+    def test_capped_ratio_and_minimum_permanent(self):
+        weights = build_occupations.contract_weights(
+            self.contracts, self.lfs({"6": 90}, self_employed={"OC6": 90}))
+        mix = weights["6"]
+        self.assertAlmostEqual(sum(mix.values()), 100)
+        self.assertAlmostEqual(mix["permanent"], 10)
+        # 20 x 3 and 10 x 3 (capped), then scaled down to leave 10 % permanent.
+        self.assertAlmostEqual(mix["fixed-term"] / mix["freelance"], 2, places=2)
 
 
 if __name__ == "__main__":

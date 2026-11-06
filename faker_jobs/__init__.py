@@ -115,7 +115,10 @@ class OccupationRecord(TypedDict):
     Travail's BMO 2026 survey, by job family, shared between the ROME sheets
     of the family by the DARES FAP 2021 → ROME table; ROME 4.0 sheets
     missing from that table get the mean of their ROME group). French
-    figures in every locale: a rough popularity weight, not a statistic."""
+    figures in every locale: a rough popularity weight, not a statistic.
+    `seasonal` is the share of those projects that are seasonal (0 to 1,
+    same source; areas the open data masks count as 0, so it is a lower
+    bound). It sets the share of "CDD saisonnier" postings in French locales."""
 
     code: str
     title: str
@@ -135,6 +138,7 @@ class OccupationRecord(TypedDict):
     isco_code: str | None
     isco_group: str
     demand: int
+    seasonal: float
 
 
 class OccupationPosting(TypedDict):
@@ -798,6 +802,7 @@ class JobsProvider(BaseProvider):
             "isco_code": found["isco_code"],
             "isco_group": found["isco_group"],
             "demand": found["weight"],
+            "seasonal": found["seasonal"],
         }
 
     def job_occupation_skills(
@@ -847,9 +852,13 @@ class JobsProvider(BaseProvider):
         - `weighted` picks the occupation by demand (see `job_occupation`)
           and, without local conditions, the Kaggle benefits by popularity.
 
-        Local conditions (fr_*, de_*, es_*, it_* and en_US locales): the
-        contract, benefits, job boards and default diplomas are hand-made
-        and illustrative (scripts/posting_conditions.py), the experience
+        Local conditions (fr_*, de_*, es_*, it_* and en_US locales):
+        benefits, job boards and default diplomas are hand-made and
+        illustrative (scripts/posting_conditions.py); the contract comes
+        from a national mix adapted to the occupation's ISCO major group
+        (Eurostat LFS shares of temporary, part-time and self-employed
+        workers; not for the United States), with a "CDD saisonnier" at the
+        occupation's `seasonal` share in French locales; the experience
         asked follows the occupation's skill level (ISCO major group), and
         the salary comes from official mean earnings: Eurostat SES 2022 by
         ISCO major group and NACE section (France, Germany, Spain, Italy),
@@ -989,6 +998,19 @@ class JobsProvider(BaseProvider):
             low = -(-minimum // step) * step   # rounded up, so never below the minimum wage
         return int(low), int(max(high, low + step))
 
+    def _local_contract(self, occupation: OccupationRecord, conditions: dict[str, Any]) -> str:
+        """A contract type from the mix of the occupation's ISCO major group
+        (see contract_weights() in scripts/build_occupations.py); a seasonal
+        contract, where the locale has one, with the occupation's seasonal share."""
+        weights = dict(conditions["contract_weights"][occupation["isco_group"]])
+        seasonal = [name for name, spec in conditions["contracts"].items() if spec["kind"] == "seasonal"]
+        if seasonal:
+            share = min(occupation["seasonal"], 0.99)
+            others = sum(weight for name, weight in weights.items() if name not in seasonal)
+            for name in seasonal:
+                weights[name] = others * share / (1 - share) / len(seasonal)
+        return self.generator.random.choices(list(weights), weights=list(weights.values()))[0]
+
     def _local_terms(
         self, occupation: OccupationRecord, conditions: dict[str, Any], country: str | None
     ) -> dict[str, Any]:
@@ -996,10 +1018,9 @@ class JobsProvider(BaseProvider):
         contract, the experience and diploma for the occupation's skill
         level, a salary from the earnings of its ISCO group, local benefits
         and job boards; in French locales, the NAF activity of the company."""
-        rng = self.generator.random
         level = conditions["skill_levels"][occupation["isco_group"]]
         contracts = conditions["contracts"]
-        contract = rng.choices(list(contracts), weights=[spec["weight"] for spec in contracts.values()])[0]
+        contract = self._local_contract(occupation, conditions)
         spec = contracts[contract]
         bounds = conditions["experience"][level]
         experience_min = self.random_int(*bounds["low"])

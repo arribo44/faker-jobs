@@ -3,16 +3,24 @@ Local job conditions of the occupation postings (job_occupation_posting()
 and job_posting()), by occupation locale: contract types, benefits, job
 boards, diplomas, wording of the experience and salary, minimum wage.
 
-Hand-made and ILLUSTRATIVE: contract weights, benefit rules and default
-diplomas give plausible postings, they are not statistics. Salaries are
-not here: build_occupations.py derives them from Eurostat (France,
-Germany, Spain, Italy) and BLS (United States) earnings.
+Hand-made and ILLUSTRATIVE: the national contract mix of the postings,
+benefit rules and default diplomas give plausible postings, they are not
+statistics. Salaries are not here: build_occupations.py derives them from
+Eurostat (France, Germany, Spain, Italy) and BLS (United States) earnings,
+and adapts the contract mix to each occupation (see contract_weights()
+there): Eurostat shares of temporary, part-time and self-employed workers
+of its ISCO major group, and in French locales the share of seasonal
+recruitment projects of the occupation (BMO).
 
 Shared vocabulary:
 - skill levels, from the ISCO-08 major group of the occupation: 'high'
   (1 managers, 2 professionals), 'mid' (3 technicians and associate
   professionals, 0 armed forces), 'low' (4 to 9);
-- contracts: name -> {"weight": relative weight, "salary_factor": share of
+- contracts: name -> {"weight": relative weight in the national mix (they
+  add up to 100), "kind": 'permanent', 'temporary', 'part_time',
+  'seasonal', 'apprentice', 'intern', 'freelance' or 'other' (the
+  kind says which figure adapts the weight to the occupation; 'other',
+  'apprentice' and 'intern' keep it), "salary_factor": share of
   a full-time salary (internships, apprenticeships, part-time),
   "max_experience": cap on the years of experience asked (0 for
   internships and apprenticeships), "employee": False for freelancers};
@@ -38,12 +46,14 @@ CONDITIONS = {
         "country": "France",
         "currency": "EUR",
         "contracts": {
-            "CDI": {"weight": 55},
-            "CDD": {"weight": 20},
-            "Intérim": {"weight": 12},
-            "Alternance": {"weight": 6, "salary_factor": 0.55, "max_experience": 0},
-            "Stage": {"weight": 4, "salary_factor": 0.3, "max_experience": 0},
-            "Freelance": {"weight": 3, "employee": False},
+            "CDI": {"weight": 55, "kind": "permanent"},
+            "CDD": {"weight": 20, "kind": "temporary"},
+            # Weight set by the share of seasonal recruitment projects of the occupation (BMO).
+            "CDD saisonnier": {"weight": 0, "kind": "seasonal"},
+            "Intérim": {"weight": 12, "kind": "temporary"},
+            "Alternance": {"weight": 6, "kind": "apprentice", "salary_factor": 0.55, "max_experience": 0},
+            "Stage": {"weight": 4, "kind": "intern", "salary_factor": 0.3, "max_experience": 0},
+            "Freelance": {"weight": 3, "kind": "freelance", "employee": False},
         },
         "salary_format": {"template": "{min} € - {max} € brut/an", "thousands": " "},
         # SMIC 2022 (35 h/week), yearly.
@@ -84,13 +94,13 @@ CONDITIONS = {
         "country": "Germany",
         "currency": "EUR",
         "contracts": {
-            "Unbefristet": {"weight": 58},
-            "Befristet": {"weight": 18},
-            "Zeitarbeit": {"weight": 10},
-            "Teilzeit": {"weight": 6, "salary_factor": 0.5},
-            "Ausbildung": {"weight": 4, "salary_factor": 0.35, "max_experience": 0},
-            "Praktikum": {"weight": 2, "salary_factor": 0.3, "max_experience": 0},
-            "Freiberuflich": {"weight": 2, "employee": False},
+            "Unbefristet": {"weight": 58, "kind": "permanent"},
+            "Befristet": {"weight": 18, "kind": "temporary"},
+            "Zeitarbeit": {"weight": 10, "kind": "temporary"},
+            "Teilzeit": {"weight": 6, "kind": "part_time", "salary_factor": 0.5},
+            "Ausbildung": {"weight": 4, "kind": "apprentice", "salary_factor": 0.35, "max_experience": 0},
+            "Praktikum": {"weight": 2, "kind": "intern", "salary_factor": 0.3, "max_experience": 0},
+            "Freiberuflich": {"weight": 2, "kind": "freelance", "employee": False},
         },
         "salary_format": {"template": "{min} € - {max} € brutto/Jahr", "thousands": "."},
         # Mindestlohn 12 €/h (October 2022), 40 h/week, yearly.
@@ -125,13 +135,13 @@ CONDITIONS = {
         "country": "Spain",
         "currency": "EUR",
         "contracts": {
-            "Indefinido": {"weight": 55},
-            "Temporal": {"weight": 20},
-            "Fijo discontinuo": {"weight": 8},
-            "A través de ETT": {"weight": 7},
-            "Formación en alternancia": {"weight": 4, "salary_factor": 0.55, "max_experience": 0},
-            "Prácticas": {"weight": 3, "salary_factor": 0.4, "max_experience": 0},
-            "Autónomo": {"weight": 3, "employee": False},
+            "Indefinido": {"weight": 55, "kind": "permanent"},
+            "Temporal": {"weight": 20, "kind": "temporary"},
+            "Fijo discontinuo": {"weight": 8, "kind": "other"},
+            "A través de ETT": {"weight": 7, "kind": "temporary"},
+            "Formación en alternancia": {"weight": 4, "kind": "apprentice", "salary_factor": 0.55, "max_experience": 0},
+            "Prácticas": {"weight": 3, "kind": "intern", "salary_factor": 0.4, "max_experience": 0},
+            "Autónomo": {"weight": 3, "kind": "freelance", "employee": False},
         },
         "salary_format": {"template": "{min} € - {max} € brutos/año", "thousands": "."},
         # Salario mínimo interprofesional 2022, yearly (14 payments).
@@ -164,12 +174,12 @@ CONDITIONS = {
         "country": "Italy",
         "currency": "EUR",
         "contracts": {
-            "Tempo indeterminato": {"weight": 50},
-            "Tempo determinato": {"weight": 24},
-            "Somministrazione": {"weight": 10},
-            "Apprendistato": {"weight": 7, "salary_factor": 0.65, "max_experience": 0},
-            "Stage": {"weight": 5, "salary_factor": 0.3, "max_experience": 0},
-            "Partita IVA": {"weight": 4, "employee": False},
+            "Tempo indeterminato": {"weight": 50, "kind": "permanent"},
+            "Tempo determinato": {"weight": 24, "kind": "temporary"},
+            "Somministrazione": {"weight": 10, "kind": "temporary"},
+            "Apprendistato": {"weight": 7, "kind": "apprentice", "salary_factor": 0.65, "max_experience": 0},
+            "Stage": {"weight": 5, "kind": "intern", "salary_factor": 0.3, "max_experience": 0},
+            "Partita IVA": {"weight": 4, "kind": "freelance", "employee": False},
         },
         "salary_format": {"template": "RAL {min} € - {max} €", "thousands": "."},
         # No statutory minimum wage in Italy (wages are set by the collective agreements).
@@ -202,12 +212,12 @@ CONDITIONS = {
         "country": "USA",
         "currency": "USD",
         "contracts": {
-            "Full-time": {"weight": 62},
-            "Part-time": {"weight": 15, "salary_factor": 0.5},
-            "Contract": {"weight": 10},
-            "Temporary": {"weight": 7},
-            "Internship": {"weight": 4, "salary_factor": 0.4, "max_experience": 0},
-            "Freelance": {"weight": 2, "employee": False},
+            "Full-time": {"weight": 62, "kind": "permanent"},
+            "Part-time": {"weight": 15, "kind": "part_time", "salary_factor": 0.5},
+            "Contract": {"weight": 10, "kind": "temporary"},
+            "Temporary": {"weight": 7, "kind": "temporary"},
+            "Internship": {"weight": 4, "kind": "intern", "salary_factor": 0.4, "max_experience": 0},
+            "Freelance": {"weight": 2, "kind": "freelance", "employee": False},
         },
         "salary_format": {"template": "${min} - ${max} a year", "thousands": ","},
         # Federal minimum wage, $7.25/h, 2,080 h/year.
