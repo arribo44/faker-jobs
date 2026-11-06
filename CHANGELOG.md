@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.3.0] - 2026-11-06
+
 ### Added
 - Local posting conditions for German, Spanish, Italian and US postings (`de_*`, `es_*`, `it_*`, `en_US`), as for the French ones: contract types, diplomas, benefits, job boards, a city of the country, the experience and salary in the local wording and currency (`scripts/posting_conditions.py`). Other locales keep the Kaggle conditions.
 - Salaries that follow the occupation: mean gross annual earnings of its ISCO-08 major group (Eurostat SES 2022 by NACE section for France, Germany, Spain and Italy; BLS OEWS for the United States), adjusted to the experience asked (earnings by age), to the contract (internship, apprenticeship, part-time) and kept above the minimum wage. `scripts/fetch_salaries.py` caches the earnings in `DATAS/salaries/`.
