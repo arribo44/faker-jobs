@@ -2,6 +2,7 @@
 Tests for the locale-aware occupation methods (ROME 4.0 in French locales,
 ESCO otherwise).
 """
+import collections
 import unittest
 
 from faker import Faker
@@ -336,10 +337,11 @@ class TestRomeOccupations(OccupationTests, unittest.TestCase):
             self.assertEqual(posting["salary_currency"], "EUR")
             self.assertTrue(posting["salary_range"].endswith("€ brut/an"))
             self.assertLess(posting["salary_min"], posting["salary_max"])
-            if posting["work_type"] in {"CDI", "CDD", "Intérim"}:
+            if posting["work_type"] in {"CDI", "CDD", "CDD saisonnier", "Intérim"}:
                 self.assertGreaterEqual(posting["salary_min"], 20_150)   # SMIC
             self.assertEqual(posting["location"]["country"], "France")
-            self.assertIn(posting["work_type"], {"CDI", "CDD", "Intérim", "Alternance", "Stage", "Freelance"})
+            self.assertIn(posting["work_type"],
+                          {"CDI", "CDD", "CDD saisonnier", "Intérim", "Alternance", "Stage", "Freelance"})
             if occupation["qualifications"]:
                 self.assertIn(posting["qualification"], occupation["qualifications"])
             if not occupation["executive"]:
@@ -393,6 +395,25 @@ class LocalConditionsTests:
         juniors, seniors = self._salaries("2", experience=(0, 2)), self._salaries("2", experience=(20, 25))
         self.assertGreater(sum(seniors), sum(juniors) * 1.3)
 
+    def test_contract_mix_follows_the_isco_group(self):
+        weights = self.conditions["contract_weights"]
+        contracts = self.conditions["contracts"]
+        self.assertEqual(set(weights), set(self.conditions["skill_levels"]))
+        total = sum(weights["2"].values())   # the national mix adapted: same total in every group
+        permanent = next(name for name, spec in contracts.items() if spec["kind"] == "permanent")
+        for group, mix in weights.items():
+            self.assertEqual(set(mix), set(contracts), msg=group)
+            self.assertAlmostEqual(sum(mix.values()), total, delta=0.1, msg=group)
+            self.assertGreaterEqual(mix[permanent], 0.1 * total - 0.01, msg=group)
+
+        def temporary(group):
+            return sum(w for name, w in weights[group].items() if contracts[name]["kind"] == "temporary")
+
+        if self.locale == "en_US":   # no labour figures: the national mix everywhere
+            self.assertEqual(weights["1"], weights["9"])
+        else:   # managers are seldom temporary, elementary jobs often are (Eurostat LFS)
+            self.assertLess(temporary("1") * 2, temporary("9"))
+
     def test_internship_pays_less(self):
         full = {"salary_factor": 1, "employee": True}
         intern = {"salary_factor": 0.3, "employee": True}
@@ -402,6 +423,22 @@ class LocalConditionsTests:
 
 class TestFrenchConditions(LocalConditionsTests, unittest.TestCase):
     locale, country, currency = "fr_FR", "France", "EUR"
+
+    def _contracts(self, code, n=300):
+        return collections.Counter(self.fake.job_occupation_posting(code=code)["work_type"] for _ in range(n))
+
+    def test_seasonal_contract_follows_the_occupation(self):
+        picker = self.fake.job_occupation_record(code="A1401")   # fruit picker
+        developer = self.fake.job_occupation_record(code="M1805")
+        self.assertGreater(picker["seasonal"], 0.8)
+        self.assertLess(developer["seasonal"], 0.05)
+        self.assertGreater(self._contracts("A1401")["CDD saisonnier"], 200)
+        self.assertLess(self._contracts("M1805")["CDD saisonnier"], 20)
+
+    def test_seasonal_share_is_a_share(self):
+        for code in self.provider.job_occupation_codes:
+            record = self.fake.job_occupation_record(code=code)
+            self.assertTrue(0 <= record["seasonal"] <= 1, msg=code)
 
 
 class TestGermanConditions(LocalConditionsTests, unittest.TestCase):
@@ -429,6 +466,13 @@ class TestUSConditions(LocalConditionsTests, unittest.TestCase):
     def test_us_wording(self):
         posting = self.fake.job_occupation_posting()
         self.assertRegex(posting["salary_range"], r"^\$[\d,]+ - \$[\d,]+ a year$")
+
+
+class TestNoSeasonalContract(unittest.TestCase):
+    def test_only_french_locales_have_seasonal_contracts(self):
+        for locale in ("de_DE", "es_ES", "it_IT", "en_US"):
+            contracts = JobsProvider(make_faker(locale))._local_conditions()["contracts"]
+            self.assertNotIn("seasonal", {spec["kind"] for spec in contracts.values()}, msg=locale)
 
 
 class TestNoLocalConditions(unittest.TestCase):

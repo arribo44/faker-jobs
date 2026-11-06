@@ -19,7 +19,11 @@ Inputs (DATAS/ is not published):
 - DATAS/bmo/Base-open-data-BMO-2026.xlsx (France Travail, "Besoins en
   Main-d'Œuvre" 2026: recruitment projects by job family, FAP 2021) and
   DATAS/bmo/Dares_FAP2021_Table_passage_ROME.xlsx (DARES, FAP 2021 → ROME):
-  the demand weight of each occupation (see bmo_weights())
+  the demand weight and the seasonal share of each occupation (see
+  bmo_weights() and bmo_seasonal())
+- DATAS/salaries/ (see fetch_salaries.py): Eurostat earnings (SES 2022) and
+  BLS wages for the salaries, Eurostat Labour Force Survey figures for the
+  contract mix (see contract_weights())
 - DATAS/naf/naf2008_liste_n5.xls (INSEE, NAF rév. 2 sub-classes): the
   activity codes of the French companies (see NAF_BY_SECTOR)
 - faker_jobs/data/jobs_data.json: companies, matched to the ROME sectors
@@ -156,19 +160,24 @@ def load_rome(sheets):
 
 
 def read_bmo():
-    """{BMO job code (FAP 2021, 5 characters): recruitment projects in France, all areas summed}.
+    """({BMO job code (FAP 2021, 5 characters): recruitment projects in
+    France}, {BMO job code: seasonal recruitment projects}), all areas summed.
 
-    Areas with too few answers are masked ('*') in the open data: they count as 0."""
+    Areas with too few answers are masked ('*') in the open data: they count
+    as 0, so the seasonal share is a lower bound (32 % of all projects)."""
     import openpyxl
     workbook = openpyxl.load_workbook(BMO_PATH, read_only=True)
     try:
         rows = workbook["BMO_2026_open_data"].iter_rows(min_row=2, values_only=True)
-        projects = collections.Counter()
+        projects, seasonal = collections.Counter(), collections.Counter()
         for row in rows:
-            code, value = row[1], row[12]  # 'Code métier BMO', 'met' (recruitment projects)
+            # 'Code métier BMO', 'met' (recruitment projects), 'smet' (seasonal ones)
+            code, value, season = row[1], row[12], row[14]
             if code and value not in (None, "*"):
                 projects[code] += float(value)
-        return projects
+                if season not in (None, "*"):
+                    seasonal[code] += float(season)
+        return projects, seasonal
     finally:
         workbook.close()
 
@@ -225,6 +234,34 @@ def bmo_weights(jobs, projects, fap_rome):
     return {code: weight * scale for code, weight in estimated.items()}
 
 
+def bmo_seasonal(jobs, projects, seasonal, fap_rome):
+    """{ROME code: share of its recruitment projects that are seasonal}.
+
+    The projects of a BMO job are shared between its ROME codes as in
+    bmo_weights(); a sheet missing from the DARES table takes the share of
+    its ROME group, or the national share."""
+    total, season = collections.Counter(), collections.Counter()
+    for bmo_code, n in projects.items():
+        codes = set().union(*(romes for fap, romes in fap_rome.items() if fap.startswith(bmo_code)))
+        for code in codes:
+            total[code] += n / len(codes)
+            season[code] += seasonal[bmo_code] / len(codes)
+    group_total, group_season = collections.Counter(), collections.Counter()
+    for code in total:
+        group_total[code[:3]] += total[code]
+        group_season[code[:3]] += season[code]
+    national = sum(seasonal.values()) / sum(projects.values())
+    shares = {}
+    for code in jobs:
+        if total[code]:
+            shares[code] = season[code] / total[code]
+        elif group_total[code[:3]]:
+            shares[code] = group_season[code[:3]] / group_total[code[:3]]
+        else:
+            shares[code] = national
+    return shares
+
+
 class Pool:
     """Interns repeated strings (skills, sectors...): records store indexes into one list."""
 
@@ -264,6 +301,7 @@ def package(meta, sectors, occupations):
             "transitions": occupation["transitions"],
             "isco_code": occupation["isco_code"],
             "isco_group": occupation["isco_group"],
+            "seasonal": round(occupation["seasonal"], 3),
             # Demand weight: estimated yearly recruitment projects in France (at least 1).
             "weight": max(1, round(occupation["weight"])),
         })
@@ -463,13 +501,64 @@ def salary_table(locale, eurostat, bls):
     }
 
 
-def make_conditions(locale, office_domains, salary, sections, naf=None):
-    """The posting conditions of a locale (see posting_conditions.py), with its salaries."""
+# Labour Force Survey figure that adapts each contract kind to the ISCO
+# group: (part of the group, of all the group's ...).
+LFS_SHARES = {"temporary": ("temporary", "employees"), "part_time": ("part_time", "employed"),
+              "freelance": ("self_employed", "employed")}
+# Cap on the ratio of a group's share to the national one: managers are
+# 64 % self-employed in Italy (shopkeepers), but postings seldom hire them so.
+MAX_LFS_RATIO = 3
+# The permanent contract keeps at least this share of the postings.
+MIN_PERMANENT = 0.1
+
+
+def contract_weights(contracts, lfs):
+    """{ISCO major group: {contract: weight}}: the national mix of the
+    posting contracts (posting_conditions.py), adapted to each group.
+
+    The weight of a temporary, part-time or freelance contract is multiplied
+    by the ratio of the group's share of temporary employees (of employees),
+    part-time or self-employed workers (of all workers) to the country's
+    share (Eurostat LFS), capped at MAX_LFS_RATIO; a figure the survey does
+    not publish (too few people, e.g. part-time soldiers) counts as 0. The
+    permanent contract takes what is left of the total, at least
+    MIN_PERMANENT of it (the other contracts are scaled down when needed);
+    apprenticeships, internships and 'other' kinds keep their weight. Without
+    figures (`lfs` None: the United States), every group gets the national
+    mix. Seasonal contracts are weighted per occupation when the posting is made."""
+    total = sum(spec["weight"] for spec in contracts.values())
+    result = {}
+    for group in sorted(SKILL_LEVELS):
+        weights = {}
+        for name, spec in contracts.items():
+            ratio = 1
+            if lfs is not None and spec["kind"] in LFS_SHARES:
+                part, whole = LFS_SHARES[spec["kind"]]
+                group_share = lfs[part].get(f"OC{group}", 0) / lfs[whole][f"OC{group}"]
+                ratio = min(MAX_LFS_RATIO, group_share / (lfs[part]["TOTAL"] / lfs[whole]["TOTAL"]))
+            weights[name] = spec["weight"] * ratio
+        permanent = [name for name, spec in contracts.items() if spec["kind"] == "permanent"]
+        if len(permanent) != 1:
+            raise ValueError(f"one permanent contract expected, got {permanent}")
+        others = sum(weight for name, weight in weights.items() if name != permanent[0])
+        if others > (1 - MIN_PERMANENT) * total:
+            # Too many non-permanent postings: scale them down to leave the minimum.
+            weights = {name: weight * (1 - MIN_PERMANENT) * total / others for name, weight in weights.items()}
+            others = (1 - MIN_PERMANENT) * total
+        weights[permanent[0]] = total - others
+        result[group] = {name: round(weight, 2) for name, weight in weights.items()}
+    return result
+
+
+def make_conditions(locale, office_domains, salary, sections, lfs, naf=None):
+    """The posting conditions of a locale (see posting_conditions.py), with
+    its salaries and contract weights."""
     local = CONDITIONS[locale]
-    contracts = {name: {"weight": spec["weight"], "salary_factor": spec.get("salary_factor", 1),
+    contracts = {name: {"kind": spec["kind"], "salary_factor": spec.get("salary_factor", 1),
                         "max_experience": spec.get("max_experience"), "employee": spec.get("employee", True)}
                  for name, spec in local["contracts"].items()}
-    conditions = {**local, "contracts": contracts, "experience": EXPERIENCE, "skill_levels": SKILL_LEVELS,
+    conditions = {**local, "contracts": contracts, "contract_weights": contract_weights(local["contracts"], lfs),
+                  "experience": EXPERIENCE, "skill_levels": SKILL_LEVELS,
                   "benefits_per_posting": BENEFITS_PER_POSTING, "office_domains": sorted(office_domains),
                   "salary": salary, "section_by_sector": sections}
     if naf is not None:
@@ -477,7 +566,7 @@ def make_conditions(locale, office_domains, salary, sections, naf=None):
     return conditions
 
 
-def build_fr(sectors, jobs, weights, naf, isco, salary):
+def build_fr(sectors, jobs, weights, seasonal, naf, isco, salary, lfs):
     occupations = [{
         "code": job["code"],
         "title": job["title"],
@@ -491,13 +580,15 @@ def build_fr(sectors, jobs, weights, naf, isco, salary):
         **{field: job[field] for field in ROME_ATTRIBUTES},
         "isco_code": isco[job["code"]][0],
         "isco_group": isco[job["code"]][1],
+        "seasonal": seasonal[job["code"]],
         "weight": weights[job["code"]],
     } for job in jobs.values()]
-    meta = {"source": f"{ROME_SOURCE}; {BMO_SOURCE}; NAF: {NAF_SOURCE}; {SALARY_SOURCES['eurostat']}",
+    meta = {"source": f"{ROME_SOURCE}; {BMO_SOURCE}; NAF: {NAF_SOURCE}; {SALARY_SOURCES['eurostat']}; "
+                      f"{lfs_source(lfs)}",
             "language": "fr", "gender": GENDER["fr"]}
     office_domains = {job["domain"] for job in jobs.values() if job["domain_code"] in OFFICE_DOMAIN_CODES}
     conditions = make_conditions("fr_FR", office_domains, salary, section_by_sector(sectors, naf),
-                                 naf_by_sector(sectors, naf))
+                                 lfs_country("fr_FR", lfs), naf_by_sector(sectors, naf))
     return {**package(meta, sectors.values(), occupations), "conditions": conditions}
 
 
@@ -532,17 +623,23 @@ def esco_sectors(jobs, counts):
     return sorted(kept, key=lambda code: (-weight[code], int(code)))
 
 
-def esco_weights(jobs, links, weights):
-    """{ESCO URI: demand weight}: each ROME sheet's weight shared between the
-    ESCO occupations its job titles are mapped to, by number of titles."""
+def esco_weights(jobs, links, weights, seasonal):
+    """({ESCO URI: demand weight}, {ESCO URI: seasonal share}): each ROME
+    sheet's weight shared between the ESCO occupations its job titles are
+    mapped to, by number of titles; the seasonal share is the mean of the
+    linked sheets' shares, weighted by those parts."""
     titles_by_code = collections.Counter()
     for counts in links.values():
         titles_by_code.update(counts)
-    return {uri: sum(weights[code] * n / titles_by_code[code] for code, n in counts.items())
-            for uri, counts in links.items()}
+    demand, shares = {}, {}
+    for uri, counts in links.items():
+        parts = {code: weights[code] * n / titles_by_code[code] for code, n in counts.items()}
+        demand[uri] = sum(parts.values())
+        shares[uri] = sum(seasonal[code] * part for code, part in parts.items()) / demand[uri]
+    return demand, shares
 
 
-def build_esco(locale, jobs, weights, naf, salary, salary_source):
+def build_esco(locale, jobs, weights, seasonal, naf, salary, salary_source, lfs):
     """Occupations of an ESCO language, with the ROME sectors, domains and soft skills in it."""
     language = ESCO_LOCALES[locale]
     sector_labels, domain_labels, soft_skill_labels = SECTORS[language], DOMAINS[language], SOFT_SKILLS[language]
@@ -550,7 +647,7 @@ def build_esco(locale, jobs, weights, naf, salary, salary_source):
         esco = json.load(f)
     occupations = []
     links = link_esco_to_rome(jobs)
-    weight_by_uri = esco_weights(jobs, links, weights)
+    weight_by_uri, seasonal_by_uri = esco_weights(jobs, links, weights, seasonal)
     for uri, counts in links.items():
         if uri not in esco:
             raise ValueError(f"ESCO occupation {uri} missing from the {language} cache: "
@@ -582,13 +679,15 @@ def build_esco(locale, jobs, weights, naf, salary, salary_source):
             "qualifications": [],
             "isco_code": record["isco_code"].split(".")[0],
             "isco_group": record["isco_code"][0],
+            "seasonal": seasonal_by_uri[uri],
             "weight": weight_by_uri[uri],
         })
     meta = {"source": f"{ESCO_SOURCE}; sectors, domains and soft skills: {ROME_SOURCE}; {BMO_SOURCE}; "
-                      f"{salary_source}",
+                      f"{salary_source}" + (f"; {lfs_source(lfs)}" if lfs_country(locale, lfs) else ""),
             "language": language, "gender": GENDER.get(language)}
     office_domains = {domain_labels[code] for code in OFFICE_DOMAIN_CODES}
-    conditions = make_conditions(locale, office_domains, salary, section_by_sector(sector_labels, naf))
+    conditions = make_conditions(locale, office_domains, salary, section_by_sector(sector_labels, naf),
+                                 lfs_country(locale, lfs))
     return {**package(meta, sector_labels.values(), occupations), "conditions": conditions}
 
 
@@ -649,6 +748,16 @@ def companies_by_sector(sector_names):
     return {sector: sorted(names) for sector, names in sorted(grouped.items())}
 
 
+def lfs_country(locale, lfs):
+    """The Labour Force Survey figures of the locale's country, None for the United States."""
+    country = EUROSTAT_COUNTRIES.get(locale)
+    return lfs["values"][country] if country else None
+
+
+def lfs_source(lfs):
+    return f"contract mix: {lfs['source']}"
+
+
 def build_occupations():
     """{locale: packaged data}."""
     sectors, jobs = load_rome(read_rome())
@@ -658,7 +767,10 @@ def build_occupations():
             missing = codes ^ set(labels[language])
             if missing:
                 raise ValueError(f"rome_labels.{name}[{language!r}] out of sync with ROME: {sorted(missing)}")
-    weights = bmo_weights(jobs, read_bmo(), read_fap_rome())
+    projects, seasonal_projects = read_bmo()
+    fap_rome = read_fap_rome()
+    weights = bmo_weights(jobs, projects, fap_rome)
+    seasonal = bmo_seasonal(jobs, projects, seasonal_projects, fap_rome)
     naf = read_naf()
     with open(fetch_esco.CACHE_PATH, encoding="utf-8") as f:
         isco = rome_isco(jobs, link_esco_to_rome(jobs), json.load(f))
@@ -666,10 +778,14 @@ def build_occupations():
         eurostat = json.load(f)
     with open(fetch_salaries.BLS_PATH, encoding="utf-8") as f:
         bls = json.load(f)
-    built = {"fr_FR": build_fr(sectors, jobs, weights, naf, isco, salary_table("fr_FR", eurostat, bls))}
+    with open(fetch_salaries.LFS_PATH, encoding="utf-8") as f:
+        lfs = json.load(f)
+    built = {"fr_FR": build_fr(sectors, jobs, weights, seasonal, naf, isco,
+                               salary_table("fr_FR", eurostat, bls), lfs)}
     for locale, language in ESCO_LOCALES.items():
         source = SALARY_SOURCES["bls"].format(year=bls["year"]) if locale == "en_US" else SALARY_SOURCES["eurostat"]
-        built[locale] = build_esco(locale, jobs, weights, naf, salary_table(locale, eurostat, bls), source)
+        built[locale] = build_esco(locale, jobs, weights, seasonal, naf, salary_table(locale, eurostat, bls),
+                                   source, lfs)
         built[locale]["companies_by_sector"] = companies_by_sector(SECTORS[language])
     return dict(sorted(built.items()))
 

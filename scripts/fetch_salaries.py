@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Fetch the earnings used for the posting salaries (build_occupations.py) and
-cache them in DATAS/salaries/:
+Fetch the earnings and labour figures used for the posting salaries and
+contracts (build_occupations.py) and cache them in DATAS/salaries/:
 
 - eurostat_ses2022.json: Eurostat Structure of Earnings Survey 2022, mean
   gross annual earnings in EUR (both sexes; all enterprise sizes, or those
@@ -9,6 +9,11 @@ cache them in DATAS/salaries/:
   and Italy) for France, Germany, Spain and Italy:
   - by ISCO-08 major group and NACE Rev. 2 section (earn_ses22_49);
   - by ISCO-08 major group and age band (earn_ses22_28).
+- eurostat_lfs.json: Eurostat Labour Force Survey, latest year, people
+  aged 15 to 64, in thousands, by ISCO-08 major group, for the same
+  countries: employees (lfsa_eegais), temporary employees (lfsa_etgais),
+  part-time workers and all workers (lfsa_epgais), self-employed
+  (lfsa_esgais). They set the contract mix of each occupation.
 - bls_oews.json: U.S. Bureau of Labor Statistics, Occupational Employment
   and Wage Statistics, national mean annual wage by SOC major group, latest
   year available.
@@ -23,7 +28,9 @@ import urllib.request
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SALARY_DIR = os.path.join(ROOT, "DATAS", "salaries")
 EUROSTAT_PATH = os.path.join(SALARY_DIR, "eurostat_ses2022.json")
+LFS_PATH = os.path.join(SALARY_DIR, "eurostat_lfs.json")
 BLS_PATH = os.path.join(SALARY_DIR, "bls_oews.json")
+LFS_YEAR = "2025"
 
 EUROSTAT_URL = "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/{dataset}?format=JSON&lang=EN"
 BLS_URL = "https://api.bls.gov/publicAPI/v1/timeseries/data/"
@@ -68,8 +75,9 @@ def eurostat_by_size(dataset, keep, **fixed):
 
 def eurostat(dataset, keep, **fixed):
     """{country: {key: value}} of a JSON-stat dataset, `key` made of the `keep` dimensions
-    ("OC2|Q"), the other dimensions set to `fixed`."""
-    raw = get_json(EUROSTAT_URL.format(dataset=dataset) + "".join(f"&geo={geo}" for geo in COUNTRIES))
+    ("OC2|Q"), the other dimensions set to `fixed` (filtered by the API too)."""
+    query = "".join(f"&geo={geo}" for geo in COUNTRIES) + "".join(f"&{dim}={code}" for dim, code in fixed.items())
+    raw = get_json(EUROSTAT_URL.format(dataset=dataset) + query)
     ids, sizes = raw["id"], raw["size"]
     positions = {dim: {code: index for code, index in raw["dimension"][dim]["category"]["index"].items()}
                  for dim in ids}
@@ -83,6 +91,25 @@ def eurostat(dataset, keep, **fixed):
         if all(coords[dim] == code for dim, code in fixed.items()):
             result[coords["geo"]]["|".join(coords[dim] for dim in keep)] = value
     return result
+
+
+def fetch_lfs():
+    """{country: {table: {ISCO major group ("OC1"... and "TOTAL"): thousands}}}."""
+    common = {"unit": "THS_PER", "sex": "T", "age": "Y15-64", "freq": "A", "time": LFS_YEAR}
+    tables = {
+        "employees": eurostat("lfsa_eegais", ("isco08",), **common),
+        "temporary": eurostat("lfsa_etgais", ("isco08",), **common),
+        "part_time": eurostat("lfsa_epgais", ("isco08",), worktime="PT", **common),
+        "employed": eurostat("lfsa_epgais", ("isco08",), worktime="TOTAL", **common),
+        "self_employed": eurostat("lfsa_esgais", ("isco08",), wstatus="SELF", **common),
+    }
+    result = {geo: {name: table[geo] for name, table in tables.items()} for geo in COUNTRIES}
+    for geo, entry in result.items():
+        missing = [name for name, values in entry.items() if "TOTAL" not in values]
+        if missing:
+            sys.exit(f"Eurostat LFS {LFS_YEAR}: no {missing} total for {geo}")
+    return {"source": f"Eurostat LFS {LFS_YEAR}, aged 15-64, thousands (lfsa_eegais, lfsa_etgais, "
+                      "lfsa_epgais, lfsa_esgais)", "year": LFS_YEAR, "values": result}
 
 
 def fetch_bls():
@@ -121,6 +148,7 @@ def main():
         if empty:
             sys.exit(f"Eurostat: no {table} data for {empty}")
     save(EUROSTAT_PATH, data)
+    save(LFS_PATH, fetch_lfs())
     save(BLS_PATH, fetch_bls())
 
 

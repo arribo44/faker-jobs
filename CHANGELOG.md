@@ -13,10 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Local posting conditions for German, Spanish, Italian and US postings (`de_*`, `es_*`, `it_*`, `en_US`), as for the French ones: contract types, diplomas, benefits, job boards, a city of the country, the experience and salary in the local wording and currency (`scripts/posting_conditions.py`). Other locales keep the Kaggle conditions.
 - Salaries that follow the occupation: mean gross annual earnings of its ISCO-08 major group (Eurostat SES 2022 by NACE section for France, Germany, Spain and Italy; BLS OEWS for the United States), adjusted to the experience asked (earnings by age), to the contract (internship, apprenticeship, part-time) and kept above the minimum wage. `scripts/fetch_salaries.py` caches the earnings in `DATAS/salaries/`.
 - `OccupationRecord.isco_code` / `isco_group`; `seniority` ('junior', 'mid', 'senior') in `OccupationPosting` and `JobPosting`.
+- Contracts that follow the occupation (France, Germany, Spain, Italy): the national contract mix of the postings is adapted to the occupation's ISCO-08 major group with the Eurostat Labour Force Survey 2025 (shares of temporary employees, part-time and self-employed workers relative to the national share, capped at x3; the permanent contract takes the rest, at least 10%). `scripts/fetch_salaries.py` also caches those figures (`DATAS/salaries/eurostat_lfs.json`).
+- French postings: "CDD saisonnier" contracts, offered with the occupation's share of seasonal recruitment projects in the BMO 2026 survey, exposed in every locale as `OccupationRecord.seasonal` (a lower bound: areas masked in the open data count as 0).
 
 ### Changed
 - The experience asked and the default diploma of the occupation postings follow the ISCO skill level of the occupation instead of the executive status; French salaries come from Eurostat earnings instead of hand-made ranges.
 - French interns and apprentices get 0 years of experience asked and a reduced salary.
+- French postings are now about 40% CDI, 30% CDD saisonnier (as in the BMO hiring plans), 14% CDD and 8% Intérim, instead of 55% CDI and no seasonal contract.
 
 ---
 

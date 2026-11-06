@@ -171,6 +171,7 @@ fake.job_occupation_record(sector="Healthcare")
 #     'transitions': ['demographic'],          # any of 'ecological', 'digital', 'demographic'
 #     'isco_code': '3213', 'isco_group': '3',  # ISCO-08 unit and major group (skill level, salary)
 #     'demand': 689,                           # estimated yearly recruitment projects in France (BMO 2026)
+#     'seasonal': 0.097,                       # share of those projects that are seasonal (BMO 2026)
 # }
 fake.job_occupation_record(code="7b74626d-b487-48a1-9e80-47faf9928210")  # a given occupation
 ```
@@ -260,7 +261,7 @@ fake.job_occupation_posting(sector="Logistique et transport")
 #     'experience': '3 à 6 ans', 'experience_min': 3, 'experience_max': 6,   # or 'Débutant accepté'
 #     'salary_range': '24 000 € - 32 000 € brut/an', 'salary_min': 24000, 'salary_max': 32000,
 #     'salary_currency': 'EUR',
-#     'work_type': 'CDI',                       # CDI, CDD, Intérim, Alternance, Stage, Freelance
+#     'work_type': 'CDI',                       # CDI, CDD, CDD saisonnier, Intérim, Alternance, Stage, Freelance
 #     'benefits': ['Intéressement et participation', 'Tickets restaurant', ...],   # fit the job and contract
 #     'location': {'city': 'Lyon', 'country': 'France', ...},
 #     'company': {'company': 'Lemaire SARL', 'sector': 'Logistique et transport',
@@ -315,8 +316,27 @@ group (managers and professionals, technicians, other jobs). Expect a
 specialist doctor to earn far more than a kitchen assistant, and a senior
 more than a junior; but the figures are 2022 (Eurostat) or latest-year
 (BLS) means of broad groups, not the pay of the exact job: an
-**estimate**. Contract weights, benefit rules, job boards and default
-diplomas are hand-made and **illustrative** (`scripts/posting_conditions.py`).
+**estimate**.
+
+**Contracts follow the occupation too.** Each country has a national mix
+of posting contracts (hand-made, e.g. 55% CDI, 20% CDD, 12% Intérim in
+France), adapted to the occupation's ISCO major group with the
+[Eurostat Labour Force Survey](https://ec.europa.eu/eurostat/web/lfs) 2025
+(France, Germany, Spain, Italy): the weight of the temporary contracts is
+multiplied by the ratio of the group's share of temporary employees to the
+national share, the same for part-time (Teilzeit) and self-employed
+(freelance) workers, capped at three times the national mix; the permanent
+contract takes the rest (at least 10%). A farm worker therefore gets a
+fixed-term or temp contract far more often than a manager. In French
+locales, a **CDD saisonnier** is offered with the occupation's share of
+seasonal recruitment projects (`seasonal`, BMO 2026): 95% of the fruit
+picker postings, 1% of the software developer ones, about 30% of all
+French postings, as in the BMO survey (hiring plans, which count every
+seasonal hire), so the CDI is only about 40% of them. The United States
+keep the national mix for every occupation.
+
+Benefit rules, job boards and default diplomas are hand-made and
+**illustrative** (`scripts/posting_conditions.py`).
 
 The NAF activities of each sector are chosen by hand (`NAF_BY_SECTOR` in
 `scripts/build_occupations.py`) and picked at random within the sector: a
@@ -476,9 +496,11 @@ DATAS/bmo/Dares_FAP2021_Table_passage_ROME.xlsx   FAP 2021 -> ROME table (DARES;
 DATAS/naf/naf2008_liste_n5.xls               NAF rév. 2 sub-classes (INSEE)
 DATAS/salaries/eurostat_ses2022.json         Eurostat SES 2022 earnings, cached by fetch_salaries.py
 DATAS/salaries/bls_oews.json                 BLS OEWS mean wages, cached by fetch_salaries.py
+DATAS/salaries/eurostat_lfs.json             Eurostat LFS 2025 temporary, part-time, self-employed workers
+                                             by ISCO group, cached by fetch_salaries.py
 scripts/
   fetch_esco.py [language]      ESCO web-service API -> the caches above (~2,000 requests each, resumable)
-  fetch_salaries.py             Eurostat and BLS APIs -> the salary caches above
+  fetch_salaries.py             Eurostat and BLS APIs -> the salary and labour caches above
   posting_conditions.py         local contracts, benefits, job boards, diplomas by locale
   rome_labels.py                ROME sectors, domains and soft skills in English, German, Spanish, Italian
   build_occupations.py          -> faker_jobs/data/occupations_{de_DE,en_US,es_ES,fr_FR,it_IT}.json.gz (gzipped)
@@ -524,7 +546,7 @@ Occupation data:
   ROME 4.0 → ESCO crosswalk by France Travail, from the [ESCO portal](https://esco.ec.europa.eu/en/use-esco/eures-countries-mapping-tables).
 - BMO 2026 © France Travail, FAP 2021 → ROME table © DARES, NAF rév. 2 ©
   INSEE: [Licence Ouverte / Etalab 2.0](https://www.etalab.gouv.fr/licence-ouverte-open-licence/).
-- Earnings: Eurostat SES 2022 © European Union (reuse authorised, source
-  acknowledged); BLS OEWS, U.S. Bureau of Labor Statistics (public domain).
+- Earnings and labour figures: Eurostat SES 2022 and LFS 2025 © European
+  Union (reuse authorised, source acknowledged); BLS OEWS, U.S. Bureau of Labor Statistics (public domain).
 - English, German, Spanish and Italian labels of the 35 ROME activity
   sectors, 14 domains and 16 soft skills are translated by this project.
