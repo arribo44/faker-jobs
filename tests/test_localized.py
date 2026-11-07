@@ -1,7 +1,7 @@
 """
 Tests for the generic methods (job_title, job_role_record, job_salary_range,
 job_company_profile...) in the German, Spanish, French and Italian locales:
-they use the occupations and local conditions, not the English Kaggle data.
+the occupations in the language, local conditions and made-up companies.
 """
 import unittest
 
@@ -27,12 +27,12 @@ class LocalizedTests:
         Faker.seed(20261106)
         self.fake, self.provider = make(self.locale)
         self.conditions = self.provider._local_conditions()
-        self.kaggle = JobsProvider(Faker("en_US"))
+        self.english = JobsProvider(Faker("en_US"))
 
     def test_titles_and_roles_are_occupations(self):
         titles, roles = set(self.provider.job_titles), set(self.provider.job_roles)
         self.assertGreater(len(roles), 1900)
-        self.assertLess(len(titles & set(self.kaggle.job_titles)), 10)   # loanwords only (Data Scientist)
+        self.assertLess(len(roles & set(self.english.job_roles)), 25)   # loanwords only (sommelier)
         for _ in range(30):
             title = self.fake.job_title()
             self.assertIn(title, titles)
@@ -65,9 +65,7 @@ class LocalizedTests:
         qualifications = {name for names in self.conditions["qualifications"].values() for name in names}
         portals = set(self.conditions["job_portals"]["all"]) | set(self.conditions["job_portals"].get("executive", []))
         for _ in range(20):
-            qualification = self.fake.job_qualification()
-            self.assertIn(qualification, qualifications)
-            self.assertEqual(self.fake.job_qualification_name(qualification.lower()), qualification)
+            self.assertIn(self.fake.job_qualification(), qualifications)
             self.assertIn(self.fake.job_work_type(), self.conditions["contracts"])
             self.assertIn(self.fake.job_portal(), portals)
             low, high = self.fake.job_salary_bounds()
@@ -83,8 +81,6 @@ class LocalizedTests:
         self.assertEqual(self.fake.job_benefits(count=0), [])
         with self.assertRaises(ValueError):
             self.fake.job_benefits(count=len(self.conditions["benefits"]) + 1)
-        with self.assertRaisesRegex(ValueError, "Unknown qualification"):
-            self.fake.job_qualification_name("MBA")
 
     def test_location_in_the_country(self):
         self.assertEqual(self.fake.job_location()["country"], self.country)
@@ -104,11 +100,11 @@ class LocalizedTests:
         with self.assertRaisesRegex(ValueError, "Unknown activity sector"):
             self.fake.job_company(sector="Piracy")
 
-    def test_kaggle_posting_stays_kaggle(self):
-        posting = self.fake.job_posting(source="kaggle")
-        self.assertEqual(posting["salary_currency"], "USD")
-        self.assertIn(posting["job_title"], self.kaggle.job_titles)
-        self.assertIn(posting["company"]["company"], set(self.kaggle.job_companies))
+    def test_posting_is_local(self):
+        posting = self.fake.job_posting()
+        self.assertEqual(posting["salary_currency"], self.conditions["currency"])
+        self.assertEqual(posting["location"]["country"], self.country)
+        self.assertNotIn(posting["company"]["company"], set(self.provider.job_companies))
 
 
 class TestFrenchLocalized(LocalizedTests, unittest.TestCase):
@@ -151,35 +147,15 @@ class TestItalianLocalized(LocalizedTests, unittest.TestCase):
         self.assertEqual(self.fake.job_location(country="Germany")["country"], "Germany")
 
 
-class TestEnglishKeepsKaggle(unittest.TestCase):
-    def test_english_locales_are_not_localized(self):
-        for locale in ("en_US", "en_GB", "nl_NL"):
-            fake, provider = make(locale)
-            self.assertIsNone(provider._localized(), msg=locale)
-            self.assertIn(fake.job_title(), provider._data["job_titles"])
-            self.assertTrue(fake.job_salary_range().startswith("$"))
-
-
-class KaggleJobs(JobsProvider):
-    use_kaggle_data = True
-
-
-class TestUseKaggleData(unittest.TestCase):
-    def test_opt_out(self):
-        fake, provider = make("fr_FR", KaggleJobs)
-        self.assertIsNone(provider._localized())
-        self.assertIn(fake.job_title(), provider._data["job_titles"])
-        self.assertTrue(fake.job_salary_range().startswith("$"))
-        # The occupation methods stay French.
-        self.assertEqual(fake.job_occupation_posting()["salary_currency"], "EUR")
-
-    def test_forced_occupation_locale_is_localized(self):
+class TestForcedOccupationLocale(unittest.TestCase):
+    def test_forced_occupation_locale(self):
         class FrenchJobs(JobsProvider):
             occupations_locale = "fr_FR"
 
         fake, provider = make("en_US", FrenchJobs)
-        self.assertIsNotNone(provider._localized())
+        self.assertTrue(provider._local_companies())
         self.assertTrue(fake.job_salary_range().endswith("€ brut/an"))
+        self.assertEqual(fake.job_location()["country"], "France")
 
 
 if __name__ == "__main__":

@@ -1,19 +1,15 @@
 """
-Unit tests for the JobsProvider.
+Unit tests for the JobsProvider: registration, the generic methods in an
+English locale (ESCO occupations, US conditions, Kaggle cities and
+companies) and job_posting().
 """
 import datetime
+import json
 import unittest
-from collections import Counter
 
 from faker import Faker
 
-from faker_jobs import JobsProvider
-
-
-class KaggleJobs(JobsProvider):
-    """The generic methods on the Kaggle data, in a French locale (as before 0.4)."""
-
-    use_kaggle_data = True
+from faker_jobs import _DATA_PATH, JobsProvider
 
 
 class TestJobsProvider(unittest.TestCase):
@@ -21,9 +17,10 @@ class TestJobsProvider(unittest.TestCase):
         # Fixed seed: every test sees the same draws on every run, so a
         # failure is reproducible instead of showing up once in a while.
         Faker.seed(20261104)
-        self.fake = Faker("fr_FR")
-        self.fake.add_provider(KaggleJobs)
-        self.provider = KaggleJobs(self.fake)
+        self.fake = Faker("en_US")
+        self.fake.add_provider(JobsProvider)
+        self.provider = JobsProvider(self.fake)
+        self.conditions = self.provider._local_conditions()
 
     # -- registration -----------------------------------------------------------
 
@@ -39,93 +36,84 @@ class TestJobsProvider(unittest.TestCase):
         for name in ("job_title", "job_role", "job_role_record", "job_posting", "job_benefits", "job_location"):
             self.assertTrue(callable(getattr(self.fake, name)), msg=name)
 
+    def test_no_kaggle_job_data_is_shipped(self):
+        with open(_DATA_PATH, encoding="utf-8") as f:
+            self.assertEqual(set(json.load(f)), {"meta", "locations", "companies", "ranges"})
+        self.assertFalse(hasattr(JobsProvider, "use_kaggle_data"))
+
     # -- titles / roles -----------------------------------------------------------
 
-    def test_job_title_is_known(self):
-        for _ in range(50):
-            self.assertIn(self.fake.job_title(), self.provider.job_titles)
-            self.assertIn(self.fake.job_title(weighted=False), self.provider.job_titles)
-
-    def test_job_role_restricted_to_title(self):
-        roles = {role["role"] for role in self.provider._data["roles_by_title"]["Web Developer"]}
+    def test_titles_and_roles_are_occupations(self):
+        titles, roles = set(self.provider.job_titles), set(self.provider.job_roles)
+        self.assertGreater(len(roles), 2000)
         for _ in range(30):
-            self.assertIn(self.fake.job_role(job_title="web developer"), roles)
-
-    def test_unknown_title_or_role_raises(self):
-        with self.assertRaises(ValueError):
-            self.fake.job_role(job_title="Dragon Tamer")
-        with self.assertRaises(ValueError):
-            self.fake.job_role_record(role="Dragon Tamer")
-        with self.assertRaises(ValueError):
-            self.fake.job_role_record(job_title="Accountant", role="Frontend Web Developer")
+            title = self.fake.job_title()
+            self.assertIn(title, titles)
+            self.assertIn(self.fake.job_role(job_title=title), roles)
+            self.assertIn(self.fake.job_title(weighted=False), titles)
 
     def test_role_record_lookup(self):
-        record = self.fake.job_role_record(role="frontend web developer")
-        self.assertEqual(record["role"], "Frontend Web Developer")
-        self.assertEqual(record["job_title"], "Web Developer")
+        record = self.fake.job_role_record(role="Accountant")
+        self.assertEqual(record["role"], "accountant")
         self.assertTrue(record["description"] and record["skills"] and record["responsibilities"])
-        self.assertEqual(self.fake.job_description(role="Frontend Web Developer"), record["description"])
-        self.assertEqual(self.fake.job_skills(role="Frontend Web Developer"), record["skills"])
-        self.assertEqual(self.fake.job_responsibilities(role="Frontend Web Developer"), record["responsibilities"])
+        occupation = self.provider._occupations["occupation_by_title"]["accountant"]
+        self.assertIn(record["job_title"], occupation["titles"])
+        for activity in record["responsibilities"].split("; "):
+            self.assertIn(activity, occupation["skills"])
+        self.assertEqual(self.fake.job_description(role="accountant"), record["description"])
+        self.assertTrue(self.fake.job_skills(role="accountant"))
+        self.assertTrue(self.fake.job_responsibilities(role="accountant"))
 
-    def test_weighted_roles_follow_popularity(self):
-        # UX/UI Designer is by far the most posted job title in the source data.
-        counts = Counter(self.fake.job_title() for _ in range(3000))
-        self.assertEqual(counts.most_common(1)[0][0], "UX/UI Designer")
-        uniform = Counter(self.fake.job_title(weighted=False) for _ in range(3000))
-        self.assertLess(uniform["UX/UI Designer"], counts["UX/UI Designer"] / 2)
+    def test_unknown_title_or_role_raises(self):
+        with self.assertRaisesRegex(ValueError, "Unknown job title"):
+            self.fake.job_role(job_title="Dragon Tamer")
+        with self.assertRaisesRegex(ValueError, "Unknown role"):
+            self.fake.job_role_record(role="Dragon Tamer")
+        with self.assertRaisesRegex(ValueError, "does not belong"):
+            self.fake.job_role_record(job_title="accountant", role="pizzaiolo")
 
-    # -- qualifications / experience / salary ----------------------------------------
+    # -- conditions (US) ----------------------------------------------------------
 
-    def test_qualification(self):
-        code = self.fake.job_qualification()
-        self.assertIn(code, self.provider._data["qualifications"])
-        self.assertIn(self.fake.job_qualification(full_name=True), self.provider._data["qualifications"].values())
-        self.assertEqual(self.fake.job_qualification_name("mba"), "Master of Business Administration")
-        with self.assertRaises(ValueError):
-            self.fake.job_qualification_name("XYZ")
-
-    def test_experience_and_salary_ranges(self):
-        for _ in range(100):
+    def test_us_conditions(self):
+        qualifications = {name for names in self.conditions["qualifications"].values() for name in names}
+        portals = set(self.conditions["job_portals"]["all"]) | set(self.conditions["job_portals"].get("executive", []))
+        for _ in range(30):
+            self.assertIn(self.fake.job_qualification(), qualifications)
+            self.assertIn(self.fake.job_work_type(), self.conditions["contracts"])
+            self.assertIn(self.fake.job_portal(), portals)
             low, high = self.fake.job_experience_range()
-            self.assertTrue(0 <= low < high <= 15)
+            self.assertLessEqual(low, high)
             low, high = self.fake.job_salary_bounds()
-            self.assertTrue(55000 <= low < high <= 130000)
-        self.assertRegex(self.fake.job_experience(), r"^\d+ to \d+ Years$")
-        self.assertRegex(self.fake.job_salary_range(), r"^\$\d+K-\$\d+K$")
-
-    # -- work type / benefits / portals -------------------------------------------------
-
-    def test_work_type_and_portal(self):
-        self.assertIn(self.fake.job_work_type(), {"Contract", "Full-Time", "Intern", "Part-Time", "Temporary"})
-        self.assertIn(self.fake.job_portal(), self.provider._data["job_portals"])
+            self.assertLess(low, high)
+        self.assertRegex(self.fake.job_salary_range(), r"^\$[\d,]+ - \$[\d,]+ a year$")
+        self.assertTrue(self.fake.job_experience())
 
     def test_benefits_are_distinct(self):
-        for weighted in (True, False):
-            benefits = self.fake.job_benefits(weighted=weighted)
-            self.assertEqual(len(benefits), 5)
-            self.assertEqual(len(set(benefits)), 5)
-            self.assertTrue(set(benefits) <= set(self.provider._data["benefits"]))
+        benefits = self.fake.job_benefits()
+        self.assertEqual(len(benefits), self.conditions["benefits_per_posting"])
+        self.assertEqual(len(set(benefits)), len(benefits))
+        self.assertTrue(set(benefits) <= set(self.conditions["benefits"]))
         self.assertEqual(self.fake.job_benefits(count=0), [])
-        self.assertEqual(len(self.fake.job_benefits(count=25)), 25)
+        everything = len(self.conditions["benefits"])
+        self.assertEqual(len(self.fake.job_benefits(count=everything)), everything)
 
     def test_invalid_benefit_count_raises(self):
-        for count in (-1, 26, 2.5, True):
+        for count in (-1, len(self.conditions["benefits"]) + 1, 2.5, True):
             with self.assertRaises(ValueError, msg=count):
                 self.fake.job_benefits(count=count)
 
-    # -- locations / companies -------------------------------------------------------
+    # -- locations / companies (Kaggle) ------------------------------------------------
 
     def test_location(self):
-        location = self.fake.job_location()
+        for _ in range(20):
+            self.assertEqual(self.fake.job_location()["country"], "USA")
+        location = self.fake.job_location(country="france")
+        self.assertEqual(location["country"], "France")
         self.assertIn(location["country"], self.provider.job_countries)
         self.assertTrue(-90 <= location["latitude"] <= 90 and -180 <= location["longitude"] <= 180)
-        # With multiple cities per country, verify we get a French city
-        french_loc = self.fake.job_location(country="france")
-        self.assertEqual(french_loc["country"], "France")
         french_cities = [loc["city"] for loc in self.provider._data["locations"] if loc["country"] == "France"]
-        self.assertIn(french_loc["city"], french_cities)
-        with self.assertRaises(ValueError):
+        self.assertIn(location["city"], french_cities)
+        with self.assertRaisesRegex(ValueError, "Unknown country"):
             self.fake.job_location(country="Atlantis")
 
     def test_company(self):
@@ -135,6 +123,7 @@ class TestJobsProvider(unittest.TestCase):
         for _ in range(20):
             self.assertEqual(self.fake.job_company_profile(sector="energy")["sector"], "Energy")
         self.assertIn("Energy", self.provider.job_sectors)
+        self.assertIn(self.fake.job_company(), self.provider.job_companies)
         with self.assertRaises(ValueError):
             self.fake.job_company(sector="Piracy")
         with self.assertRaises(ValueError):
@@ -160,61 +149,65 @@ class TestJobsProvider(unittest.TestCase):
         fixed = datetime.date(2024, 5, 1)
         self.assertEqual(self.fake.job_posting_date(start_date=fixed, end_date=fixed), fixed)
 
-    def test_job_posting_is_consistent(self):
-        posting = self.fake.job_posting(job_title="Web Developer", country="France", sector="Retail", source="kaggle")
-        self.assertEqual(posting["source"], "kaggle")
-        self.assertIsNone(posting["occupation"])
-        self.assertEqual(posting["job_title"], "Web Developer")
-        # With multiple cities per country, verify it's a French city
-        self.assertEqual(posting["location"]["country"], "France")
-        self.assertEqual(posting["company"]["sector"], "Retail")
-        record = self.fake.job_role_record(role=posting["role"])
-        self.assertEqual(posting["description"], record["description"])
-        self.assertEqual(posting["experience"], f"{posting['experience_min']} to {posting['experience_max']} Years")
-        self.assertEqual(posting["salary_range"],
-                         f"${posting['salary_min'] // 1000}K-${posting['salary_max'] // 1000}K")
-        self.assertEqual(posting["salary_currency"], "USD")
-        self.assertIsInstance(posting["job_posting_date"], datetime.date)
-
-    def test_job_posting_defaults_to_occupations(self):
+    def test_job_posting_is_an_occupation(self):
         posting = self.fake.job_posting()
-        self.assertEqual(posting["source"], "occupations")
         occupation = posting["occupation"]
         self.assertEqual(posting["role"], occupation["title"])
         self.assertTrue(posting["description"] and posting["skills"] and posting["responsibilities"])
-        # fr_FR: French conditions and job title.
-        self.assertEqual(posting["salary_currency"], "EUR")
-        self.assertTrue(posting["job_title"].endswith(" (H/F)"))
         for activity in posting["responsibilities"].split("; "):
             self.assertIn(activity, occupation["skills"])
+        self.assertEqual(posting["salary_currency"], "USD")
+        self.assertEqual(posting["location"]["country"], "USA")
+        self.assertIsInstance(posting["job_posting_date"], datetime.date)
 
-    def test_job_posting_occupation_options(self):
-        posting = self.fake.job_posting(code="J1506", country="Belgium")
-        self.assertEqual(posting["occupation"]["code"], "J1506")
-        self.assertEqual(posting["location"]["country"], "Belgium")
-        self.assertIn("Santé", self.fake.job_posting(sector="Santé")["occupation"]["sectors"])
+    def test_job_posting_options(self):
+        posting = self.fake.job_posting(role="accountant", country="France")
+        self.assertEqual(posting["role"], "accountant")
+        self.assertEqual(posting["location"]["country"], "France")
+        title = self.provider._occupations["occupation_by_title"]["accountant"]["titles"][-1]
+        posting = self.fake.job_posting(job_title=title)
+        self.assertEqual(posting["job_title"], title)
+        code = posting["occupation"]["code"]
+        self.assertEqual(self.fake.job_posting(code=code)["occupation"]["code"], code)
+        sector = self.provider.job_activity_sectors[0]
+        self.assertIn(sector, self.fake.job_posting(sector=sector)["occupation"]["sectors"])
 
-    def test_job_posting_source_errors(self):
-        with self.assertRaisesRegex(ValueError, "source='kaggle'"):
-            self.fake.job_posting(job_title="Web Developer")
-        with self.assertRaisesRegex(ValueError, "source must be"):
-            self.fake.job_posting(source="rome")
-        with self.assertRaisesRegex(ValueError, "source='occupations'"):
-            self.fake.job_posting(code="J1506", source="kaggle")
-
-    def test_kaggle_and_occupation_postings_have_the_same_keys(self):
-        self.assertEqual(set(self.fake.job_posting()), set(self.fake.job_posting(source="kaggle")))
+    def test_job_posting_errors(self):
+        with self.assertRaisesRegex(ValueError, "either code"):
+            self.fake.job_posting(code="x", role="accountant")
+        with self.assertRaisesRegex(ValueError, "Unknown role"):
+            self.fake.job_posting(role="Dragon Tamer")
+        with self.assertRaisesRegex(ValueError, "not in activity sector"):
+            self.fake.job_posting(role="accountant", sector="Agriculture and livestock")
+        with self.assertRaises(TypeError):
+            self.fake.job_posting(source="kaggle")
 
     def test_contact_comes_from_locale(self):
-        # fr_FR phone numbers start with +33 or 0; en_US ones never do with "0x xx".
+        fake = Faker("fr_FR")
+        fake.add_provider(JobsProvider)
+        # fr_FR phone numbers start with +33 or 0.
         for _ in range(20):
-            self.assertRegex(self.fake.job_posting()["contact"], r"^(\+33|0)")
+            self.assertRegex(fake.job_posting()["contact"], r"^(\+33|0)")
 
     def test_seed_reproducibility(self):
         Faker.seed(42)
         first = self.fake.job_posting()
         Faker.seed(42)
         self.assertEqual(self.fake.job_posting(), first)
+
+
+class TestOtherLocalesUseUsConditions(unittest.TestCase):
+    def test_locales_without_conditions(self):
+        us = JobsProvider(Faker("en_US"))._local_conditions()
+        for locale in ("en_GB", "nl_NL", "ja_JP"):
+            fake = Faker(locale)
+            fake.add_provider(JobsProvider)
+            provider = JobsProvider(fake)
+            self.assertIs(provider._local_conditions(), us, msg=locale)
+            self.assertIn(fake.job_title(), provider.job_titles)
+            posting = fake.job_posting()
+            self.assertEqual(posting["salary_currency"], "USD", msg=locale)
+            self.assertEqual(posting["location"]["country"], "USA", msg=locale)
 
 
 if __name__ == "__main__":

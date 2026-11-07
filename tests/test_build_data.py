@@ -26,12 +26,9 @@ class TestBuildData(unittest.TestCase):
         self.assertEqual(packaged, json.loads(json.dumps(self.data)),
                          msg="faker_jobs/data/jobs_data.json is stale: re-run scripts/build_data.py")
 
-    def test_every_role_has_text_and_popularity(self):
-        self.assertEqual(len(self.data["roles"]), 376)
-        for role in self.data["roles"]:
-            self.assertTrue(role["description"] and role["skills"] and role["responsibilities"], msg=role["role"])
-            self.assertGreater(role["posting_count"], 0, msg=role["role"])
-            self.assertIn(role["job_title"], self.data["job_titles"])
+    def test_only_cities_and_companies(self):
+        self.assertEqual(set(self.data), {"meta", "locations", "companies", "ranges"})
+        self.assertEqual(set(self.data["ranges"]), {"company_size"})
 
     def test_multiple_locations_per_country(self):
         # Now we have multiple cities per country
@@ -52,14 +49,10 @@ class TestBuildData(unittest.TestCase):
         names = [company["company"].lower() for company in self.data["companies"]]
         self.assertEqual(len(names), len(set(names)))
 
-    def test_ranges_are_ordered(self):
-        for field, (low, high) in self.data["ranges"].items():
-            self.assertLessEqual(low, high, msg=field)
-        self.assertLess(self.data["ranges"]["experience_min"][1], self.data["ranges"]["experience_max"][0])
-        self.assertLess(self.data["ranges"]["salary_min_k"][1], self.data["ranges"]["salary_max_k"][0])
-
-    def test_enough_benefits_per_posting(self):
-        self.assertGreaterEqual(len(self.data["benefits"]), self.data["meta"]["benefits_per_posting"])
+    def test_company_size_range_is_ordered(self):
+        low, high = self.data["ranges"]["company_size"]
+        self.assertLess(0, low)
+        self.assertLessEqual(low, high)
 
 
 if __name__ == "__main__":

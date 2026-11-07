@@ -18,8 +18,6 @@ def demo(locale: str) -> None:
     print(f"Faker Jobs Provider - Demo ({locale})")
     print("=" * 60)
 
-    localized = jobs._localized() is not None
-    print(f"\n(generic methods: {'occupations and local conditions' if localized else 'Kaggle data, in English'})")
     print("\n--- Job titles / roles ---")
     for _ in range(5):
         title = jobs.job_title()
@@ -30,9 +28,7 @@ def demo(locale: str) -> None:
         print(f"  {key}: {value}")
 
     print("\n--- Requirements / conditions ---")
-    qualification = jobs.job_qualification()
-    name = jobs.job_qualification_name(qualification)
-    print(f"  qualification: {qualification}{f' ({name})' if name != qualification else ''}")
+    print(f"  qualification: {jobs.job_qualification()}")
     print(f"  experience: {jobs.job_experience()}")
     print(f"  salary: {jobs.job_salary_range()}")
     print(f"  work type: {jobs.job_work_type()}")
@@ -52,7 +48,7 @@ def demo(locale: str) -> None:
     occupation_posting = jobs.job_occupation_posting()
     naf = occupation_posting["company_naf"]
     print(f"  posting: {occupation_posting['job_title']} at {occupation_posting['company']['company']} "
-          f"({occupation_posting['company_sector'] or 'company made up by the locale'}"
+          f"({occupation_posting['company_sector'] or 'no company in the sector: name made up by the locale'}"
           f"{f', NAF {naf} ' + str(occupation_posting['company']['industry']) if naf else ''}), "
           f"demand {occupation_posting['occupation']['demand']}")
     print(f"  {occupation_posting['work_type']}, {occupation_posting['experience']}, "
@@ -65,9 +61,6 @@ def demo(locale: str) -> None:
     print(f"  {posting['location']['city']}, {posting['location']['country']} - {posting['salary_range']}")
     print(f"  Posted {posting['job_posting_date']} on {posting['job_portal']}, "
           f"contact: {posting['contact_person']} {posting['contact']}")
-    kaggle = jobs.job_posting(source="kaggle")
-    print(f"  source='kaggle' (English, any locale): {kaggle['job_title']} ({kaggle['work_type']}) "
-          f"at {kaggle['company']['company']}, {kaggle['location']['country']} - {kaggle['salary_range']}")
 
 
 def main() -> None:

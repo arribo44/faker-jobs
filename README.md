@@ -1,35 +1,33 @@
 # Faker Jobs Provider
 
-**A custom [Faker](https://faker.readthedocs.io/) provider for generating realistic fake job-market data: job titles and roles with their description, skills and responsibilities, qualifications, experience and salary ranges, work types, benefits, hiring companies, locations and full job postings.**
+**A custom [Faker](https://faker.readthedocs.io/) provider for generating realistic fake job-market data: job titles and occupations with their description, skills and responsibilities, qualifications, experience and salary ranges, contract types, benefits, hiring companies, locations and full job postings.**
 
-The data is built from the [Job Description Dataset](https://www.kaggle.com/datasets/ravindrasinghrana/job-description-dataset) (~1.6M synthetic postings): **147 job titles**, **376 roles**, **888 companies** with their profile, **216 locations** (one city per country, geocoded) and **25 benefits**.
-
-On top of it, **occupations** cover every trade, not only office jobs: the
-**1,923 job sheets** of the French [ROME 4.0](https://www.francetravail.org/opendata/repertoire-operationnel-des-meti.html)
+Jobs come from **occupation directories**, covering every trade, not only
+office jobs: the **1,923 job sheets** of the French [ROME 4.0](https://www.francetravail.org/opendata/repertoire-operationnel-des-meti.html)
 directory (France Travail) in French, and the **2,045 [ESCO](https://esco.ec.europa.eu/)
 occupations** mapped to them in English, German, Spanish and Italian, with **~14,000 job titles**,
-**35 activity sectors**, skills, knowledge and soft skills.
+**35 activity sectors**, skills, knowledge and soft skills. Posting
+conditions (contracts, diplomas, salaries from official earnings, benefits,
+job boards) are those of France, Germany, Spain, Italy and the United States.
+
+Cities and companies come from the [Job Description Dataset](https://www.kaggle.com/datasets/ravindrasinghrana/job-description-dataset)
+(Kaggle): **457 geocoded cities** worldwide and **888 companies** with their
+profile.
 
 ---
 
 ## 🌍 Languages
 
-[Occupations](#-occupations-rome--esco) follow the locale: **French** (ROME
-4.0) in French locales (`fr_FR`, `fr_CA`, `fr_BE`...), **German**, **Spanish**
-or **Italian** (ESCO) in those locales (`de_DE`, `de_AT`, `es_ES`, `es_MX`,
-`it_IT`...), **English** (ESCO) in every other one. `job_posting()` is built
-on them by default.
+Everything follows the locale: **French** (ROME 4.0) in French locales
+(`fr_FR`, `fr_CA`, `fr_BE`...), **German**, **Spanish** or **Italian** (ESCO)
+in those locales (`de_DE`, `de_AT`, `es_ES`, `es_MX`, `it_IT`...), with the
+conditions of France, Germany, Spain or Italy; **English** (ESCO) with the
+**US** conditions in every other one (`en_US`, `en_GB`, `nl_NL`...).
 
-In **German, Spanish, French and Italian** locales, every method speaks the
-language: the generic methods (`job_title`, `job_role_record`,
-`job_salary_range`, `job_work_type`, `job_company_profile`...) use the
-occupations and the local conditions (contracts, diplomas, salary in EUR,
-benefits, job boards, places of the country, companies made up by the
-locale), see [Localized generic methods](#-localized-generic-methods).
-Other locales (`en_US`, `en_GB`, `nl_NL`...) use the Kaggle data, in
-**English**; so does `job_posting(source="kaggle")` in every locale.
-Contact names and phone numbers always come from the Faker locale (`fr_FR`
--> "Luc Renaud", "04 97 52 87 61").
+Companies are made up by the locale in German, Spanish, French and Italian
+locales, in the activity sector of the job; English locales use the Kaggle
+companies. Contact names and phone numbers always come from the Faker
+locale (`fr_FR` -> "Luc Renaud", "04 97 52 87 61").
 
 ---
 
@@ -50,7 +48,7 @@ pip install -e .
 from faker import Faker
 from faker_jobs import JobsProvider
 
-fake = Faker("fr_FR")          # or "en_US"...
+fake = Faker("en_US")          # or "fr_FR", "de_DE"...
 fake.add_provider(JobsProvider)
 ```
 
@@ -58,69 +56,67 @@ Every method is prefixed with `job_`, so adding the provider leaves Faker's
 own `job()` (a random job title from Faker's job provider) and `company()`
 untouched.
 
-Unknown names (job title, role, country, company, sector, qualification)
-and invalid arguments raise `ValueError`. Name lookups are case-insensitive.
+Unknown names (job title, role, country, company, sector) and invalid
+arguments raise `ValueError`. Name lookups are case-insensitive.
 
-The examples of the next sections show the Kaggle data, as in English
-locales. German, Spanish, French and Italian locales return local values
-instead: see [Localized generic methods](#-localized-generic-methods).
+The examples below are in `en_US`; see [Other languages](#-other-languages)
+for the values of the other locales.
 
 ### 💼 Job titles & roles
 
-A **job title** is a family of **roles** ("Web Developer" -> "Frontend Web
-Developer", "Backend Developer"...). Each role has its own description,
-skills and responsibilities.
+A **role** is an [occupation](#-occupations-rome--esco) ("accountant"); a
+**job title** is one of its titles ("cost accountant", "financial reporting
+accountant"...). Each occupation has its own description, skills and
+activities.
 
 ```python
-fake.job_title()                        # "Software Engineer"
-fake.job_role()                         # "Interaction Designer"
-fake.job_role(job_title="Web Developer")   # "Frontend Web Developer"
+fake.job_title()                        # "courier"
+fake.job_role()                         # "postman/postwoman"
+fake.job_role(job_title="courier")      # "postman/postwoman"  (the occupation that has this title)
 
 fake.job_role_record()
 # {
-#     'job_title': 'Event Manager',
-#     'role': 'Conference Manager',
-#     'description': 'A Conference Manager coordinates and manages conferences, ...',
-#     'skills': 'Event planning Conference logistics Budget management ...',
-#     'responsibilities': 'Specialize in conference and convention planning. ...',
+#     'job_title': 'financial reporting accountant',
+#     'role': 'accountant',
+#     'description': 'Accountants review and analyse financial statements, budgets, ...',   # ESCO description
+#     'skills': 'depreciation, statistics, ..., Teamwork, Attention to detail',            # knowledge and soft skills
+#     'responsibilities': 'check accounting records; prepare trial accounting balances; ...',   # 5 activities
 # }
-fake.job_role_record(role="Frontend Web Developer")   # a specific role
+fake.job_role_record(role="accountant")   # a specific occupation
 
-fake.job_description(role="Tax Accountant")   # or a random role's
+fake.job_description(role="accountant")   # or a random occupation's
 fake.job_skills()
 fake.job_responsibilities()
 ```
 
-Job titles and roles are picked **in proportion to how often they are
-posted** in the source data: UX/UI designers come up ~4.7 times more often
-than the median job title. Pass `weighted=False` to `job_title()`,
-`job_role()`, `job_role_record()` or `job_posting(source="kaggle")` for a uniform pick.
+Occupations are picked **in proportion to their demand** (see
+[Occupations](#-occupations-rome--esco)): cooks, farm workers and care
+assistants come up far more often than air traffic controllers. Pass
+`weighted=False` to `job_title()`, `job_role()`, `job_role_record()` or
+`job_posting()` for a uniform pick.
 
 ### 🎓 Qualifications, experience, salary
 
 ```python
-fake.job_qualification()                # "MBA"
-fake.job_qualification(full_name=True)  # "Master of Business Administration"
-fake.job_qualification_name("B.Tech")   # "Bachelor of Technology"
+fake.job_qualification()                # "Bachelor's degree", "Professional certification"...
 
-fake.job_experience()                   # "2 to 12 Years"
-fake.job_experience_range()             # (2, 12)
+fake.job_experience()                   # "4-7 years of experience" or "Entry level"
+fake.job_experience_range()             # (4, 7)
 
-fake.job_salary_range()                 # "$59K-$104K"  (yearly, USD)
-fake.job_salary_bounds()                # (59000, 104000)
+fake.job_salary_range()                 # "$64,500 - $79,000 a year"  (yearly, gross)
+fake.job_salary_bounds()                # (64500, 79000)
 ```
 
-Ranges follow the source data: minimum experience 0-5 years, maximum 8-15;
-salaries from $55K-$65K up to $80K-$130K.
+Salaries come from the official earnings of a random occupation's group
+(see "Salaries follow the occupation" under [Occupations](#-occupations-rome--esco)).
 
-### 📝 Work type, benefits, portals
+### 📝 Contract, benefits, job boards
 
 ```python
-fake.job_work_type()                    # "Full-Time", "Part-Time", "Contract", "Temporary" or "Intern"
-fake.job_benefits()                     # 5 distinct benefits, as in every source posting
-fake.job_benefits(count=3)              # ['Health Insurance', 'Parental Leave', 'Profit-Sharing']
-fake.job_benefits(weighted=False)       # uniform pick (default: in proportion to the source data)
-fake.job_portal()                       # "Indeed", "LinkedIn", "Randstad", "Adecco"...
+fake.job_work_type()                    # "Full-time", "Part-time", "Contract", "Temporary", "Internship", "Freelance"
+fake.job_benefits()                     # 4 distinct local benefits
+fake.job_benefits(count=3)              # ['Paid parental leave', 'Vision insurance', 'Paid time off']
+fake.job_portal()                       # "Indeed", "LinkedIn", "ZipRecruiter"...
 ```
 
 ### 🏢 Companies & locations
@@ -137,18 +133,18 @@ fake.job_company_profile()
 fake.job_company_profile(company="3M")  # a specific company
 fake.job_company_size()                 # 57916 (employees)
 
-fake.job_location()
-# {'city': 'Georgetown', 'country': 'Guyana', 'latitude': 6.8033, 'longitude': -58.1455}
+fake.job_location()                     # the locale's country by default (the USA here)
+# {'city': 'Houston', 'country': 'USA', 'latitude': 29.7604, 'longitude': -95.3698}
 fake.job_location(country="France")     # {'city': 'Paris', 'country': 'France', ...}
 ```
 
 Company profile fields missing from the source data (no state outside the
 US, no CEO for some companies...) are `None`.
 
-### 🇫🇷 Localized generic methods
+### 🇫🇷 Other languages
 
-In German, Spanish, French and Italian locales the generic methods use the
-occupations and local conditions, so that the data is in one language:
+In German, Spanish, French and Italian locales the same methods return the
+occupations in the language and the local conditions:
 
 ```python
 fake = Faker("fr_FR")
@@ -176,29 +172,17 @@ fake.job_company_profile(sector="Santé")
 #  'city': 'Nice', 'state': None, 'zip': None, 'website': None, 'ticker': None, 'ceo': 'Alfred Roux-Bertrand'}
 ```
 
-| Method | Kaggle data (English locales) | Localized (de, es, fr, it) |
+| Method | English locales | German, Spanish, French, Italian locales |
 |---|---|---|
-| `job_title()`, `job_titles` | job title, a family of roles | a job title of an occupation (picked by demand) |
-| `job_role()`, `job_roles` | role | the occupation's name, as `job_posting()` gives it |
-| `job_role_record()`, `job_description()`, `job_skills()`, `job_responsibilities()` | Kaggle texts | ESCO description (else activities: ROME has none), knowledge and soft skills, 5 activities |
-| `job_qualification()` | code ('MBA') | local diploma (`full_name` changes nothing) |
-| `job_experience()`, `job_salary_range()` | US ranges, USD | local wording, Eurostat earnings of a random occupation |
-| `job_work_type()`, `job_benefits()`, `job_portal()` | Kaggle values | local contracts (mix of a random occupation), benefits (uniform), job boards |
-| `job_location()` | anywhere | the locale's country by default, with local names (Deutschland, München, Sevilla, Roma...) |
-| `job_company()`, `job_company_profile()`, `job_sectors` | Kaggle companies and sectors | made up by the locale, in an activity sector |
+| `job_title()`, `job_role()`, `job_role_record()`... | ESCO occupations, in English | ROME (fr) or ESCO (de, es, it) occupations, in the language |
+| conditions (`job_qualification()`, `job_salary_range()`, `job_work_type()`...) | US | the country's |
+| `job_location()` | the USA by default | the locale's country by default, with local names (Deutschland, München, Sevilla, Roma...) |
+| `job_company()`, `job_company_profile()`, `job_sectors` | Kaggle companies and their sectors | made up by the locale, in an activity sector |
 
-`job_countries`, `job_companies` and `job_company_size()` stay on the
-Kaggle data. Countries other than the locale's keep their English name
-(`country="Belgium"`); the local name of the locale's country is accepted
-too (`country="Deutschland"`). For the Kaggle data in every locale, as
-before 0.4, use a subclass:
-
-```python
-class KaggleJobs(JobsProvider):
-    use_kaggle_data = True
-
-fake.add_provider(KaggleJobs)
-```
+`job_countries`, `job_companies` and `job_company_size()` use the Kaggle
+data in every locale. Countries other than the locale's keep their English
+name (`country="Belgium"`); the local name of the locale's country is
+accepted too (`country="Deutschland"`).
 
 ### 🧰 Occupations (ROME / ESCO)
 
@@ -360,9 +344,9 @@ Lavoro, ZipRecruiter...) and a city of the country:
 | `it_IT` | conducente di autocarri (m/f), Tempo indeterminato, "Anche prima esperienza", RAL 26.000 € - 30.000 € |
 | `en_US` | boatbuilder, Full-time, "4-7 years of experience", $58,000 - $71,000 a year |
 
-The US conditions only apply to `en_US`: the other locales that use the
-English data (`en_GB`, `nl_NL`...) keep the Kaggle conditions (USD,
-worldwide places), as `job_posting(source="kaggle")`.
+The US conditions also serve the other locales that use the English data
+(`en_GB`, `nl_NL`, `ja_JP`...): USD salaries, US job boards and a place in
+the USA by default.
 
 **Salaries follow the occupation.** The occupation's ISCO-08 major group
 (`isco_group`, from ESCO) gives its mean gross annual earnings in the
@@ -407,9 +391,9 @@ The NAF activities of each sector are chosen by hand (`NAF_BY_SECTOR` in
 `scripts/build_occupations.py`) and picked at random within the sector: a
 wastewater plant manager may work for a waste treatment company.
 
-ROME sheets have no description (`None`). The occupation methods are
-independent from the Kaggle-based methods: activity sectors (occupations) are not `job_sectors`
-(companies).
+ROME sheets have no description (`None`). In English locales the
+activity sectors of the occupations are not `job_sectors` (the sectors of
+the Kaggle companies).
 
 An ESCO occupation takes the sectors that cover at least 25% of the ROME job
 titles mapped to it. Sectors follow ROME, which lists secondary sectors too:
@@ -444,7 +428,7 @@ fake.job_posting_date(start_date="-30d")   # anything Faker's date_between() acc
 
 `job_posting()` builds a posting on a ROME / ESCO
 [occupation](#-occupations-rome--esco), in the language of the Faker locale
-(every trade, picked by demand), with the same keys as the Kaggle postings:
+(every trade, picked by demand), with the keys of `job_role_record()`:
 
 ```python
 fake = Faker("fr_FR")
@@ -453,49 +437,35 @@ fake.add_provider(JobsProvider)
 fake.job_posting()
 fake.job_posting(sector="Santé", country="France")   # an activity sector
 fake.job_posting(code="J1506")                       # a given occupation
+fake.job_posting(role="Infirmier / Infirmière en soins généraux (IDE)")   # by name (see `job_roles`)
+fake.job_posting(job_title="Infirmier / Infirmière en gériatrie")          # by job title (see `job_titles`)
 # {
-#     'source': 'occupations',
 #     'occupation': {'code': 'J1506', 'title': 'Infirmier / Infirmière en soins généraux (IDE)', ...},
+#     'job_id': 9486177616759356,
 #     'job_title': 'Infirmier en gériatrie (H/F)',
 #     'role': 'Infirmier / Infirmière en soins généraux (IDE)',   # the occupation
 #     'description': ...,        # ESCO description; for ROME sheets (none), the main activities
 #     'responsibilities': 'Appliquer un protocole de soin; ...',   # the occupation's skills (activities)
 #     'skills': "Connaissance de l'écosystème sanitaire, ..., Etre force de proposition",   # knowledge, soft skills
-#     'salary_range': '27 000 € - 33 000 € brut/an', 'salary_currency': 'EUR', 'work_type': 'CDI',
-#     ...                        # the other keys as below
-# }
-```
-
-It is `job_occupation_posting()` in the `JobPosting` shape: use that one for
-the NAF code and company sector. `source="kaggle"` gives the postings of the
-Kaggle data, in English (office jobs, worldwide), as before 0.2; `job_title`
-and `role` need it:
-
-```python
-fake.job_posting(source="kaggle")
-fake.job_posting(job_title="Web Developer", country="France", sector="Retail", source="kaggle")
-# {
-#     'source': 'kaggle',
-#     'occupation': None,
-#     'job_id': 9486177616759356,
-#     'job_title': 'UX/UI Designer',
-#     'role': 'Interaction Designer',
-#     'description': '...', 'skills': '...', 'responsibilities': '...',
-#     'qualification': 'MCA',
-#     'experience': '5 to 15 Years', 'experience_min': 5, 'experience_max': 15,
-#     'salary_range': '$63K-$80K', 'salary_min': 63000, 'salary_max': 80000,
-#     'salary_currency': 'USD',
-#     'work_type': 'Part-Time',
-#     'benefits': ['Professional Development', ...],
-#     'location': {'city': 'Manama', 'country': 'Bahrain', ...},
-#     'company': {'company': 'Ferguson plc', 'sector': ..., ...},
+#     'qualification': "Diplôme d'Etat d'infirmier (ière)",
+#     'experience': '1 à 3 ans', 'experience_min': 1, 'experience_max': 3,
+#     'salary_range': '27 000 € - 33 000 € brut/an', 'salary_min': 27000, 'salary_max': 33000,
+#     'salary_currency': 'EUR',
+#     'work_type': 'CDI',
+#     'benefits': ['Mutuelle d\'entreprise', ...],
+#     'location': {'city': 'Lyon', 'country': 'France', ...},
+#     'company': {'company': 'Vallet', 'sector': 'Santé', ...},
 #     'company_size': 90587,
-#     'job_portal': 'FlexJobs',
+#     'seniority': 'junior',
+#     'job_portal': 'HelloWork',
 #     'job_posting_date': datetime.date(2025, 6, 1),
 #     'contact_person': 'Luc Renaud',       # from the Faker locale
 #     'contact': '04 97 52 87 61',          # from the Faker locale
 # }
 ```
+
+It is `job_occupation_posting()` in the `JobPosting` shape: use that one for
+the NAF code and company sector.
 
 ### 🔤 Type hints
 
@@ -529,23 +499,22 @@ python -m faker_jobs
 ## 🧱 Data layout
 
 The source files in `DATAS/` are not published in this repository: the
-package only needs the generated `faker_jobs/data/jobs_data.json`. They are
-only needed to rebuild it.
+package only needs the generated files of `faker_jobs/data/`. They are
+only needed to rebuild them.
+
+The cities and companies come from the Kaggle dataset:
 
 ```
 DATAS/                          curated source files (not published)
-  faker_job_descriptions.csv    job titles, roles, descriptions, skills, responsibilities
-  role_popularity.csv           postings per role         } measured on the full
-  faker_benefits.csv            postings per benefit      } postings file by
-  posting_ranges.csv            min/max of numeric fields } scripts/build_job_stats.py
-  faker_qualifications.csv, faker_contract.csv, faker_job_portal.csv
-  faker_locations.csv           one city per country (geocode_locations.py)
+  faker_locations.csv           cities per country (geocode_locations.py)
   faker_firms.csv               companies and profiles (transform_firms.py)
+  posting_ranges.csv            min/max of numeric fields, measured on the full postings
+                                file by scripts/build_job_stats.py (only the company size is kept)
   job_descriptions2.csv         full postings file, 1.7 GB
 scripts/
-  build_job_stats.py            job_descriptions2.csv -> the 3 statistics files
+  build_job_stats.py            job_descriptions2.csv -> the statistics files
   build_data.py                 DATAS/*.csv -> faker_jobs/data/jobs_data.json
-faker_jobs/data/jobs_data.json  packaged data (~450 KB)
+faker_jobs/data/jobs_data.json  packaged cities and companies (~225 KB)
 ```
 
 Occupations have their own sources and scripts:

@@ -475,14 +475,15 @@ class TestNoSeasonalContract(unittest.TestCase):
             self.assertNotIn("seasonal", {spec["kind"] for spec in contracts.values()}, msg=locale)
 
 
-class TestNoLocalConditions(unittest.TestCase):
-    def test_other_english_locales_keep_the_kaggle_conditions(self):
+class TestUsConditionsElsewhere(unittest.TestCase):
+    def test_other_locales_get_the_us_conditions(self):
         for locale in ("en_GB", "nl_NL"):
             provider = JobsProvider(Faker(locale))
-            self.assertIsNone(provider._local_conditions(), msg=locale)
+            self.assertEqual(provider._local_conditions()["country"], "USA", msg=locale)
             posting = provider.job_occupation_posting()
             self.assertIsNone(posting["company_naf"])
-            self.assertRegex(posting["salary_range"], r"^\$\d+K-\$\d+K$")   # the Kaggle format
+            self.assertEqual(posting["salary_currency"], "USD")
+            self.assertRegex(posting["salary_range"], r"^\$[\d,]+ - \$[\d,]+ a year$")
 
 
 class TestGenderForm(unittest.TestCase):
@@ -531,7 +532,7 @@ class TestEscoOccupations(KaggleCompanyTests, OccupationTests, unittest.TestCase
         Faker.seed(1)
         self.assertEqual(self.fake.job_occupation_title(), title)
 
-    def test_english_posting_keeps_kaggle_conditions(self):
+    def test_english_posting_has_us_conditions(self):
         posting = self.fake.job_occupation_posting()
         self.assertEqual(posting["salary_currency"], "USD")
         self.assertEqual(posting["occupation"]["qualifications"], [])

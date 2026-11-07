@@ -43,14 +43,11 @@ class TestTypedDictsMatchRuntime(unittest.TestCase):
         self.assertEqual(set(self.fake.job_company_profile()), set(CompanyProfile.__annotations__))
 
     def test_job_posting_keys(self) -> None:
-        for source in ("occupations", "kaggle"):
-            posting = self.fake.job_posting(source=source)
-            self.assertEqual(set(posting), set(JobPosting.__annotations__))
-            self.assertEqual(set(posting["location"]), set(LocationRecord.__annotations__))
-            self.assertEqual(set(posting["company"]), set(CompanyProfile.__annotations__))
-        occupation = self.fake.job_posting()["occupation"]
-        assert occupation is not None
-        self.assertEqual(set(occupation), set(OccupationRecord.__annotations__))
+        posting = self.fake.job_posting()
+        self.assertEqual(set(posting), set(JobPosting.__annotations__))
+        self.assertEqual(set(posting["location"]), set(LocationRecord.__annotations__))
+        self.assertEqual(set(posting["company"]), set(CompanyProfile.__annotations__))
+        self.assertEqual(set(posting["occupation"]), set(OccupationRecord.__annotations__))
 
     def test_occupation_record_keys(self) -> None:
         self.assertEqual(set(self.fake.job_occupation_record()), set(OccupationRecord.__annotations__))
@@ -80,6 +77,7 @@ class TestDocumentedTypedUsage(unittest.TestCase):
         assert_type(posting, JobPosting)
         assert_type(posting["company"], CompanyProfile)
         assert_type(posting["job_posting_date"], datetime.date)
+        assert_type(posting["occupation"], OccupationRecord)
         assert_type(jobs.job_salary_bounds(), tuple[int, int])
         assert_type(jobs.job_title(), str)
         assert_type(jobs.job_occupation_record(), OccupationRecord)
