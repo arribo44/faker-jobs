@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.5.0] - 2026-11-07
+
 ### Removed
 - **Breaking**: the Kaggle job data. Job titles, roles and their texts, qualifications, experience and salary ranges, work types, benefits and job portals of the Kaggle dataset are no longer shipped (`jobs_data.json`: 470 KB → 225 KB); `job_posting(source="kaggle")`, `JobsProvider.use_kaggle_data`, `job_qualification_name()`, `job_qualification(full_name=...)` and `job_benefits(weighted=...)` are gone, and `JobPosting` loses its `source` key (`occupation` is never None).
 
