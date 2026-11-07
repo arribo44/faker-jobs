@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+- **Breaking**: the Kaggle job data. Job titles, roles and their texts, qualifications, experience and salary ranges, work types, benefits and job portals of the Kaggle dataset are no longer shipped (`jobs_data.json`: 470 KB → 225 KB); `job_posting(source="kaggle")`, `JobsProvider.use_kaggle_data`, `job_qualification_name()`, `job_qualification(full_name=...)` and `job_benefits(weighted=...)` are gone, and `JobPosting` loses its `source` key (`occupation` is never None).
+
+### Changed
+- **Breaking**: the generic methods use the ROME / ESCO occupations and local conditions in every locale. English locales (`en_US`, `en_GB`, `nl_NL`...) get the ESCO occupations in English with the US conditions: `job_title()` / `job_role()` / `job_role_record()` are occupations, `job_qualification()`, `job_experience()`, `job_salary_range()`, `job_work_type()`, `job_benefits()` and `job_portal()` the US ones, `job_location()` a city of the USA by default. Locales without data of their own (`en_GB`, `nl_NL`, `ja_JP`...) also get the US conditions in `job_occupation_posting()`, instead of the Kaggle ones.
+- `job_posting(job_title=..., role=...)` picks the occupation by one of its job titles or by its name, in every locale.
+- The Kaggle dataset is kept for the 457 cities and the 888 companies, which English locales still use (`job_company_profile()`, the hiring company of the postings).
+
 ---
 
 ## [0.4.0] - 2026-11-06

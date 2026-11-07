@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 Aggregate the (large, unversioned) job postings file into the small
-statistics files versioned in DATAS/ and used by build_data.py:
+statistics files versioned in DATAS/ (build_data.py only keeps the company
+size range of posting_ranges.csv; the others feed the reports):
 
 - DATAS/role_popularity.csv: number of postings per (Job Title, Role) -
   drives popularity-weighted role picking (UX/UI designers are posted far
