@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.6.0] - 2026-11-08
+
 ### Added
 - `job_posting_text(posting=None, markdown=False)`: the full text of a job posting, as published on a job board, in French, English, German, Spanish or Italian (the language of the occupation data): headline, company introduction, the job (ESCO description, or the ROME sheet's name and domain), missions, profile asked (diploma, experience, knowledge, soft skills, regulated profession), conditions (contract, salary, place, benefits) and how to apply. It renders a posting from `job_occupation_posting()` or `job_posting()` (a new `job_occupation_posting()` by default), in plain text or Markdown. The wording is hand-made, with a few phrasings per section picked by the provider's random generator (`faker_jobs/posting_text.py`); every fact comes from the posting.
 
