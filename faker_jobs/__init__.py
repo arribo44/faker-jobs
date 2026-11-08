@@ -1138,6 +1138,31 @@ class JobsProvider(BaseProvider):
         occupation = self._occupation_record(found, sector, title)
         return self._occupation_job_posting(self._occupation_posting(occupation, country, 5))
 
+    def job_posting_text(
+        self, posting: OccupationPosting | JobPosting | None = None, markdown: bool = False
+    ) -> str:
+        """Return the full text of a job posting, as published on a job
+        board: headline, introduction of the company, the job (the ESCO
+        description, or for ROME sheets their name and domain), the missions,
+        the profile asked (diploma, experience, knowledge, soft skills), the
+        conditions (contract, salary, place, benefits) and how to apply.
+
+        `posting` is a dict from `job_occupation_posting()` or `job_posting()`
+        (default: a new `job_occupation_posting()`). The text is in the
+        language of the occupation data (French, English, German, Spanish or
+        Italian), so render a posting with a provider of the locale that made
+        it. `markdown=True` gives Markdown headings, bold and bullets; else
+        plain text with upper-case headings.
+
+        The wording is hand-made, with a few phrasings per section picked at
+        random (reproducible with `Faker.seed()`); every fact comes from the
+        posting."""
+        from faker_jobs.posting_text import render_posting
+
+        if posting is None:
+            posting = self.job_occupation_posting()
+        return render_posting(posting, self._occupations["meta"]["language"], self.generator.random, markdown)
+
     @staticmethod
     def _occupation_job_posting(posting: OccupationPosting) -> JobPosting:
         """An occupation posting in the `JobPosting` shape."""

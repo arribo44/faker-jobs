@@ -467,6 +467,54 @@ fake.job_posting(job_title="Infirmier / Infirmière en gériatrie")          # b
 It is `job_occupation_posting()` in the `JobPosting` shape: use that one for
 the NAF code and company sector.
 
+`job_posting_text()` writes the full text of a posting, as published on a
+job board, in the locale's language: headline, company, the job, missions,
+profile, conditions and how to apply. Pass a posting from
+`job_occupation_posting()` or `job_posting()` (by default it makes a new
+one), and `markdown=True` for Markdown headings and bullets:
+
+```python
+fake.job_posting_text()
+fake.job_posting_text(fake.job_posting(code="J1506"), markdown=True)
+```
+
+```text
+Chercheur en glaciologie (H/F)
+Chauvin · Bordeaux, France · CDI
+
+Acteur du secteur Environnement, Chauvin (21 038 salariés) renforce ses équipes à Bordeaux. Activité : Services d'aménagement paysager.
+
+DESCRIPTION DU POSTE
+Vous exercerez le métier de Glaciologue (fiche ROME F1123, domaine Construction, Bâtiment et Travaux publics). Ce métier contribue à la transition écologique.
+
+VOS MISSIONS
+Vous serez notamment chargé(e) de :
+- Définir des mesures de prévention des risques
+- Analyser les données climatiques
+...
+
+PROFIL RECHERCHÉ
+- Formation : Master mention sciences de la Terre et des planètes, environnement
+- Expérience : 7 à 9 ans
+- Connaissances : Gestion de groupe en expédition, Glaciologie, ...
+- Savoir-être : organiser son travail selon les priorités et les objectifs ; ...
+
+CONDITIONS DU POSTE
+- Contrat : CDI
+- Rémunération : 50 000 € - 69 000 € brut/an
+- Lieu de travail : Bordeaux, France
+- Avantages : Comité social et économique (CSE), Prime annuelle, ...
+
+CANDIDATURE
+Intéressé(e) ? Contactez Alice-Madeleine Valette au +33 (0)4 20 79 66 69, référence de l'offre : 9524798606396852.
+Offre publiée le 3 mars 2025 sur Le Bon Coin Emploi.
+```
+
+The wording is hand-made (a few phrasings per section, picked at random and
+reproducible with `Faker.seed()`); every fact comes from the posting.
+Render a posting with a provider of the locale that made it: the text is in
+the provider's language.
+
 ### 🔤 Type hints
 
 The package ships type information (`py.typed`) and `TypedDict`s describing

@@ -62,6 +62,9 @@ def demo(locale: str) -> None:
     print(f"  Posted {posting['job_posting_date']} on {posting['job_portal']}, "
           f"contact: {posting['contact_person']} {posting['contact']}")
 
+    print("\n--- Posting text ---")
+    print(jobs.job_posting_text(occupation_posting))
+
 
 def main() -> None:
     for locale in ["en_US", "fr_FR", "de_DE"]:
