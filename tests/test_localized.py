@@ -62,7 +62,8 @@ class LocalizedTests:
             self.fake.job_role_record(job_title=job_title, role=last["title"])
 
     def test_local_conditions(self):
-        qualifications = {name for names in self.conditions["qualifications"].values() for name in names}
+        qualifications = {name.format(field=field) for names in self.conditions["qualifications"].values()
+                          for name in names for field in self.conditions["fields_of_study"].values()}
         portals = set(self.conditions["job_portals"]["all"]) | set(self.conditions["job_portals"].get("executive", []))
         for _ in range(20):
             self.assertIn(self.fake.job_qualification(), qualifications)
@@ -143,8 +144,36 @@ class TestItalianLocalized(LocalizedTests, unittest.TestCase):
         self.assertEqual(self.fake.job_location(country="Italy")["country"], "Italia")
         self.assertEqual(self.fake.job_location(country="italia")["country"], "Italia")
         self.assertEqual(self.fake.job_occupation_posting()["location"]["country"], "Italia")
-        # Other countries keep the names of the location data.
+        # Other countries keep their English names, and so do their cities.
         self.assertEqual(self.fake.job_location(country="Germany")["country"], "Germany")
+        german = {self.fake.job_location(country="Germany")["city"] for _ in range(300)}
+        self.assertIn("Munich", german)
+        self.assertNotIn("München", german)
+
+
+class TestGermanPlaceNames(unittest.TestCase):
+    def test_local_city_names(self):
+        Faker.seed(3)
+        fake, _ = make("de_DE")
+        cities = {fake.job_location()["city"] for _ in range(300)}
+        self.assertTrue({"München", "Köln"} <= cities)
+        self.assertFalse(cities & {"Munich", "Cologne"})
+
+
+class TestDefaultDiplomas(unittest.TestCase):
+    def test_field_of_study_follows_the_sector(self):
+        Faker.seed(5)
+        fake, provider = make("de_DE")
+        conditions = provider._local_conditions()
+        self.assertEqual(set(conditions["fields_of_study"]), set(provider.job_activity_sectors))
+        with_field = 0
+        for _ in range(200):
+            posting = fake.job_occupation_posting(sector="IT und Telekommunikation")
+            self.assertNotIn("{", posting["qualification"])
+            if "Bereich" in posting["qualification"]:
+                with_field += 1
+                self.assertTrue(posting["qualification"].endswith(" Informatik"), posting["qualification"])
+        self.assertGreater(with_field, 20)
 
 
 class TestForcedOccupationLocale(unittest.TestCase):

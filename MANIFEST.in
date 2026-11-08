@@ -1,4 +1,4 @@
 include README.md
 include CHANGELOG.md
 include LICENSE
-recursive-include faker_jobs/data *.json
+recursive-include faker_jobs/data *.json *.json.gz

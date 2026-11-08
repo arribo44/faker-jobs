@@ -1,0 +1,6441 @@
+{
+ "de_DE": {
+  "country": "Germany",
+  "place_names": {
+   "country": "Deutschland"
+  },
+  "currency": "EUR",
+  "contracts": {
+   "Unbefristet": {
+    "kind": "permanent",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Befristet": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Zeitarbeit": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Teilzeit": {
+    "kind": "part_time",
+    "salary_factor": 0.5,
+    "max_experience": null,
+    "employee": true
+   },
+   "Ausbildung": {
+    "kind": "apprentice",
+    "salary_factor": 0.35,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Praktikum": {
+    "kind": "intern",
+    "salary_factor": 0.3,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Freiberuflich": {
+    "kind": "freelance",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": false
+   }
+  },
+  "salary_format": {
+   "template": "{min} € - {max} € brutto/Jahr",
+   "thousands": "."
+  },
+  "minimum_wage": 24960,
+  "experience_none": "Berufseinsteiger willkommen",
+  "experience_range": "{min} bis {max} Jahre Berufserfahrung",
+  "qualifications": {
+   "high": [
+    "Master",
+    "Diplom",
+    "Bachelor",
+    "Master im Bereich {field}",
+    "Bachelor im Bereich {field}",
+    "Abgeschlossenes Studium im Bereich {field}",
+    "Promotion"
+   ],
+   "mid": [
+    "Bachelor",
+    "Techniker / Meister",
+    "Abgeschlossene Berufsausbildung",
+    "Fachwirt",
+    "Bachelor im Bereich {field}",
+    "Meister oder Techniker im Bereich {field}",
+    "Abgeschlossene Berufsausbildung im Bereich {field}"
+   ],
+   "low": [
+    "Abgeschlossene Berufsausbildung",
+    "Hauptschulabschluss",
+    "Realschulabschluss",
+    "Mittlere Reife",
+    "Abgeschlossene Berufsausbildung im Bereich {field}"
+   ]
+  },
+  "benefits": {
+   "Betriebliche Altersvorsorge": {
+    "requires": null,
+    "not_for": [
+     "Praktikum",
+     "Zeitarbeit"
+    ]
+   },
+   "Deutschlandticket / Jobticket": {
+    "requires": null,
+    "not_for": []
+   },
+   "30 Tage Urlaub": {
+    "requires": null,
+    "not_for": [
+     "Praktikum"
+    ]
+   },
+   "Weihnachtsgeld": {
+    "requires": null,
+    "not_for": [
+     "Praktikum"
+    ]
+   },
+   "Urlaubsgeld": {
+    "requires": null,
+    "not_for": [
+     "Praktikum"
+    ]
+   },
+   "Homeoffice": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Flexible Arbeitszeiten": {
+    "requires": "office",
+    "not_for": []
+   },
+   "JobRad": {
+    "requires": null,
+    "not_for": [
+     "Praktikum",
+     "Zeitarbeit"
+    ]
+   },
+   "Weiterbildungsmöglichkeiten": {
+    "requires": null,
+    "not_for": []
+   },
+   "Betriebliches Gesundheitsmanagement": {
+    "requires": null,
+    "not_for": []
+   },
+   "Mitarbeiterrabatte": {
+    "requires": null,
+    "not_for": []
+   },
+   "Firmenwagen": {
+    "requires": "executive",
+    "not_for": [
+     "Praktikum",
+     "Ausbildung",
+     "Teilzeit"
+    ]
+   }
+  },
+  "job_portals": {
+   "all": [
+    "StepStone",
+    "Indeed",
+    "LinkedIn",
+    "XING",
+    "Bundesagentur für Arbeit",
+    "Monster",
+    "Jobware",
+    "kununu"
+   ]
+  },
+  "contract_weights": {
+   "0": {
+    "Unbefristet": 10.0,
+    "Befristet": 54,
+    "Zeitarbeit": 30,
+    "Teilzeit": 0.0,
+    "Ausbildung": 4,
+    "Praktikum": 2,
+    "Freiberuflich": 0.0
+   },
+   "1": {
+    "Unbefristet": 76.56,
+    "Befristet": 6.14,
+    "Zeitarbeit": 3.41,
+    "Teilzeit": 1.89,
+    "Ausbildung": 4,
+    "Praktikum": 2,
+    "Freiberuflich": 6
+   },
+   "2": {
+    "Unbefristet": 53.68,
+    "Befristet": 20.2,
+    "Zeitarbeit": 11.22,
+    "Teilzeit": 6.05,
+    "Ausbildung": 4,
+    "Praktikum": 2,
+    "Freiberuflich": 2.85
+   },
+   "3": {
+    "Unbefristet": 62.52,
+    "Befristet": 15.51,
+    "Zeitarbeit": 8.62,
+    "Teilzeit": 5.59,
+    "Ausbildung": 4,
+    "Praktikum": 2,
+    "Freiberuflich": 1.76
+   },
+   "4": {
+    "Unbefristet": 61.84,
+    "Befristet": 15.7,
+    "Zeitarbeit": 8.72,
+    "Teilzeit": 7.49,
+    "Ausbildung": 4,
+    "Praktikum": 2,
+    "Freiberuflich": 0.25
+   },
+   "5": {
+    "Unbefristet": 48.33,
+    "Befristet": 21.89,
+    "Zeitarbeit": 12.16,
+    "Teilzeit": 9.57,
+    "Ausbildung": 4,
+    "Praktikum": 2,
+    "Freiberuflich": 2.04
+   },
+   "6": {
+    "Unbefristet": 59.53,
+    "Befristet": 16.35,
+    "Zeitarbeit": 9.08,
+    "Teilzeit": 3.04,
+    "Ausbildung": 4,
+    "Praktikum": 2,
+    "Freiberuflich": 6
+   },
+   "7": {
+    "Unbefristet": 59.62,
+    "Befristet": 19.92,
+    "Zeitarbeit": 11.06,
+    "Teilzeit": 1.47,
+    "Ausbildung": 4,
+    "Praktikum": 2,
+    "Freiberuflich": 1.93
+   },
+   "8": {
+    "Unbefristet": 70.96,
+    "Befristet": 12.86,
+    "Zeitarbeit": 7.15,
+    "Teilzeit": 2.49,
+    "Ausbildung": 4,
+    "Praktikum": 2,
+    "Freiberuflich": 0.54
+   },
+   "9": {
+    "Unbefristet": 54.88,
+    "Befristet": 18.33,
+    "Zeitarbeit": 10.18,
+    "Teilzeit": 10.01,
+    "Ausbildung": 4,
+    "Praktikum": 2,
+    "Freiberuflich": 0.6
+   }
+  },
+  "experience": {
+   "high": {
+    "low": [
+     0,
+     8
+    ],
+    "gap": [
+     2,
+     5
+    ]
+   },
+   "mid": {
+    "low": [
+     0,
+     6
+    ],
+    "gap": [
+     2,
+     4
+    ]
+   },
+   "low": {
+    "low": [
+     0,
+     4
+    ],
+    "gap": [
+     1,
+     3
+    ]
+   }
+  },
+  "skill_levels": {
+   "1": "high",
+   "2": "high",
+   "3": "mid",
+   "0": "mid",
+   "4": "low",
+   "5": "low",
+   "6": "low",
+   "7": "low",
+   "8": "low",
+   "9": "low"
+  },
+  "benefits_per_posting": 4,
+  "office_domains": [
+   "Banken, Versicherungen und Immobilien",
+   "Kommunikation, Medien und Multimedia",
+   "Unternehmensunterstützung"
+  ],
+  "salary": {
+   "base": {
+    "0": {
+     "*": 43730,
+     "C": 47223,
+     "J": 145942,
+     "M": 105811,
+     "N": 34767,
+     "O": 43048,
+     "Q": 30797,
+     "S": 13961
+    },
+    "1": {
+     "*": 111275,
+     "B": 124481,
+     "C": 126225,
+     "D": 129044,
+     "E": 108552,
+     "F": 87873,
+     "G": 98993,
+     "H": 103372,
+     "I": 57248,
+     "J": 129763,
+     "K": 151063,
+     "L": 92055,
+     "M": 158869,
+     "N": 99300,
+     "O": 92025,
+     "P": 79999,
+     "Q": 109914,
+     "R": 69652,
+     "S": 81792
+    },
+    "2": {
+     "*": 72211,
+     "B": 98588,
+     "C": 89618,
+     "D": 90533,
+     "E": 73819,
+     "F": 80800,
+     "G": 80898,
+     "H": 71344,
+     "I": 41405,
+     "J": 77111,
+     "K": 100380,
+     "L": 62756,
+     "M": 78457,
+     "N": 67997,
+     "O": 73823,
+     "P": 61099,
+     "Q": 63635,
+     "R": 50645,
+     "S": 59593
+    },
+    "3": {
+     "*": 53017,
+     "B": 74789,
+     "C": 68019,
+     "D": 78316,
+     "E": 57471,
+     "F": 54892,
+     "G": 55307,
+     "H": 66920,
+     "I": 36951,
+     "J": 66179,
+     "K": 68434,
+     "L": 48141,
+     "M": 56788,
+     "N": 51800,
+     "O": 53157,
+     "P": 42867,
+     "Q": 43165,
+     "R": 41304,
+     "S": 45846
+    },
+    "4": {
+     "*": 43425,
+     "B": 51867,
+     "C": 48946,
+     "D": 57476,
+     "E": 46146,
+     "F": 36084,
+     "G": 40780,
+     "H": 37648,
+     "I": 27743,
+     "J": 47488,
+     "K": 62187,
+     "L": 33856,
+     "M": 43536,
+     "N": 36183,
+     "O": 36228,
+     "P": 40121,
+     "Q": 39418,
+     "R": 37498,
+     "S": 41017
+    },
+    "5": {
+     "*": 33728,
+     "B": 52920,
+     "C": 32821,
+     "D": 56402,
+     "E": 40977,
+     "F": 36296,
+     "G": 33644,
+     "H": 43546,
+     "I": 27263,
+     "J": 34947,
+     "K": 44809,
+     "L": 26601,
+     "M": 33492,
+     "N": 35145,
+     "O": 50483,
+     "P": 41733,
+     "Q": 36071,
+     "R": 28916,
+     "S": 28117
+    },
+    "6": {
+     "*": 34404,
+     "C": 37630,
+     "D": 44699,
+     "E": 45236,
+     "F": 30670,
+     "G": 26914,
+     "H": 27909,
+     "I": 27125,
+     "M": 43181,
+     "N": 34492,
+     "P": 31872,
+     "Q": 38630,
+     "R": 29838,
+     "S": 32909
+    },
+    "7": {
+     "*": 42566,
+     "B": 54244,
+     "C": 46804,
+     "D": 56833,
+     "E": 47303,
+     "F": 37531,
+     "G": 36073,
+     "H": 42901,
+     "I": 28464,
+     "J": 54181,
+     "K": 48494,
+     "L": 32482,
+     "M": 47946,
+     "N": 36142,
+     "O": 44160,
+     "P": 19096,
+     "Q": 43543,
+     "R": 38495,
+     "S": 36069
+    },
+    "8": {
+     "*": 40198,
+     "B": 48991,
+     "C": 46333,
+     "D": 54937,
+     "E": 40322,
+     "F": 43241,
+     "G": 36837,
+     "H": 34899,
+     "I": 25523,
+     "J": 32233,
+     "K": 49970,
+     "L": 37657,
+     "M": 43280,
+     "N": 32984,
+     "O": 45574,
+     "P": 22619,
+     "Q": 29307,
+     "R": 34399,
+     "S": 27604
+    },
+    "9": {
+     "*": 29284,
+     "B": 40035,
+     "C": 36456,
+     "D": 35432,
+     "E": 37635,
+     "F": 31538,
+     "G": 27370,
+     "H": 32860,
+     "I": 25346,
+     "J": 27279,
+     "K": 26281,
+     "L": 22691,
+     "M": 27891,
+     "N": 28171,
+     "O": 32005,
+     "P": 29584,
+     "Q": 27941,
+     "R": 26347,
+     "S": 27952
+    }
+   },
+   "age_ratio": {
+    "0": {
+     "Y_LT30": 0.76348,
+     "Y30-49": 1.004345,
+     "Y_GE50": 1.131123
+    },
+    "1": {
+     "Y_LT30": 0.548524,
+     "Y30-49": 0.929751,
+     "Y_GE50": 1.069135
+    },
+    "2": {
+     "Y_LT30": 0.639238,
+     "Y30-49": 0.994156,
+     "Y_GE50": 1.133553
+    },
+    "3": {
+     "Y_LT30": 0.663712,
+     "Y30-49": 1.051267,
+     "Y_GE50": 1.106324
+    },
+    "4": {
+     "Y_LT30": 0.755302,
+     "Y30-49": 1.052942,
+     "Y_GE50": 1.037098
+    },
+    "5": {
+     "Y_LT30": 0.840667,
+     "Y30-49": 1.06502,
+     "Y_GE50": 1.013876
+    },
+    "6": {
+     "Y_LT30": 0.866963,
+     "Y30-49": 1.069934,
+     "Y_GE50": 1.008923
+    },
+    "7": {
+     "Y_LT30": 0.738806,
+     "Y30-49": 1.07802,
+     "Y_GE50": 1.085138
+    },
+    "8": {
+     "Y_LT30": 0.912508,
+     "Y30-49": 1.05565,
+     "Y_GE50": 0.975347
+    },
+    "9": {
+     "Y_LT30": 0.91579,
+     "Y30-49": 1.041285,
+     "Y_GE50": 1.004644
+    }
+   }
+  },
+  "section_by_sector": {
+   "Architektur, Ingenieurwesen und Normung": "M",
+   "Automobilindustrie": "G",
+   "Bauwesen und Tiefbau": "F",
+   "Bildung und Weiterbildung": "P",
+   "Chemische Industrie": "C",
+   "Elektronikindustrie": "C",
+   "Energie": "D",
+   "Finanzen, Banken und Versicherungen": "K",
+   "Forschung": "M",
+   "Gesundheitswesen": "Q",
+   "Handel und Vertrieb": "G",
+   "Holzindustrie": "C",
+   "Hotellerie und Gastronomie": "I",
+   "IT und Telekommunikation": "J",
+   "Immobilien": "L",
+   "Instandhaltung und Reinigung": "C",
+   "Kommunikation und Marketing": "M",
+   "Kultur und Kulturerbe": "R",
+   "Kunsthandwerk, Film und darstellende Kunst": "J",
+   "Landwirtschaft und Tierhaltung": "A",
+   "Lebensmittelindustrie": "C",
+   "Logistik und Verkehr": "H",
+   "Metallindustrie": "C",
+   "Papier- und Druckindustrie": "C",
+   "Personenbezogene Dienstleistungen": "S",
+   "Produzierendes Gewerbe": "C",
+   "Recht und Rechnungswesen": "M",
+   "Soziale Arbeit": "Q",
+   "Sport und Freizeit": "R",
+   "Textil- und Modeindustrie": "C",
+   "Tourismus": "N",
+   "Umwelt": "E",
+   "Verlagswesen": "J",
+   "Verwaltung und Personalwesen": "N",
+   "Öffentlicher Dienst, Verteidigung und Sicherheit": "O"
+  },
+  "fields_of_study": {
+   "Metallindustrie": "Metalltechnik",
+   "Tourismus": "Tourismus",
+   "Hotellerie und Gastronomie": "Hotellerie und Gastronomie",
+   "Verwaltung und Personalwesen": "Betriebswirtschaft",
+   "Elektronikindustrie": "Elektrotechnik",
+   "Forschung": "Naturwissenschaften",
+   "Chemische Industrie": "Chemie",
+   "Holzindustrie": "Holztechnik",
+   "Energie": "Energietechnik",
+   "Soziale Arbeit": "Soziale Arbeit",
+   "Recht und Rechnungswesen": "Recht oder Rechnungswesen",
+   "Öffentlicher Dienst, Verteidigung und Sicherheit": "Öffentliche Verwaltung",
+   "Bildung und Weiterbildung": "Pädagogik",
+   "Logistik und Verkehr": "Logistik",
+   "Landwirtschaft und Tierhaltung": "Agrarwirtschaft",
+   "Umwelt": "Umwelttechnik",
+   "Instandhaltung und Reinigung": "Gebäudetechnik",
+   "Kultur und Kulturerbe": "Kulturwissenschaften",
+   "Lebensmittelindustrie": "Lebensmitteltechnik",
+   "Produzierendes Gewerbe": "Produktionstechnik",
+   "Gesundheitswesen": "Pflege und Gesundheit",
+   "Personenbezogene Dienstleistungen": "Körperpflege",
+   "Kunsthandwerk, Film und darstellende Kunst": "Medien und darstellende Kunst",
+   "Handel und Vertrieb": "Handel",
+   "Papier- und Druckindustrie": "Druck- und Medientechnik",
+   "Textil- und Modeindustrie": "Textil und Mode",
+   "Finanzen, Banken und Versicherungen": "Bank- und Finanzwesen",
+   "Immobilien": "Immobilienwirtschaft",
+   "Sport und Freizeit": "Sportwissenschaft",
+   "Kommunikation und Marketing": "Kommunikation und Marketing",
+   "Automobilindustrie": "Kfz-Technik",
+   "IT und Telekommunikation": "Informatik",
+   "Verlagswesen": "Medien und Publizistik",
+   "Architektur, Ingenieurwesen und Normung": "Architektur oder Ingenieurwesen",
+   "Bauwesen und Tiefbau": "Bautechnik"
+  }
+ },
+ "en_US": {
+  "country": "USA",
+  "currency": "USD",
+  "contracts": {
+   "Full-time": {
+    "kind": "permanent",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Part-time": {
+    "kind": "part_time",
+    "salary_factor": 0.5,
+    "max_experience": null,
+    "employee": true
+   },
+   "Contract": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Temporary": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Internship": {
+    "kind": "intern",
+    "salary_factor": 0.4,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Freelance": {
+    "kind": "freelance",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": false
+   }
+  },
+  "salary_format": {
+   "template": "${min} - ${max} a year",
+   "thousands": ","
+  },
+  "minimum_wage": 15080,
+  "experience_none": "Entry level",
+  "experience_range": "{min}-{max} years of experience",
+  "qualifications": {
+   "high": [
+    "Bachelor's degree",
+    "Master's degree",
+    "Bachelor's degree in {field}",
+    "Master's degree in {field}",
+    "Doctoral degree"
+   ],
+   "mid": [
+    "Associate degree",
+    "Bachelor's degree",
+    "Professional certification",
+    "Associate degree in {field}",
+    "Bachelor's degree in {field}",
+    "Postsecondary certificate in {field}"
+   ],
+   "low": [
+    "High school diploma or GED",
+    "Vocational training",
+    "Vocational training in {field}",
+    "Apprenticeship in {field}"
+   ]
+  },
+  "benefits": {
+   "Health insurance": {
+    "requires": null,
+    "not_for": [
+     "Part-time",
+     "Temporary",
+     "Internship"
+    ]
+   },
+   "Dental insurance": {
+    "requires": null,
+    "not_for": [
+     "Part-time",
+     "Temporary",
+     "Internship"
+    ]
+   },
+   "Vision insurance": {
+    "requires": null,
+    "not_for": [
+     "Part-time",
+     "Temporary",
+     "Internship"
+    ]
+   },
+   "401(k) matching": {
+    "requires": null,
+    "not_for": [
+     "Temporary",
+     "Internship",
+     "Contract"
+    ]
+   },
+   "Paid time off": {
+    "requires": null,
+    "not_for": [
+     "Contract"
+    ]
+   },
+   "Remote work": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Flexible schedule": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Tuition reimbursement": {
+    "requires": null,
+    "not_for": [
+     "Temporary",
+     "Internship",
+     "Contract"
+    ]
+   },
+   "Life insurance": {
+    "requires": null,
+    "not_for": [
+     "Part-time",
+     "Temporary",
+     "Internship"
+    ]
+   },
+   "Performance bonus": {
+    "requires": null,
+    "not_for": [
+     "Internship"
+    ]
+   },
+   "Stock options": {
+    "requires": "executive",
+    "not_for": [
+     "Internship",
+     "Part-time",
+     "Temporary"
+    ]
+   },
+   "Commuter benefits": {
+    "requires": null,
+    "not_for": []
+   },
+   "Employee discount": {
+    "requires": null,
+    "not_for": []
+   },
+   "Paid parental leave": {
+    "requires": null,
+    "not_for": [
+     "Temporary",
+     "Internship",
+     "Contract"
+    ]
+   }
+  },
+  "job_portals": {
+   "all": [
+    "Indeed",
+    "LinkedIn",
+    "Glassdoor",
+    "ZipRecruiter",
+    "Monster",
+    "CareerBuilder",
+    "SimplyHired"
+   ]
+  },
+  "contract_weights": {
+   "0": {
+    "Full-time": 62,
+    "Part-time": 15,
+    "Contract": 10,
+    "Temporary": 7,
+    "Internship": 4,
+    "Freelance": 2
+   },
+   "1": {
+    "Full-time": 62,
+    "Part-time": 15,
+    "Contract": 10,
+    "Temporary": 7,
+    "Internship": 4,
+    "Freelance": 2
+   },
+   "2": {
+    "Full-time": 62,
+    "Part-time": 15,
+    "Contract": 10,
+    "Temporary": 7,
+    "Internship": 4,
+    "Freelance": 2
+   },
+   "3": {
+    "Full-time": 62,
+    "Part-time": 15,
+    "Contract": 10,
+    "Temporary": 7,
+    "Internship": 4,
+    "Freelance": 2
+   },
+   "4": {
+    "Full-time": 62,
+    "Part-time": 15,
+    "Contract": 10,
+    "Temporary": 7,
+    "Internship": 4,
+    "Freelance": 2
+   },
+   "5": {
+    "Full-time": 62,
+    "Part-time": 15,
+    "Contract": 10,
+    "Temporary": 7,
+    "Internship": 4,
+    "Freelance": 2
+   },
+   "6": {
+    "Full-time": 62,
+    "Part-time": 15,
+    "Contract": 10,
+    "Temporary": 7,
+    "Internship": 4,
+    "Freelance": 2
+   },
+   "7": {
+    "Full-time": 62,
+    "Part-time": 15,
+    "Contract": 10,
+    "Temporary": 7,
+    "Internship": 4,
+    "Freelance": 2
+   },
+   "8": {
+    "Full-time": 62,
+    "Part-time": 15,
+    "Contract": 10,
+    "Temporary": 7,
+    "Internship": 4,
+    "Freelance": 2
+   },
+   "9": {
+    "Full-time": 62,
+    "Part-time": 15,
+    "Contract": 10,
+    "Temporary": 7,
+    "Internship": 4,
+    "Freelance": 2
+   }
+  },
+  "experience": {
+   "high": {
+    "low": [
+     0,
+     8
+    ],
+    "gap": [
+     2,
+     5
+    ]
+   },
+   "mid": {
+    "low": [
+     0,
+     6
+    ],
+    "gap": [
+     2,
+     4
+    ]
+   },
+   "low": {
+    "low": [
+     0,
+     4
+    ],
+    "gap": [
+     1,
+     3
+    ]
+   }
+  },
+  "skill_levels": {
+   "1": "high",
+   "2": "high",
+   "3": "mid",
+   "0": "mid",
+   "4": "low",
+   "5": "low",
+   "6": "low",
+   "7": "low",
+   "8": "low",
+   "9": "low"
+  },
+  "benefits_per_posting": 4,
+  "office_domains": [
+   "Banking, insurance and real estate",
+   "Business support",
+   "Communication, media and multimedia"
+  ],
+  "salary": {
+   "base": {
+    "0": {
+     "*": 60720.0
+    },
+    "1": {
+     "*": 145260.0
+    },
+    "2": {
+     "*": 106210.0
+    },
+    "3": {
+     "*": 79476.666667
+    },
+    "4": {
+     "*": 51560.0
+    },
+    "5": {
+     "*": 46940.0
+    },
+    "6": {
+     "*": 41510.0
+    },
+    "7": {
+     "*": 64340.0
+    },
+    "8": {
+     "*": 50725.0
+    },
+    "9": {
+     "*": 39015.0
+    }
+   },
+   "age_ratio": {
+    "0": {
+     "Y_LT30": 0.802705,
+     "Y30-49": 1.004733,
+     "Y_GE50": 1.090986
+    },
+    "1": {
+     "Y_LT30": 0.488714,
+     "Y30-49": 0.913304,
+     "Y_GE50": 1.121247
+    },
+    "2": {
+     "Y_LT30": 0.652849,
+     "Y30-49": 0.970801,
+     "Y_GE50": 1.157495
+    },
+    "3": {
+     "Y_LT30": 0.710311,
+     "Y30-49": 1.007522,
+     "Y_GE50": 1.120844
+    },
+    "4": {
+     "Y_LT30": 0.773121,
+     "Y30-49": 1.007026,
+     "Y_GE50": 1.104287
+    },
+    "5": {
+     "Y_LT30": 0.876143,
+     "Y30-49": 1.013801,
+     "Y_GE50": 1.060105
+    },
+    "6": {
+     "Y_LT30": 0.889805,
+     "Y30-49": 1.01208,
+     "Y_GE50": 1.074879
+    },
+    "7": {
+     "Y_LT30": 0.794588,
+     "Y30-49": 1.035544,
+     "Y_GE50": 1.064795
+    },
+    "8": {
+     "Y_LT30": 0.845771,
+     "Y30-49": 1.015567,
+     "Y_GE50": 1.023818
+    },
+    "9": {
+     "Y_LT30": 0.925618,
+     "Y30-49": 1.014011,
+     "Y_GE50": 1.019812
+    }
+   }
+  },
+  "section_by_sector": {
+   "Administration and human resources": "N",
+   "Agriculture and livestock": "A",
+   "Architecture, engineering studies and standards": "M",
+   "Automotive": "G",
+   "Chemical industry": "C",
+   "Communication and marketing": "M",
+   "Construction and public works": "F",
+   "Crafts, audiovisual and performing arts": "J",
+   "Culture and heritage": "R",
+   "Education and training": "P",
+   "Electronics industry": "C",
+   "Energy": "D",
+   "Environment": "E",
+   "Finance, banking and insurance": "K",
+   "Food industry": "C",
+   "Healthcare": "Q",
+   "Hotels and restaurants": "I",
+   "IT and telecommunications": "J",
+   "Legal and accounting": "M",
+   "Logistics and transport": "H",
+   "Maintenance and cleaning": "C",
+   "Manufacturing": "C",
+   "Metalworking industry": "C",
+   "Paper and printing industry": "C",
+   "Personal care services": "S",
+   "Public service, defence and security": "O",
+   "Publishing": "J",
+   "Real estate": "L",
+   "Research": "M",
+   "Retail and distribution": "G",
+   "Social work": "Q",
+   "Sport and leisure": "R",
+   "Textile and fashion industry": "C",
+   "Tourism": "N",
+   "Wood industry": "C"
+  },
+  "fields_of_study": {
+   "Metalworking industry": "Mechanical Engineering",
+   "Tourism": "Tourism Management",
+   "Hotels and restaurants": "Hospitality Management",
+   "Administration and human resources": "Business Administration",
+   "Electronics industry": "Electrical Engineering",
+   "Research": "Natural Sciences",
+   "Chemical industry": "Chemistry",
+   "Wood industry": "Wood Technology",
+   "Energy": "Energy Engineering",
+   "Social work": "Social Work",
+   "Legal and accounting": "Law or Accounting",
+   "Public service, defence and security": "Public Administration",
+   "Education and training": "Education",
+   "Logistics and transport": "Logistics and Transportation",
+   "Agriculture and livestock": "Agriculture",
+   "Environment": "Environmental Science",
+   "Maintenance and cleaning": "Facility Maintenance",
+   "Culture and heritage": "Cultural Heritage",
+   "Food industry": "Food Science",
+   "Manufacturing": "Industrial Engineering",
+   "Healthcare": "Health Sciences",
+   "Personal care services": "Cosmetology",
+   "Crafts, audiovisual and performing arts": "Fine and Performing Arts",
+   "Retail and distribution": "Retail Management",
+   "Paper and printing industry": "Graphic Communications",
+   "Textile and fashion industry": "Fashion Design",
+   "Finance, banking and insurance": "Finance",
+   "Real estate": "Real Estate",
+   "Sport and leisure": "Sports Science",
+   "Communication and marketing": "Marketing and Communications",
+   "Automotive": "Automotive Technology",
+   "IT and telecommunications": "Computer Science",
+   "Publishing": "Journalism and Publishing",
+   "Architecture, engineering studies and standards": "Architecture or Engineering",
+   "Construction and public works": "Construction Management"
+  }
+ },
+ "es_ES": {
+  "country": "Spain",
+  "place_names": {
+   "country": "España"
+  },
+  "currency": "EUR",
+  "contracts": {
+   "Indefinido": {
+    "kind": "permanent",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Temporal": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Fijo discontinuo": {
+    "kind": "other",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "A través de ETT": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Formación en alternancia": {
+    "kind": "apprentice",
+    "salary_factor": 0.55,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Prácticas": {
+    "kind": "intern",
+    "salary_factor": 0.4,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Autónomo": {
+    "kind": "freelance",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": false
+   }
+  },
+  "salary_format": {
+   "template": "{min} € - {max} € brutos/año",
+   "thousands": "."
+  },
+  "minimum_wage": 14000,
+  "experience_none": "Sin experiencia previa",
+  "experience_range": "De {min} a {max} años de experiencia",
+  "qualifications": {
+   "high": [
+    "Grado universitario",
+    "Máster",
+    "Ingeniería superior",
+    "Grado en {field}",
+    "Máster en {field}",
+    "Doctorado"
+   ],
+   "mid": [
+    "Ciclo Formativo de Grado Superior",
+    "Grado universitario",
+    "Ciclo Formativo de Grado Superior en {field}",
+    "Grado en {field}"
+   ],
+   "low": [
+    "ESO",
+    "Ciclo Formativo de Grado Medio",
+    "Bachillerato",
+    "FP Básica",
+    "Ciclo Formativo de Grado Medio en {field}",
+    "Certificado de profesionalidad en {field}"
+   ]
+  },
+  "benefits": {
+   "Seguro médico privado": {
+    "requires": null,
+    "not_for": [
+     "Prácticas"
+    ]
+   },
+   "Ticket restaurante": {
+    "requires": null,
+    "not_for": []
+   },
+   "Retribución flexible": {
+    "requires": null,
+    "not_for": [
+     "Prácticas",
+     "A través de ETT"
+    ]
+   },
+   "Teletrabajo parcial": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Horario flexible": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Jornada intensiva en verano": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Formación continua": {
+    "requires": null,
+    "not_for": []
+   },
+   "Plan de pensiones": {
+    "requires": null,
+    "not_for": [
+     "Prácticas",
+     "Temporal",
+     "A través de ETT"
+    ]
+   },
+   "Bonus anual por objetivos": {
+    "requires": null,
+    "not_for": [
+     "Prácticas"
+    ]
+   },
+   "Descuentos para empleados": {
+    "requires": null,
+    "not_for": []
+   },
+   "Coche de empresa": {
+    "requires": "executive",
+    "not_for": [
+     "Prácticas",
+     "Formación en alternancia"
+    ]
+   }
+  },
+  "job_portals": {
+   "all": [
+    "InfoJobs",
+    "Indeed",
+    "LinkedIn",
+    "InfoEmpleo",
+    "Jooble",
+    "Trabajos.com",
+    "SEPE Empléate"
+   ]
+  },
+  "contract_weights": {
+   "0": {
+    "Indefinido": 53.23,
+    "Temporal": 23.54,
+    "Fijo discontinuo": 8,
+    "A través de ETT": 8.24,
+    "Formación en alternancia": 4,
+    "Prácticas": 3,
+    "Autónomo": 0.0
+   },
+   "1": {
+    "Indefinido": 66.56,
+    "Temporal": 7.33,
+    "Fijo discontinuo": 8,
+    "A través de ETT": 2.56,
+    "Formación en alternancia": 4,
+    "Prácticas": 3,
+    "Autónomo": 8.55
+   },
+   "2": {
+    "Indefinido": 50.77,
+    "Temporal": 23.19,
+    "Fijo discontinuo": 8,
+    "A través de ETT": 8.12,
+    "Formación en alternancia": 4,
+    "Prácticas": 3,
+    "Autónomo": 2.92
+   },
+   "3": {
+    "Indefinido": 64.27,
+    "Temporal": 13.25,
+    "Fijo discontinuo": 8,
+    "A través de ETT": 4.64,
+    "Formación en alternancia": 4,
+    "Prácticas": 3,
+    "Autónomo": 2.83
+   },
+   "4": {
+    "Indefinido": 66.19,
+    "Temporal": 13.4,
+    "Fijo discontinuo": 8,
+    "A través de ETT": 4.69,
+    "Formación en alternancia": 4,
+    "Prácticas": 3,
+    "Autónomo": 0.72
+   },
+   "5": {
+    "Indefinido": 51.88,
+    "Temporal": 21.99,
+    "Fijo discontinuo": 8,
+    "A través de ETT": 7.7,
+    "Formación en alternancia": 4,
+    "Prácticas": 3,
+    "Autónomo": 3.43
+   },
+   "6": {
+    "Indefinido": 45.43,
+    "Temporal": 22.65,
+    "Fijo discontinuo": 8,
+    "A través de ETT": 7.93,
+    "Formación en alternancia": 4,
+    "Prácticas": 3,
+    "Autónomo": 9
+   },
+   "7": {
+    "Indefinido": 60.63,
+    "Temporal": 14.81,
+    "Fijo discontinuo": 8,
+    "A través de ETT": 5.18,
+    "Formación en alternancia": 4,
+    "Prácticas": 3,
+    "Autónomo": 4.38
+   },
+   "8": {
+    "Indefinido": 64.76,
+    "Temporal": 13.36,
+    "Fijo discontinuo": 8,
+    "A través de ETT": 4.68,
+    "Formación en alternancia": 4,
+    "Prácticas": 3,
+    "Autónomo": 2.21
+   },
+   "9": {
+    "Indefinido": 39.08,
+    "Temporal": 33.77,
+    "Fijo discontinuo": 8,
+    "A través de ETT": 11.82,
+    "Formación en alternancia": 4,
+    "Prácticas": 3,
+    "Autónomo": 0.33
+   }
+  },
+  "experience": {
+   "high": {
+    "low": [
+     0,
+     8
+    ],
+    "gap": [
+     2,
+     5
+    ]
+   },
+   "mid": {
+    "low": [
+     0,
+     6
+    ],
+    "gap": [
+     2,
+     4
+    ]
+   },
+   "low": {
+    "low": [
+     0,
+     4
+    ],
+    "gap": [
+     1,
+     3
+    ]
+   }
+  },
+  "skill_levels": {
+   "1": "high",
+   "2": "high",
+   "3": "mid",
+   "0": "mid",
+   "4": "low",
+   "5": "low",
+   "6": "low",
+   "7": "low",
+   "8": "low",
+   "9": "low"
+  },
+  "benefits_per_posting": 4,
+  "office_domains": [
+   "Apoyo a la empresa",
+   "Banca, seguros e inmobiliaria",
+   "Comunicación, medios y multimedia"
+  ],
+  "salary": {
+   "base": {
+    "0": {
+     "*": 33425,
+     "B": 45721,
+     "C": 40463,
+     "D": 54658,
+     "E": 36924,
+     "F": 33968,
+     "G": 34002,
+     "H": 41620,
+     "I": 26724,
+     "J": 34124,
+     "K": 46135,
+     "L": 28981,
+     "M": 30385,
+     "N": 29513,
+     "O": 36459,
+     "P": 31448,
+     "Q": 25486,
+     "R": 25008,
+     "S": 25986
+    },
+    "1": {
+     "*": 63698,
+     "C": 66074,
+     "E": 58600,
+     "F": 62557,
+     "G": 58538,
+     "H": 57241,
+     "I": 45242,
+     "J": 68993,
+     "K": 75524,
+     "L": 58384,
+     "M": 73038,
+     "N": 92268,
+     "O": 54152,
+     "P": 50489,
+     "Q": 46828,
+     "R": 49098,
+     "S": 50778
+    },
+    "2": {
+     "*": 42617,
+     "B": 59937,
+     "C": 48798,
+     "D": 66363,
+     "E": 51018,
+     "F": 42102,
+     "G": 40744,
+     "H": 44256,
+     "I": 32990,
+     "J": 44820,
+     "K": 53451,
+     "L": 45084,
+     "M": 38825,
+     "N": 39827,
+     "O": 43112,
+     "P": 37939,
+     "Q": 48103,
+     "R": 35620,
+     "S": 30013
+    },
+    "3": {
+     "*": 33425,
+     "B": 45721,
+     "C": 40463,
+     "D": 54658,
+     "E": 36924,
+     "F": 33968,
+     "G": 34002,
+     "H": 41620,
+     "I": 26724,
+     "J": 34124,
+     "K": 46135,
+     "L": 28981,
+     "M": 30385,
+     "N": 29513,
+     "O": 36459,
+     "P": 31448,
+     "Q": 25486,
+     "R": 25008,
+     "S": 25986
+    },
+    "4": {
+     "*": 25850,
+     "B": 30946,
+     "C": 28496,
+     "D": 41088,
+     "E": 32178,
+     "F": 26675,
+     "G": 25194,
+     "H": 29123,
+     "I": 23667,
+     "J": 24594,
+     "K": 37214,
+     "L": 22663,
+     "M": 22678,
+     "N": 21464,
+     "O": 29545,
+     "P": 27013,
+     "Q": 24231,
+     "R": 25783,
+     "S": 23494
+    },
+    "5": {
+     "*": 20727,
+     "C": 22173,
+     "E": 33130,
+     "F": 25381,
+     "G": 20818,
+     "H": 32586,
+     "I": 19696,
+     "J": 19277,
+     "K": 24936,
+     "L": 20895,
+     "M": 20147,
+     "N": 22345,
+     "O": 38619,
+     "P": 19992,
+     "Q": 21098,
+     "R": 21696,
+     "S": 16050
+    },
+    "6": {
+     "*": 22080,
+     "C": 33557,
+     "E": 23148,
+     "G": 18580,
+     "I": 22110,
+     "M": 26599,
+     "N": 22911,
+     "O": 24550,
+     "Q": 17274,
+     "R": 22338
+    },
+    "7": {
+     "*": 25387,
+     "B": 34384,
+     "C": 26789,
+     "D": 46681,
+     "E": 33319,
+     "F": 23079,
+     "G": 23858,
+     "H": 40436,
+     "I": 22436,
+     "J": 24742,
+     "M": 27094,
+     "N": 22618,
+     "O": 26032,
+     "P": 27878,
+     "Q": 24013,
+     "R": 24378,
+     "S": 23088
+    },
+    "8": {
+     "*": 26503,
+     "B": 29687,
+     "C": 30156,
+     "D": 35778,
+     "E": 31058,
+     "F": 26092,
+     "G": 21604,
+     "H": 25483,
+     "I": 18033,
+     "J": 22569,
+     "M": 22141,
+     "N": 24048,
+     "O": 30006,
+     "P": 29342,
+     "Q": 23971,
+     "R": 22068,
+     "S": 16703
+    },
+    "9": {
+     "*": 20060,
+     "B": 28240,
+     "C": 23422,
+     "D": 21347,
+     "E": 27720,
+     "F": 20477,
+     "G": 19290,
+     "H": 24678,
+     "I": 18650,
+     "J": 17872,
+     "K": 20200,
+     "L": 17933,
+     "M": 17599,
+     "N": 18195,
+     "O": 22388,
+     "P": 19402,
+     "Q": 18341,
+     "R": 18134,
+     "S": 17492
+    }
+   },
+   "age_ratio": {
+    "0": {
+     "Y_LT30": 0.698459,
+     "Y30-49": 0.98902,
+     "Y_GE50": 1.126462
+    },
+    "1": {
+     "Y_LT30": 0.53727,
+     "Y30-49": 0.95419,
+     "Y_GE50": 1.080065
+    },
+    "2": {
+     "Y_LT30": 0.675787,
+     "Y30-49": 0.965108,
+     "Y_GE50": 1.155759
+    },
+    "3": {
+     "Y_LT30": 0.698459,
+     "Y30-49": 0.98902,
+     "Y_GE50": 1.126462
+    },
+    "4": {
+     "Y_LT30": 0.774662,
+     "Y30-49": 0.963636,
+     "Y_GE50": 1.114894
+    },
+    "5": {
+     "Y_LT30": 0.899407,
+     "Y30-49": 0.979158,
+     "Y_GE50": 1.07483
+    },
+    "6": {
+     "Y_LT30": 0.791667,
+     "Y30-49": 0.973188,
+     "Y_GE50": 1.099592
+    },
+    "7": {
+     "Y_LT30": 0.842636,
+     "Y30-49": 0.990861,
+     "Y_GE50": 1.052862
+    },
+    "8": {
+     "Y_LT30": 0.783685,
+     "Y30-49": 0.992605,
+     "Y_GE50": 1.044297
+    },
+    "9": {
+     "Y_LT30": 0.937039,
+     "Y30-49": 0.996411,
+     "Y_GE50": 1.01984
+    }
+   }
+  },
+  "section_by_sector": {
+   "Acción social": "Q",
+   "Administración y recursos humanos": "N",
+   "Agricultura y ganadería": "A",
+   "Arquitectura, ingeniería y normalización": "M",
+   "Artesanía, audiovisual y artes escénicas": "J",
+   "Automoción": "G",
+   "Comercio y distribución": "G",
+   "Comunicación y marketing": "M",
+   "Construcción y obras públicas": "F",
+   "Cultura y patrimonio": "R",
+   "Deporte y ocio": "R",
+   "Edición": "J",
+   "Educación y formación": "P",
+   "Energía": "D",
+   "Finanzas, banca y seguros": "K",
+   "Función pública, defensa y seguridad": "O",
+   "Hostelería y restauración": "I",
+   "Industria agroalimentaria": "C",
+   "Industria de la madera": "C",
+   "Industria del papel y artes gráficas": "C",
+   "Industria electrónica": "C",
+   "Industria manufacturera": "C",
+   "Industria metalúrgica": "C",
+   "Industria química": "C",
+   "Industria textil y moda": "C",
+   "Informática y telecomunicaciones": "J",
+   "Inmobiliaria": "L",
+   "Investigación": "M",
+   "Jurídico y contabilidad": "M",
+   "Logística y transporte": "H",
+   "Mantenimiento y limpieza": "C",
+   "Medio ambiente": "E",
+   "Sanidad": "Q",
+   "Servicios a las personas": "S",
+   "Turismo": "N"
+  },
+  "fields_of_study": {
+   "Industria metalúrgica": "Fabricación Mecánica",
+   "Turismo": "Turismo",
+   "Hostelería y restauración": "Hostelería",
+   "Administración y recursos humanos": "Administración y Gestión",
+   "Industria electrónica": "Electricidad y Electrónica",
+   "Investigación": "Ciencias",
+   "Industria química": "Química",
+   "Industria de la madera": "Madera y Mueble",
+   "Energía": "Energía y Agua",
+   "Acción social": "Servicios Socioculturales y a la Comunidad",
+   "Jurídico y contabilidad": "Derecho o Contabilidad",
+   "Función pública, defensa y seguridad": "Administración Pública",
+   "Educación y formación": "Educación",
+   "Logística y transporte": "Transporte y Logística",
+   "Agricultura y ganadería": "Agraria",
+   "Medio ambiente": "Ciencias Ambientales",
+   "Mantenimiento y limpieza": "Instalación y Mantenimiento",
+   "Cultura y patrimonio": "Historia del Arte y Patrimonio",
+   "Industria agroalimentaria": "Industrias Alimentarias",
+   "Industria manufacturera": "Ingeniería Industrial",
+   "Sanidad": "Sanidad",
+   "Servicios a las personas": "Imagen Personal",
+   "Artesanía, audiovisual y artes escénicas": "Imagen y Sonido",
+   "Comercio y distribución": "Comercio y Marketing",
+   "Industria del papel y artes gráficas": "Artes Gráficas",
+   "Industria textil y moda": "Textil, Confección y Piel",
+   "Finanzas, banca y seguros": "Finanzas",
+   "Inmobiliaria": "Gestión Inmobiliaria",
+   "Deporte y ocio": "Actividades Físicas y Deportivas",
+   "Comunicación y marketing": "Marketing y Publicidad",
+   "Automoción": "Transporte y Mantenimiento de Vehículos",
+   "Informática y telecomunicaciones": "Informática y Comunicaciones",
+   "Edición": "Periodismo",
+   "Arquitectura, ingeniería y normalización": "Arquitectura o Ingeniería",
+   "Construcción y obras públicas": "Edificación y Obra Civil"
+  }
+ },
+ "fr_FR": {
+  "country": "France",
+  "currency": "EUR",
+  "contracts": {
+   "CDI": {
+    "kind": "permanent",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "CDD": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "CDD saisonnier": {
+    "kind": "seasonal",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Intérim": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Alternance": {
+    "kind": "apprentice",
+    "salary_factor": 0.55,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Stage": {
+    "kind": "intern",
+    "salary_factor": 0.3,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Freelance": {
+    "kind": "freelance",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": false
+   }
+  },
+  "salary_format": {
+   "template": "{min} € - {max} € brut/an",
+   "thousands": " "
+  },
+  "minimum_wage": 20150,
+  "experience_none": "Débutant accepté",
+  "experience_range": "{min} à {max} ans",
+  "qualifications": {
+   "high": [
+    "Bac+5 (Master, école d'ingénieur ou de commerce)",
+    "Bac+3 (Licence, BUT)",
+    "Master {field}",
+    "Licence professionnelle {field}"
+   ],
+   "mid": [
+    "Bac+2 (BTS, DUT)",
+    "Bac+3 (Licence, BUT)",
+    "BTS {field}",
+    "BUT {field}"
+   ],
+   "low": [
+    "CAP / BEP",
+    "Bac pro",
+    "Bac",
+    "CAP {field}",
+    "Bac pro {field}"
+   ]
+  },
+  "benefits": {
+   "Mutuelle d'entreprise": {
+    "requires": null,
+    "not_for": []
+   },
+   "Tickets restaurant": {
+    "requires": null,
+    "not_for": []
+   },
+   "RTT": {
+    "requires": null,
+    "not_for": [
+     "Stage"
+    ]
+   },
+   "Prime annuelle": {
+    "requires": null,
+    "not_for": [
+     "Stage"
+    ]
+   },
+   "13e mois": {
+    "requires": null,
+    "not_for": [
+     "Stage"
+    ]
+   },
+   "Intéressement et participation": {
+    "requires": null,
+    "not_for": [
+     "Stage",
+     "Intérim"
+    ]
+   },
+   "Plan d'épargne entreprise (PEE)": {
+    "requires": null,
+    "not_for": [
+     "Stage",
+     "Intérim"
+    ]
+   },
+   "Télétravail partiel": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Remboursement à 50 % du titre de transport": {
+    "requires": null,
+    "not_for": []
+   },
+   "Comité social et économique (CSE)": {
+    "requires": null,
+    "not_for": []
+   },
+   "Formation continue": {
+    "requires": null,
+    "not_for": []
+   },
+   "Horaires flexibles": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Prime de vacances": {
+    "requires": null,
+    "not_for": [
+     "Stage"
+    ]
+   },
+   "Chèques cadeaux": {
+    "requires": null,
+    "not_for": []
+   },
+   "Véhicule de fonction": {
+    "requires": "executive",
+    "not_for": [
+     "Stage",
+     "Alternance"
+    ]
+   },
+   "Forfait mobilités durables": {
+    "requires": null,
+    "not_for": []
+   }
+  },
+  "job_portals": {
+   "all": [
+    "France Travail",
+    "HelloWork",
+    "Indeed",
+    "LinkedIn",
+    "Welcome to the Jungle",
+    "Meteojob",
+    "Jobteaser",
+    "Monster",
+    "Le Bon Coin Emploi"
+   ],
+   "executive": [
+    "APEC",
+    "Cadremploi"
+   ]
+  },
+  "contract_weights": {
+   "0": {
+    "CDI": 57.53,
+    "CDD": 20.29,
+    "CDD saisonnier": 0,
+    "Intérim": 12.17,
+    "Alternance": 6,
+    "Stage": 4,
+    "Freelance": 0.0
+   },
+   "1": {
+    "CDI": 74.25,
+    "CDD": 5.83,
+    "CDD saisonnier": 0,
+    "Intérim": 3.5,
+    "Alternance": 6,
+    "Stage": 4,
+    "Freelance": 6.43
+   },
+   "2": {
+    "CDI": 60.15,
+    "CDD": 16.52,
+    "CDD saisonnier": 0,
+    "Intérim": 9.91,
+    "Alternance": 6,
+    "Stage": 4,
+    "Freelance": 3.41
+   },
+   "3": {
+    "CDI": 60.09,
+    "CDD": 17.21,
+    "CDD saisonnier": 0,
+    "Intérim": 10.32,
+    "Alternance": 6,
+    "Stage": 4,
+    "Freelance": 2.38
+   },
+   "4": {
+    "CDI": 60.96,
+    "CDD": 18.04,
+    "CDD saisonnier": 0,
+    "Intérim": 10.82,
+    "Alternance": 6,
+    "Stage": 4,
+    "Freelance": 0.18
+   },
+   "5": {
+    "CDI": 47.69,
+    "CDD": 24.89,
+    "CDD saisonnier": 0,
+    "Intérim": 14.93,
+    "Alternance": 6,
+    "Stage": 4,
+    "Freelance": 2.48
+   },
+   "6": {
+    "CDI": 16.51,
+    "CDD": 40.31,
+    "CDD saisonnier": 0,
+    "Intérim": 24.18,
+    "Alternance": 6,
+    "Stage": 4,
+    "Freelance": 9
+   },
+   "7": {
+    "CDI": 47.67,
+    "CDD": 23.52,
+    "CDD saisonnier": 0,
+    "Intérim": 14.11,
+    "Alternance": 6,
+    "Stage": 4,
+    "Freelance": 4.69
+   },
+   "8": {
+    "CDI": 59.39,
+    "CDD": 18.36,
+    "CDD saisonnier": 0,
+    "Intérim": 11.01,
+    "Alternance": 6,
+    "Stage": 4,
+    "Freelance": 1.24
+   },
+   "9": {
+    "CDI": 37.46,
+    "CDD": 32.47,
+    "CDD saisonnier": 0,
+    "Intérim": 19.48,
+    "Alternance": 6,
+    "Stage": 4,
+    "Freelance": 0.58
+   }
+  },
+  "experience": {
+   "high": {
+    "low": [
+     0,
+     8
+    ],
+    "gap": [
+     2,
+     5
+    ]
+   },
+   "mid": {
+    "low": [
+     0,
+     6
+    ],
+    "gap": [
+     2,
+     4
+    ]
+   },
+   "low": {
+    "low": [
+     0,
+     4
+    ],
+    "gap": [
+     1,
+     3
+    ]
+   }
+  },
+  "skill_levels": {
+   "1": "high",
+   "2": "high",
+   "3": "mid",
+   "0": "mid",
+   "4": "low",
+   "5": "low",
+   "6": "low",
+   "7": "low",
+   "8": "low",
+   "9": "low"
+  },
+  "benefits_per_posting": 4,
+  "office_domains": [
+   "Banque, Assurance, Immobilier",
+   "Communication, Média et Multimédia",
+   "Support à l'entreprise"
+  ],
+  "salary": {
+   "base": {
+    "0": {
+     "*": 39272,
+     "B": 43882,
+     "C": 42822,
+     "D": 41578,
+     "E": 40537,
+     "F": 40446,
+     "G": 39824,
+     "H": 42170,
+     "I": 36249,
+     "J": 36626,
+     "K": 41998,
+     "L": 35975,
+     "M": 37171,
+     "N": 37529,
+     "O": 37065,
+     "P": 33531,
+     "Q": 34533,
+     "R": 41324,
+     "S": 43622
+    },
+    "1": {
+     "*": 75695,
+     "B": 85367,
+     "C": 90617,
+     "D": 83362,
+     "F": 69564,
+     "G": 76315,
+     "H": 58247,
+     "I": 65511,
+     "J": 77433,
+     "K": 81959,
+     "L": 60777,
+     "M": 79099,
+     "N": 81456,
+     "O": 57964,
+     "P": 49692,
+     "Q": 55234,
+     "R": 64612,
+     "S": 55036
+    },
+    "2": {
+     "*": 52408,
+     "B": 115247,
+     "C": 69293,
+     "D": 70169,
+     "E": 57018,
+     "G": 67907,
+     "H": 49030,
+     "I": 44280,
+     "J": 60737,
+     "K": 90721,
+     "L": 61603,
+     "M": 58969,
+     "N": 60675,
+     "O": 42981,
+     "P": 41592,
+     "Q": 48195,
+     "R": 47270,
+     "S": 43988
+    },
+    "3": {
+     "*": 39272,
+     "B": 43882,
+     "C": 42822,
+     "D": 41578,
+     "E": 40537,
+     "F": 40446,
+     "G": 39824,
+     "H": 42170,
+     "I": 36249,
+     "J": 36626,
+     "K": 41998,
+     "L": 35975,
+     "M": 37171,
+     "N": 37529,
+     "O": 37065,
+     "P": 33531,
+     "Q": 34533,
+     "R": 41324,
+     "S": 43622
+    },
+    "4": {
+     "*": 29339,
+     "C": 31842,
+     "E": 28269,
+     "F": 32301,
+     "G": 27409,
+     "H": 28469,
+     "I": 31984,
+     "J": 31046,
+     "K": 34212,
+     "L": 27423,
+     "M": 30167,
+     "N": 29534,
+     "O": 28289,
+     "P": 28298,
+     "Q": 27998,
+     "R": 31822,
+     "S": 30270
+    },
+    "5": {
+     "*": 29217,
+     "C": 24411,
+     "G": 27741,
+     "H": 33214,
+     "I": 29284,
+     "J": 40780,
+     "K": 35510,
+     "L": 30579,
+     "M": 26242,
+     "N": 29563,
+     "O": 35489,
+     "P": 23824,
+     "Q": 30018,
+     "R": 31232,
+     "S": 32417
+    },
+    "6": {
+     "*": 26341,
+     "C": 35879,
+     "M": 28798,
+     "N": 25833,
+     "Q": 14752,
+     "R": 42350
+    },
+    "7": {
+     "*": 30292,
+     "C": 30417,
+     "E": 31499,
+     "F": 31689,
+     "G": 27921,
+     "H": 30592,
+     "I": 25659,
+     "L": 30042,
+     "N": 34446,
+     "O": 27434,
+     "P": 27654,
+     "Q": 28479,
+     "R": 37686,
+     "S": 26118
+    },
+    "8": {
+     "*": 31224,
+     "B": 32715,
+     "C": 31466,
+     "E": 33450,
+     "F": 34345,
+     "G": 27593,
+     "H": 32374,
+     "I": 27350,
+     "J": 36623,
+     "M": 27337,
+     "N": 31115,
+     "Q": 16785,
+     "S": 22358
+    },
+    "9": {
+     "*": 25126,
+     "C": 26844,
+     "D": 19442,
+     "E": 24876,
+     "F": 20907,
+     "G": 27351,
+     "H": 29799,
+     "I": 27853,
+     "N": 25579,
+     "Q": 22783,
+     "S": 25047
+    }
+   },
+   "age_ratio": {
+    "0": {
+     "Y_LT30": 0.74888,
+     "Y30-49": 1.025565,
+     "Y_GE50": 1.106361
+    },
+    "1": {
+     "Y_LT30": 0.591519,
+     "Y30-49": 0.944897,
+     "Y_GE50": 1.185983
+    },
+    "2": {
+     "Y_LT30": 0.626259,
+     "Y30-49": 0.969547,
+     "Y_GE50": 1.241165
+    },
+    "3": {
+     "Y_LT30": 0.74888,
+     "Y30-49": 1.025565,
+     "Y_GE50": 1.106361
+    },
+    "4": {
+     "Y_LT30": 0.799993,
+     "Y30-49": 1.043901,
+     "Y_GE50": 1.151062
+    },
+    "5": {
+     "Y_LT30": 0.875757,
+     "Y30-49": 1.006024,
+     "Y_GE50": 1.090666
+    },
+    "6": {
+     "Y_LT30": 0.912949,
+     "Y30-49": 1.012794,
+     "Y_GE50": 1.177062
+    },
+    "7": {
+     "Y_LT30": 0.75954,
+     "Y30-49": 1.064737,
+     "Y_GE50": 1.065364
+    },
+    "8": {
+     "Y_LT30": 0.798777,
+     "Y30-49": 1.018575,
+     "Y_GE50": 1.039969
+    },
+    "9": {
+     "Y_LT30": 0.903765,
+     "Y30-49": 1.005691,
+     "Y_GE50": 1.050903
+    }
+   }
+  },
+  "section_by_sector": {
+   "Activités juridiques et comptables": "M",
+   "Agriculture et élevage": "A",
+   "Architecture, études et normes": "M",
+   "Artisanat d'art, audiovisuel et spectacle": "J",
+   "Automobile": "G",
+   "Bâtiment et travaux publics (BTP)": "F",
+   "Commerce et distribution": "G",
+   "Communication et marketing": "M",
+   "Culture et patrimoine": "R",
+   "Enseignement et formation": "P",
+   "Environnement": "E",
+   "Finance, banque et assurance": "K",
+   "Gestion administrative et ressources humaines": "N",
+   "Hôtellerie et restauration": "I",
+   "Immobilier": "L",
+   "Industrie - Alimentaire": "C",
+   "Industrie - Bois": "C",
+   "Industrie - Chimie": "C",
+   "Industrie - Métallurgie": "C",
+   "Industrie - Papier et imprimerie": "C",
+   "Industrie - Textile et mode": "C",
+   "Industrie - Électronique": "C",
+   "Industries": "C",
+   "Informatique et télécommunication": "J",
+   "Logistique et transport": "H",
+   "Maintenance, entretien et nettoyage": "C",
+   "Recherche": "M",
+   "Santé": "Q",
+   "Service public, défense et sécurité": "O",
+   "Service à la personne": "S",
+   "Social": "Q",
+   "Sport, animation et loisir": "R",
+   "Tourisme": "N",
+   "Édition": "J",
+   "Énergie": "D"
+  },
+  "fields_of_study": {
+   "Industrie - Métallurgie": "mécanique et productique",
+   "Tourisme": "tourisme",
+   "Hôtellerie et restauration": "hôtellerie-restauration",
+   "Gestion administrative et ressources humaines": "gestion des entreprises et des administrations",
+   "Industrie - Électronique": "électronique",
+   "Recherche": "sciences",
+   "Industrie - Chimie": "chimie",
+   "Industrie - Bois": "bois et ameublement",
+   "Énergie": "énergétique",
+   "Social": "travail social",
+   "Activités juridiques et comptables": "droit ou comptabilité",
+   "Service public, défense et sécurité": "administration publique et sécurité",
+   "Enseignement et formation": "sciences de l'éducation",
+   "Logistique et transport": "transport et logistique",
+   "Agriculture et élevage": "agriculture",
+   "Environnement": "environnement",
+   "Maintenance, entretien et nettoyage": "maintenance et hygiène des locaux",
+   "Culture et patrimoine": "patrimoine culturel",
+   "Industrie - Alimentaire": "industries agroalimentaires",
+   "Industries": "productique",
+   "Santé": "santé",
+   "Service à la personne": "coiffure et esthétique",
+   "Artisanat d'art, audiovisuel et spectacle": "arts et audiovisuel",
+   "Commerce et distribution": "commerce",
+   "Industrie - Papier et imprimerie": "industries graphiques",
+   "Industrie - Textile et mode": "mode et textile",
+   "Finance, banque et assurance": "banque, finance et assurance",
+   "Immobilier": "immobilier",
+   "Sport, animation et loisir": "sport et animation",
+   "Communication et marketing": "communication et marketing",
+   "Automobile": "maintenance automobile",
+   "Informatique et télécommunication": "informatique",
+   "Édition": "édition et journalisme",
+   "Architecture, études et normes": "architecture ou ingénierie",
+   "Bâtiment et travaux publics (BTP)": "bâtiment et travaux publics"
+  },
+  "naf_by_sector": {
+   "Activités juridiques et comptables": [
+    [
+     "69.10Z",
+     "Activités juridiques",
+     "M"
+    ],
+    [
+     "69.20Z",
+     "Activités comptables",
+     "M"
+    ]
+   ],
+   "Agriculture et élevage": [
+    [
+     "01.11Z",
+     "Culture de céréales (à l'exception du riz), de légumineuses et de graines oléagineuses",
+     "A"
+    ],
+    [
+     "01.12Z",
+     "Culture du riz",
+     "A"
+    ],
+    [
+     "01.13Z",
+     "Culture de légumes, de melons, de racines et de tubercules",
+     "A"
+    ],
+    [
+     "01.14Z",
+     "Culture de la canne à sucre",
+     "A"
+    ],
+    [
+     "01.15Z",
+     "Culture du tabac",
+     "A"
+    ],
+    [
+     "01.16Z",
+     "Culture de plantes à fibres",
+     "A"
+    ],
+    [
+     "01.19Z",
+     "Autres cultures non permanentes",
+     "A"
+    ],
+    [
+     "01.21Z",
+     "Culture de la vigne",
+     "A"
+    ],
+    [
+     "01.22Z",
+     "Culture de fruits tropicaux et subtropicaux",
+     "A"
+    ],
+    [
+     "01.23Z",
+     "Culture d'agrumes",
+     "A"
+    ],
+    [
+     "01.24Z",
+     "Culture de fruits à pépins et à noyau",
+     "A"
+    ],
+    [
+     "01.25Z",
+     "Culture d'autres fruits d'arbres ou d'arbustes et de fruits à coque",
+     "A"
+    ],
+    [
+     "01.26Z",
+     "Culture de fruits oléagineux",
+     "A"
+    ],
+    [
+     "01.27Z",
+     "Culture de plantes à boissons",
+     "A"
+    ],
+    [
+     "01.28Z",
+     "Culture de plantes à épices, aromatiques, médicinales et pharmaceutiques",
+     "A"
+    ],
+    [
+     "01.29Z",
+     "Autres cultures permanentes",
+     "A"
+    ],
+    [
+     "01.30Z",
+     "Reproduction de plantes",
+     "A"
+    ],
+    [
+     "01.41Z",
+     "Élevage de vaches laitières",
+     "A"
+    ],
+    [
+     "01.42Z",
+     "Élevage d'autres bovins et de buffles",
+     "A"
+    ],
+    [
+     "01.43Z",
+     "Élevage de chevaux et d'autres équidés",
+     "A"
+    ],
+    [
+     "01.44Z",
+     "Élevage de chameaux et d'autres camélidés",
+     "A"
+    ],
+    [
+     "01.45Z",
+     "Élevage d'ovins et de caprins",
+     "A"
+    ],
+    [
+     "01.46Z",
+     "Élevage de porcins",
+     "A"
+    ],
+    [
+     "01.47Z",
+     "Élevage de volailles",
+     "A"
+    ],
+    [
+     "01.49Z",
+     "Élevage d'autres animaux",
+     "A"
+    ],
+    [
+     "01.50Z",
+     "Culture et élevage associés",
+     "A"
+    ],
+    [
+     "01.61Z",
+     "Activités de soutien aux cultures",
+     "A"
+    ],
+    [
+     "01.62Z",
+     "Activités de soutien à la production animale",
+     "A"
+    ],
+    [
+     "01.63Z",
+     "Traitement primaire des récoltes",
+     "A"
+    ],
+    [
+     "01.64Z",
+     "Traitement des semences",
+     "A"
+    ],
+    [
+     "01.70Z",
+     "Chasse, piégeage et services annexes",
+     "A"
+    ],
+    [
+     "02.10Z",
+     "Sylviculture et autres activités forestières",
+     "A"
+    ],
+    [
+     "02.20Z",
+     "Exploitation forestière",
+     "A"
+    ],
+    [
+     "02.30Z",
+     "Récolte de produits forestiers non ligneux poussant à l'état sauvage",
+     "A"
+    ],
+    [
+     "02.40Z",
+     "Services de soutien à l'exploitation forestière",
+     "A"
+    ],
+    [
+     "03.11Z",
+     "Pêche en mer",
+     "A"
+    ],
+    [
+     "03.12Z",
+     "Pêche en eau douce",
+     "A"
+    ],
+    [
+     "03.21Z",
+     "Aquaculture en mer",
+     "A"
+    ],
+    [
+     "03.22Z",
+     "Aquaculture en eau douce",
+     "A"
+    ]
+   ],
+   "Architecture, études et normes": [
+    [
+     "71.11Z",
+     "Activités d'architecture",
+     "M"
+    ],
+    [
+     "71.12A",
+     "Activité des géomètres",
+     "M"
+    ],
+    [
+     "71.12B",
+     "Ingénierie, études techniques",
+     "M"
+    ],
+    [
+     "71.20A",
+     "Contrôle technique automobile",
+     "M"
+    ],
+    [
+     "71.20B",
+     "Analyses, essais et inspections techniques",
+     "M"
+    ]
+   ],
+   "Artisanat d'art, audiovisuel et spectacle": [
+    [
+     "32.11Z",
+     "Frappe de monnaie",
+     "C"
+    ],
+    [
+     "32.12Z",
+     "Fabrication d'articles de joaillerie et bijouterie",
+     "C"
+    ],
+    [
+     "32.13Z",
+     "Fabrication d'articles de bijouterie fantaisie et articles similaires",
+     "C"
+    ],
+    [
+     "32.20Z",
+     "Fabrication d'instruments de musique",
+     "C"
+    ],
+    [
+     "59.11A",
+     "Production de films et de programmes pour la télévision",
+     "J"
+    ],
+    [
+     "59.11B",
+     "Production de films institutionnels et publicitaires",
+     "J"
+    ],
+    [
+     "59.11C",
+     "Production de films pour le cinéma",
+     "J"
+    ],
+    [
+     "59.12Z",
+     "Post-production de films cinématographiques, de vidéo et de programmes de télévision",
+     "J"
+    ],
+    [
+     "59.13A",
+     "Distribution de films cinématographiques",
+     "J"
+    ],
+    [
+     "59.13B",
+     "Édition et distribution vidéo",
+     "J"
+    ],
+    [
+     "59.14Z",
+     "Projection de films cinématographiques",
+     "J"
+    ],
+    [
+     "59.20Z",
+     "Enregistrement sonore et édition musicale",
+     "J"
+    ],
+    [
+     "60.10Z",
+     "Édition et diffusion de programmes radio",
+     "J"
+    ],
+    [
+     "60.20A",
+     "Édition de chaînes généralistes",
+     "J"
+    ],
+    [
+     "60.20B",
+     "Édition de chaînes thématiques",
+     "J"
+    ],
+    [
+     "74.20Z",
+     "Activités photographiques",
+     "M"
+    ],
+    [
+     "90.01Z",
+     "Arts du spectacle vivant",
+     "R"
+    ],
+    [
+     "90.02Z",
+     "Activités de soutien au spectacle vivant",
+     "R"
+    ],
+    [
+     "90.03A",
+     "Création artistique relevant des arts plastiques",
+     "R"
+    ],
+    [
+     "90.03B",
+     "Autre création artistique",
+     "R"
+    ],
+    [
+     "90.04Z",
+     "Gestion de salles de spectacles",
+     "R"
+    ]
+   ],
+   "Automobile": [
+    [
+     "29.10Z",
+     "Construction de véhicules automobiles",
+     "C"
+    ],
+    [
+     "29.20Z",
+     "Fabrication de carrosseries et remorques",
+     "C"
+    ],
+    [
+     "29.31Z",
+     "Fabrication d'équipements électriques et électroniques automobiles",
+     "C"
+    ],
+    [
+     "29.32Z",
+     "Fabrication d'autres équipements automobiles",
+     "C"
+    ],
+    [
+     "45.11Z",
+     "Commerce de voitures et de véhicules automobiles légers",
+     "G"
+    ],
+    [
+     "45.19Z",
+     "Commerce d'autres véhicules automobiles",
+     "G"
+    ],
+    [
+     "45.20A",
+     "Entretien et réparation de véhicules automobiles légers",
+     "G"
+    ],
+    [
+     "45.20B",
+     "Entretien et réparation d'autres véhicules automobiles",
+     "G"
+    ],
+    [
+     "45.31Z",
+     "Commerce de gros d'équipements automobiles",
+     "G"
+    ],
+    [
+     "45.32Z",
+     "Commerce de détail d'équipements automobiles",
+     "G"
+    ],
+    [
+     "45.40Z",
+     "Commerce et réparation de motocycles",
+     "G"
+    ]
+   ],
+   "Bâtiment et travaux publics (BTP)": [
+    [
+     "41.10A",
+     "Promotion immobilière de logements",
+     "F"
+    ],
+    [
+     "41.10B",
+     "Promotion immobilière de bureaux",
+     "F"
+    ],
+    [
+     "41.10C",
+     "Promotion immobilière d'autres bâtiments",
+     "F"
+    ],
+    [
+     "41.10D",
+     "Supports juridiques de programmes",
+     "F"
+    ],
+    [
+     "41.20A",
+     "Construction de maisons individuelles",
+     "F"
+    ],
+    [
+     "41.20B",
+     "Construction d'autres bâtiments",
+     "F"
+    ],
+    [
+     "42.11Z",
+     "Construction de routes et autoroutes",
+     "F"
+    ],
+    [
+     "42.12Z",
+     "Construction de voies ferrées de surface et souterraines",
+     "F"
+    ],
+    [
+     "42.13A",
+     "Construction d'ouvrages d'art",
+     "F"
+    ],
+    [
+     "42.13B",
+     "Construction et entretien de tunnels",
+     "F"
+    ],
+    [
+     "42.21Z",
+     "Construction de réseaux pour fluides",
+     "F"
+    ],
+    [
+     "42.22Z",
+     "Construction de réseaux électriques et de télécommunications",
+     "F"
+    ],
+    [
+     "42.91Z",
+     "Construction d'ouvrages maritimes et fluviaux",
+     "F"
+    ],
+    [
+     "42.99Z",
+     "Construction d'autres ouvrages de génie civil n.c.a.",
+     "F"
+    ],
+    [
+     "43.11Z",
+     "Travaux de démolition",
+     "F"
+    ],
+    [
+     "43.12A",
+     "Travaux de terrassement courants et travaux préparatoires",
+     "F"
+    ],
+    [
+     "43.12B",
+     "Travaux de terrassement spécialisés ou de grande masse",
+     "F"
+    ],
+    [
+     "43.13Z",
+     "Forages et sondages",
+     "F"
+    ],
+    [
+     "43.21A",
+     "Travaux d'installation électrique dans tous locaux",
+     "F"
+    ],
+    [
+     "43.21B",
+     "Travaux d'installation électrique sur la voie publique",
+     "F"
+    ],
+    [
+     "43.22A",
+     "Travaux d'installation d'eau et de gaz en tous locaux",
+     "F"
+    ],
+    [
+     "43.22B",
+     "Travaux d'installation d'équipements thermiques et de climatisation",
+     "F"
+    ],
+    [
+     "43.29A",
+     "Travaux d'isolation",
+     "F"
+    ],
+    [
+     "43.29B",
+     "Autres travaux d'installation n.c.a.",
+     "F"
+    ],
+    [
+     "43.31Z",
+     "Travaux de plâtrerie",
+     "F"
+    ],
+    [
+     "43.32A",
+     "Travaux de menuiserie bois et PVC",
+     "F"
+    ],
+    [
+     "43.32B",
+     "Travaux de menuiserie métallique et serrurerie",
+     "F"
+    ],
+    [
+     "43.32C",
+     "Agencement de lieux de vente",
+     "F"
+    ],
+    [
+     "43.33Z",
+     "Travaux de revêtement des sols et des murs",
+     "F"
+    ],
+    [
+     "43.34Z",
+     "Travaux de peinture et vitrerie",
+     "F"
+    ],
+    [
+     "43.39Z",
+     "Autres travaux de finition",
+     "F"
+    ],
+    [
+     "43.91A",
+     "Travaux de charpente",
+     "F"
+    ],
+    [
+     "43.91B",
+     "Travaux de couverture par éléments",
+     "F"
+    ],
+    [
+     "43.99A",
+     "Travaux d'étanchéification",
+     "F"
+    ],
+    [
+     "43.99B",
+     "Travaux de montage de structures métalliques",
+     "F"
+    ],
+    [
+     "43.99C",
+     "Travaux de maçonnerie générale et gros œuvre de bâtiment",
+     "F"
+    ],
+    [
+     "43.99D",
+     "Autres travaux spécialisés de construction",
+     "F"
+    ],
+    [
+     "43.99E",
+     "Location avec opérateur de matériel de construction",
+     "F"
+    ]
+   ],
+   "Commerce et distribution": [
+    [
+     "46.11Z",
+     "Intermédiaires du commerce en matières premières agricoles, animaux vivants, matières premières textiles et produits semi-finis",
+     "G"
+    ],
+    [
+     "46.12A",
+     "Centrales d'achat de carburant",
+     "G"
+    ],
+    [
+     "46.12B",
+     "Autres intermédiaires du commerce en combustibles, métaux, minéraux et produits chimiques",
+     "G"
+    ],
+    [
+     "46.13Z",
+     "Intermédiaires du commerce en bois et matériaux de construction",
+     "G"
+    ],
+    [
+     "46.14Z",
+     "Intermédiaires du commerce en machines, équipements industriels, navires et avions",
+     "G"
+    ],
+    [
+     "46.15Z",
+     "Intermédiaires du commerce en meubles, articles de ménage et quincaillerie",
+     "G"
+    ],
+    [
+     "46.16Z",
+     "Intermédiaires du commerce en textiles, habillement, fourrures, chaussures et articles en cuir",
+     "G"
+    ],
+    [
+     "46.17A",
+     "Centrales d'achat alimentaires",
+     "G"
+    ],
+    [
+     "46.17B",
+     "Autres intermédiaires du commerce en denrées, boissons et tabac",
+     "G"
+    ],
+    [
+     "46.18Z",
+     "Intermédiaires spécialisés dans le commerce d'autres produits spécifiques",
+     "G"
+    ],
+    [
+     "46.19A",
+     "Centrales d'achat non alimentaires",
+     "G"
+    ],
+    [
+     "46.19B",
+     "Autres intermédiaires du commerce en produits divers",
+     "G"
+    ],
+    [
+     "46.21Z",
+     "Commerce de gros (commerce interentreprises) de céréales, de tabac non manufacturé, de semences et d'aliments pour le bétail",
+     "G"
+    ],
+    [
+     "46.22Z",
+     "Commerce de gros (commerce interentreprises) de fleurs et plantes",
+     "G"
+    ],
+    [
+     "46.23Z",
+     "Commerce de gros (commerce interentreprises) d'animaux vivants",
+     "G"
+    ],
+    [
+     "46.24Z",
+     "Commerce de gros (commerce interentreprises) de cuirs et peaux",
+     "G"
+    ],
+    [
+     "46.31Z",
+     "Commerce de gros (commerce interentreprises) de fruits et légumes",
+     "G"
+    ],
+    [
+     "46.32A",
+     "Commerce de gros (commerce interentreprises) de viandes de boucherie",
+     "G"
+    ],
+    [
+     "46.32B",
+     "Commerce de gros (commerce interentreprises) de produits à base de viande",
+     "G"
+    ],
+    [
+     "46.32C",
+     "Commerce de gros (commerce interentreprises) de volailles et gibier",
+     "G"
+    ],
+    [
+     "46.33Z",
+     "Commerce de gros (commerce interentreprises) de produits laitiers, œufs, huiles et matières grasses comestibles",
+     "G"
+    ],
+    [
+     "46.34Z",
+     "Commerce de gros (commerce interentreprises) de boissons",
+     "G"
+    ],
+    [
+     "46.35Z",
+     "Commerce de gros (commerce interentreprises) de produits à base de tabac",
+     "G"
+    ],
+    [
+     "46.36Z",
+     "Commerce de gros (commerce interentreprises) de sucre, chocolat et confiserie",
+     "G"
+    ],
+    [
+     "46.37Z",
+     "Commerce de gros (commerce interentreprises) de café, thé, cacao et épices",
+     "G"
+    ],
+    [
+     "46.38A",
+     "Commerce de gros (commerce interentreprises) de poissons, crustacés et mollusques",
+     "G"
+    ],
+    [
+     "46.38B",
+     "Commerce de gros (commerce interentreprises) alimentaire spécialisé divers",
+     "G"
+    ],
+    [
+     "46.39A",
+     "Commerce de gros (commerce interentreprises) de produits surgelés",
+     "G"
+    ],
+    [
+     "46.39B",
+     "Commerce de gros (commerce interentreprises) alimentaire non spécialisé",
+     "G"
+    ],
+    [
+     "46.41Z",
+     "Commerce de gros (commerce interentreprises) de textiles",
+     "G"
+    ],
+    [
+     "46.42Z",
+     "Commerce de gros (commerce interentreprises) d'habillement et de chaussures",
+     "G"
+    ],
+    [
+     "46.43Z",
+     "Commerce de gros (commerce interentreprises) d'appareils électroménagers",
+     "G"
+    ],
+    [
+     "46.44Z",
+     "Commerce de gros (commerce interentreprises) de vaisselle, verrerie et produits d'entretien",
+     "G"
+    ],
+    [
+     "46.45Z",
+     "Commerce de gros (commerce interentreprises) de parfumerie et de produits de beauté",
+     "G"
+    ],
+    [
+     "46.46Z",
+     "Commerce de gros (commerce interentreprises) de produits pharmaceutiques",
+     "G"
+    ],
+    [
+     "46.47Z",
+     "Commerce de gros (commerce interentreprises) de meubles, de tapis et d'appareils d'éclairage",
+     "G"
+    ],
+    [
+     "46.48Z",
+     "Commerce de gros (commerce interentreprises) d'articles d'horlogerie et de bijouterie",
+     "G"
+    ],
+    [
+     "46.49Z",
+     "Commerce de gros (commerce interentreprises) d'autres biens domestiques",
+     "G"
+    ],
+    [
+     "46.51Z",
+     "Commerce de gros (commerce interentreprises) d'ordinateurs, d'équipements informatiques périphériques et de logiciels",
+     "G"
+    ],
+    [
+     "46.52Z",
+     "Commerce de gros (commerce interentreprises) de composants et d'équipements électroniques et de télécommunication",
+     "G"
+    ],
+    [
+     "46.61Z",
+     "Commerce de gros (commerce interentreprises) de matériel agricole",
+     "G"
+    ],
+    [
+     "46.62Z",
+     "Commerce de gros (commerce interentreprises) de machines-outils",
+     "G"
+    ],
+    [
+     "46.63Z",
+     "Commerce de gros (commerce interentreprises) de machines pour l'extraction, la construction et le génie civil",
+     "G"
+    ],
+    [
+     "46.64Z",
+     "Commerce de gros (commerce interentreprises) de machines pour l'industrie textile et l'habillement",
+     "G"
+    ],
+    [
+     "46.65Z",
+     "Commerce de gros (commerce interentreprises) de mobilier de bureau",
+     "G"
+    ],
+    [
+     "46.66Z",
+     "Commerce de gros (commerce interentreprises) d'autres machines et équipements de bureau",
+     "G"
+    ],
+    [
+     "46.69A",
+     "Commerce de gros (commerce interentreprises) de matériel électrique",
+     "G"
+    ],
+    [
+     "46.69B",
+     "Commerce de gros (commerce interentreprises) de fournitures et équipements industriels divers",
+     "G"
+    ],
+    [
+     "46.69C",
+     "Commerce de gros (commerce interentreprises) de fournitures et équipements divers pour le commerce et les services",
+     "G"
+    ],
+    [
+     "46.71Z",
+     "Commerce de gros (commerce interentreprises) de combustibles et de produits annexes",
+     "G"
+    ],
+    [
+     "46.72Z",
+     "Commerce de gros (commerce interentreprises) de minerais et métaux",
+     "G"
+    ],
+    [
+     "46.73A",
+     "Commerce de gros (commerce interentreprises) de bois et de matériaux de construction",
+     "G"
+    ],
+    [
+     "46.73B",
+     "Commerce de gros (commerce interentreprises) d'appareils sanitaires et de produits de décoration",
+     "G"
+    ],
+    [
+     "46.74A",
+     "Commerce de gros (commerce interentreprises) de quincaillerie",
+     "G"
+    ],
+    [
+     "46.74B",
+     "Commerce de gros (commerce interentreprises) de fournitures pour la plomberie et le chauffage",
+     "G"
+    ],
+    [
+     "46.75Z",
+     "Commerce de gros (commerce interentreprises) de produits chimiques",
+     "G"
+    ],
+    [
+     "46.76Z",
+     "Commerce de gros (commerce interentreprises) d'autres produits intermédiaires",
+     "G"
+    ],
+    [
+     "46.77Z",
+     "Commerce de gros (commerce interentreprises) de déchets et débris",
+     "G"
+    ],
+    [
+     "46.90Z",
+     "Commerce de gros (commerce interentreprises) non spécialisé",
+     "G"
+    ],
+    [
+     "47.11A",
+     "Commerce de détail de produits surgelés",
+     "G"
+    ],
+    [
+     "47.11B",
+     "Commerce d'alimentation générale",
+     "G"
+    ],
+    [
+     "47.11C",
+     "Supérettes",
+     "G"
+    ],
+    [
+     "47.11D",
+     "Supermarchés",
+     "G"
+    ],
+    [
+     "47.11E",
+     "Magasins multi-commerces",
+     "G"
+    ],
+    [
+     "47.11F",
+     "Hypermarchés",
+     "G"
+    ],
+    [
+     "47.19A",
+     "Grands magasins",
+     "G"
+    ],
+    [
+     "47.19B",
+     "Autres commerces de détail en magasin non spécialisé",
+     "G"
+    ],
+    [
+     "47.21Z",
+     "Commerce de détail de fruits et légumes en magasin spécialisé",
+     "G"
+    ],
+    [
+     "47.22Z",
+     "Commerce de détail de viandes et de produits à base de viande en magasin spécialisé",
+     "G"
+    ],
+    [
+     "47.23Z",
+     "Commerce de détail de poissons, crustacés et mollusques en magasin spécialisé",
+     "G"
+    ],
+    [
+     "47.24Z",
+     "Commerce de détail de pain, pâtisserie et confiserie en magasin spécialisé",
+     "G"
+    ],
+    [
+     "47.25Z",
+     "Commerce de détail de boissons en magasin spécialisé",
+     "G"
+    ],
+    [
+     "47.26Z",
+     "Commerce de détail de produits à base de tabac en magasin spécialisé",
+     "G"
+    ],
+    [
+     "47.29Z",
+     "Autres commerces de détail alimentaires en magasin spécialisé",
+     "G"
+    ],
+    [
+     "47.30Z",
+     "Commerce de détail de carburants en magasin spécialisé",
+     "G"
+    ],
+    [
+     "47.41Z",
+     "Commerce de détail d'ordinateurs, d'unités périphériques et de logiciels en magasin spécialisé",
+     "G"
+    ],
+    [
+     "47.42Z",
+     "Commerce de détail de matériels de télécommunication en magasin spécialisé",
+     "G"
+    ],
+    [
+     "47.43Z",
+     "Commerce de détail de matériels audio et vidéo en magasin spécialisé",
+     "G"
+    ],
+    [
+     "47.51Z",
+     "Commerce de détail de textiles en magasin spécialisé",
+     "G"
+    ],
+    [
+     "47.52A",
+     "Commerce de détail de quincaillerie, peintures et verres en petites surfaces (moins de 400 m²)",
+     "G"
+    ],
+    [
+     "47.52B",
+     "Commerce de détail de quincaillerie, peintures et verres en grandes surfaces (400 m² et plus)",
+     "G"
+    ],
+    [
+     "47.53Z",
+     "Commerce de détail de tapis, moquettes et revêtements de murs et de sols en magasin spécialisé",
+     "G"
+    ],
+    [
+     "47.54Z",
+     "Commerce de détail d'appareils électroménagers en magasin spécialisé",
+     "G"
+    ],
+    [
+     "47.59A",
+     "Commerce de détail de meubles",
+     "G"
+    ],
+    [
+     "47.59B",
+     "Commerce de détail d'autres équipements du foyer",
+     "G"
+    ],
+    [
+     "47.61Z",
+     "Commerce de détail de livres en magasin spécialisé",
+     "G"
+    ],
+    [
+     "47.62Z",
+     "Commerce de détail de journaux et papeterie en magasin spécialisé",
+     "G"
+    ],
+    [
+     "47.63Z",
+     "Commerce de détail d'enregistrements musicaux et vidéo en magasin spécialisé",
+     "G"
+    ],
+    [
+     "47.64Z",
+     "Commerce de détail d'articles de sport en magasin spécialisé",
+     "G"
+    ],
+    [
+     "47.65Z",
+     "Commerce de détail de jeux et jouets en magasin spécialisé",
+     "G"
+    ],
+    [
+     "47.71Z",
+     "Commerce de détail d'habillement en magasin spécialisé",
+     "G"
+    ],
+    [
+     "47.72A",
+     "Commerce de détail de la chaussure",
+     "G"
+    ],
+    [
+     "47.72B",
+     "Commerce de détail de maroquinerie et d'articles de voyage",
+     "G"
+    ],
+    [
+     "47.73Z",
+     "Commerce de détail de produits pharmaceutiques en magasin spécialisé",
+     "G"
+    ],
+    [
+     "47.74Z",
+     "Commerce de détail d'articles médicaux et orthopédiques en magasin spécialisé",
+     "G"
+    ],
+    [
+     "47.75Z",
+     "Commerce de détail de parfumerie et de produits de beauté en magasin spécialisé",
+     "G"
+    ],
+    [
+     "47.76Z",
+     "Commerce de détail de fleurs, plantes, graines, engrais, animaux de compagnie et aliments pour ces animaux en magasin spécialisé",
+     "G"
+    ],
+    [
+     "47.77Z",
+     "Commerce de détail d'articles d'horlogerie et de bijouterie en magasin spécialisé",
+     "G"
+    ],
+    [
+     "47.78A",
+     "Commerces de détail d'optique",
+     "G"
+    ],
+    [
+     "47.78B",
+     "Commerces de détail de charbons et combustibles",
+     "G"
+    ],
+    [
+     "47.78C",
+     "Autres commerces de détail spécialisés divers",
+     "G"
+    ],
+    [
+     "47.79Z",
+     "Commerce de détail de biens d'occasion en magasin",
+     "G"
+    ],
+    [
+     "47.81Z",
+     "Commerce de détail alimentaire sur éventaires et marchés",
+     "G"
+    ],
+    [
+     "47.82Z",
+     "Commerce de détail de textiles, d'habillement et de chaussures sur éventaires et marchés",
+     "G"
+    ],
+    [
+     "47.89Z",
+     "Autres commerces de détail sur éventaires et marchés",
+     "G"
+    ],
+    [
+     "47.91A",
+     "Vente à distance sur catalogue général",
+     "G"
+    ],
+    [
+     "47.91B",
+     "Vente à distance sur catalogue spécialisé",
+     "G"
+    ],
+    [
+     "47.99A",
+     "Vente à domicile",
+     "G"
+    ],
+    [
+     "47.99B",
+     "Vente par automates et autres commerces de détail hors magasin, éventaires ou marchés n.c.a.",
+     "G"
+    ]
+   ],
+   "Communication et marketing": [
+    [
+     "70.21Z",
+     "Conseil en relations publiques et communication",
+     "M"
+    ],
+    [
+     "73.11Z",
+     "Activités des agences de publicité",
+     "M"
+    ],
+    [
+     "73.12Z",
+     "Régie publicitaire de médias",
+     "M"
+    ],
+    [
+     "73.20Z",
+     "Études de marché et sondages",
+     "M"
+    ]
+   ],
+   "Culture et patrimoine": [
+    [
+     "91.01Z",
+     "Gestion des bibliothèques et des archives",
+     "R"
+    ],
+    [
+     "91.02Z",
+     "Gestion des musées",
+     "R"
+    ],
+    [
+     "91.03Z",
+     "Gestion des sites et monuments historiques et des attractions touristiques similaires",
+     "R"
+    ],
+    [
+     "91.04Z",
+     "Gestion des jardins botaniques et zoologiques et des réserves naturelles",
+     "R"
+    ]
+   ],
+   "Enseignement et formation": [
+    [
+     "85.10Z",
+     "Enseignement pré-primaire",
+     "P"
+    ],
+    [
+     "85.20Z",
+     "Enseignement primaire",
+     "P"
+    ],
+    [
+     "85.31Z",
+     "Enseignement secondaire général",
+     "P"
+    ],
+    [
+     "85.32Z",
+     "Enseignement secondaire technique ou professionnel",
+     "P"
+    ],
+    [
+     "85.41Z",
+     "Enseignement post-secondaire non supérieur",
+     "P"
+    ],
+    [
+     "85.42Z",
+     "Enseignement supérieur",
+     "P"
+    ],
+    [
+     "85.51Z",
+     "Enseignement de disciplines sportives et d'activités de loisirs",
+     "P"
+    ],
+    [
+     "85.52Z",
+     "Enseignement culturel",
+     "P"
+    ],
+    [
+     "85.53Z",
+     "Enseignement de la conduite",
+     "P"
+    ],
+    [
+     "85.59A",
+     "Formation continue d'adultes",
+     "P"
+    ],
+    [
+     "85.59B",
+     "Autres enseignements",
+     "P"
+    ],
+    [
+     "85.60Z",
+     "Activités de soutien à l'enseignement",
+     "P"
+    ]
+   ],
+   "Environnement": [
+    [
+     "36.00Z",
+     "Captage, traitement et distribution d'eau",
+     "E"
+    ],
+    [
+     "37.00Z",
+     "Collecte et traitement des eaux usées",
+     "E"
+    ],
+    [
+     "38.11Z",
+     "Collecte des déchets non dangereux",
+     "E"
+    ],
+    [
+     "38.12Z",
+     "Collecte des déchets dangereux",
+     "E"
+    ],
+    [
+     "38.21Z",
+     "Traitement et élimination des déchets non dangereux",
+     "E"
+    ],
+    [
+     "38.22Z",
+     "Traitement et élimination des déchets dangereux",
+     "E"
+    ],
+    [
+     "38.31Z",
+     "Démantèlement d'épaves",
+     "E"
+    ],
+    [
+     "38.32Z",
+     "Récupération de déchets triés",
+     "E"
+    ],
+    [
+     "39.00Z",
+     "Dépollution et autres services de gestion des déchets",
+     "E"
+    ],
+    [
+     "81.30Z",
+     "Services d'aménagement paysager",
+     "N"
+    ]
+   ],
+   "Finance, banque et assurance": [
+    [
+     "64.11Z",
+     "Activités de banque centrale",
+     "K"
+    ],
+    [
+     "64.19Z",
+     "Autres intermédiations monétaires",
+     "K"
+    ],
+    [
+     "64.20Z",
+     "Activités des sociétés holding",
+     "K"
+    ],
+    [
+     "64.30Z",
+     "Fonds de placement et entités financières similaires",
+     "K"
+    ],
+    [
+     "64.91Z",
+     "Crédit-bail",
+     "K"
+    ],
+    [
+     "64.92Z",
+     "Autre distribution de crédit",
+     "K"
+    ],
+    [
+     "64.99Z",
+     "Autres activités des services financiers, hors assurance et caisses de retraite, n.c.a.",
+     "K"
+    ],
+    [
+     "65.11Z",
+     "Assurance vie",
+     "K"
+    ],
+    [
+     "65.12Z",
+     "Autres assurances",
+     "K"
+    ],
+    [
+     "65.20Z",
+     "Réassurance",
+     "K"
+    ],
+    [
+     "65.30Z",
+     "Caisses de retraite",
+     "K"
+    ],
+    [
+     "66.11Z",
+     "Administration de marchés financiers",
+     "K"
+    ],
+    [
+     "66.12Z",
+     "Courtage de valeurs mobilières et de marchandises",
+     "K"
+    ],
+    [
+     "66.19A",
+     "Supports juridiques de gestion de patrimoine mobilier",
+     "K"
+    ],
+    [
+     "66.19B",
+     "Autres activités auxiliaires de services financiers, hors assurance et caisses de retraite, n.c.a.",
+     "K"
+    ],
+    [
+     "66.21Z",
+     "Évaluation des risques et dommages",
+     "K"
+    ],
+    [
+     "66.22Z",
+     "Activités des agents et courtiers d'assurances",
+     "K"
+    ],
+    [
+     "66.29Z",
+     "Autres activités auxiliaires d'assurance et de caisses de retraite",
+     "K"
+    ],
+    [
+     "66.30Z",
+     "Gestion de fonds",
+     "K"
+    ]
+   ],
+   "Gestion administrative et ressources humaines": [
+    [
+     "70.10Z",
+     "Activités des sièges sociaux",
+     "M"
+    ],
+    [
+     "70.22Z",
+     "Conseil pour les affaires et autres conseils de gestion",
+     "M"
+    ],
+    [
+     "78.10Z",
+     "Activités des agences de placement de main-d'œuvre",
+     "N"
+    ],
+    [
+     "78.20Z",
+     "Activités des agences de travail temporaire",
+     "N"
+    ],
+    [
+     "78.30Z",
+     "Autre mise à disposition de ressources humaines",
+     "N"
+    ],
+    [
+     "82.11Z",
+     "Services administratifs combinés de bureau",
+     "N"
+    ],
+    [
+     "82.19Z",
+     "Photocopie, préparation de documents et autres activités spécialisées de soutien de bureau",
+     "N"
+    ],
+    [
+     "82.20Z",
+     "Activités de centres d'appels",
+     "N"
+    ],
+    [
+     "82.30Z",
+     "Organisation de foires, salons professionnels et congrès",
+     "N"
+    ],
+    [
+     "82.91Z",
+     "Activités des agences de recouvrement de factures et des sociétés d'information financière sur la clientèle",
+     "N"
+    ],
+    [
+     "82.92Z",
+     "Activités de conditionnement",
+     "N"
+    ],
+    [
+     "82.99Z",
+     "Autres activités de soutien aux entreprises n.c.a.",
+     "N"
+    ]
+   ],
+   "Hôtellerie et restauration": [
+    [
+     "55.10Z",
+     "Hôtels et hébergement similaire",
+     "I"
+    ],
+    [
+     "56.10A",
+     "Restauration traditionnelle",
+     "I"
+    ],
+    [
+     "56.10B",
+     "Cafétérias et autres libres-services",
+     "I"
+    ],
+    [
+     "56.10C",
+     "Restauration de type rapide",
+     "I"
+    ],
+    [
+     "56.21Z",
+     "Services des traiteurs",
+     "I"
+    ],
+    [
+     "56.29A",
+     "Restauration collective sous contrat",
+     "I"
+    ],
+    [
+     "56.29B",
+     "Autres services de restauration n.c.a.",
+     "I"
+    ],
+    [
+     "56.30Z",
+     "Débits de boissons",
+     "I"
+    ]
+   ],
+   "Immobilier": [
+    [
+     "68.10Z",
+     "Activités des marchands de biens immobiliers",
+     "L"
+    ],
+    [
+     "68.20A",
+     "Location de logements",
+     "L"
+    ],
+    [
+     "68.20B",
+     "Location de terrains et d'autres biens immobiliers",
+     "L"
+    ],
+    [
+     "68.31Z",
+     "Agences immobilières",
+     "L"
+    ],
+    [
+     "68.32A",
+     "Administration d'immeubles et autres biens immobiliers",
+     "L"
+    ],
+    [
+     "68.32B",
+     "Supports juridiques de gestion de patrimoine immobilier",
+     "L"
+    ]
+   ],
+   "Industrie - Alimentaire": [
+    [
+     "10.11Z",
+     "Transformation et conservation de la viande de boucherie",
+     "C"
+    ],
+    [
+     "10.12Z",
+     "Transformation et conservation de la viande de volaille",
+     "C"
+    ],
+    [
+     "10.13A",
+     "Préparation industrielle de produits à base de viande",
+     "C"
+    ],
+    [
+     "10.13B",
+     "Charcuterie",
+     "C"
+    ],
+    [
+     "10.20Z",
+     "Transformation et conservation de poisson, de crustacés et de mollusques",
+     "C"
+    ],
+    [
+     "10.31Z",
+     "Transformation et conservation de pommes de terre",
+     "C"
+    ],
+    [
+     "10.32Z",
+     "Préparation de jus de fruits et légumes",
+     "C"
+    ],
+    [
+     "10.39A",
+     "Autre transformation et conservation de légumes",
+     "C"
+    ],
+    [
+     "10.39B",
+     "Transformation et conservation de fruits",
+     "C"
+    ],
+    [
+     "10.41A",
+     "Fabrication d'huiles et graisses brutes",
+     "C"
+    ],
+    [
+     "10.41B",
+     "Fabrication d'huiles et graisses raffinées",
+     "C"
+    ],
+    [
+     "10.42Z",
+     "Fabrication de margarine et graisses comestibles similaires",
+     "C"
+    ],
+    [
+     "10.51A",
+     "Fabrication de lait liquide et de produits frais",
+     "C"
+    ],
+    [
+     "10.51B",
+     "Fabrication de beurre",
+     "C"
+    ],
+    [
+     "10.51C",
+     "Fabrication de fromage",
+     "C"
+    ],
+    [
+     "10.51D",
+     "Fabrication d'autres produits laitiers",
+     "C"
+    ],
+    [
+     "10.52Z",
+     "Fabrication de glaces et sorbets",
+     "C"
+    ],
+    [
+     "10.61A",
+     "Meunerie",
+     "C"
+    ],
+    [
+     "10.61B",
+     "Autres activités du travail des grains",
+     "C"
+    ],
+    [
+     "10.62Z",
+     "Fabrication de produits amylacés",
+     "C"
+    ],
+    [
+     "10.71A",
+     "Fabrication industrielle de pain et de pâtisserie fraîche",
+     "C"
+    ],
+    [
+     "10.71B",
+     "Cuisson de produits de boulangerie",
+     "C"
+    ],
+    [
+     "10.71C",
+     "Boulangerie et boulangerie-pâtisserie",
+     "C"
+    ],
+    [
+     "10.71D",
+     "Pâtisserie",
+     "C"
+    ],
+    [
+     "10.72Z",
+     "Fabrication de biscuits, biscottes et pâtisseries de conservation",
+     "C"
+    ],
+    [
+     "10.73Z",
+     "Fabrication de pâtes alimentaires",
+     "C"
+    ],
+    [
+     "10.81Z",
+     "Fabrication de sucre",
+     "C"
+    ],
+    [
+     "10.82Z",
+     "Fabrication de cacao, chocolat et de produits de confiserie",
+     "C"
+    ],
+    [
+     "10.83Z",
+     "Transformation du thé et du café",
+     "C"
+    ],
+    [
+     "10.84Z",
+     "Fabrication de condiments et assaisonnements",
+     "C"
+    ],
+    [
+     "10.85Z",
+     "Fabrication de plats préparés",
+     "C"
+    ],
+    [
+     "10.86Z",
+     "Fabrication d'aliments homogénéisés et diététiques",
+     "C"
+    ],
+    [
+     "10.89Z",
+     "Fabrication d'autres produits alimentaires n.c.a.",
+     "C"
+    ],
+    [
+     "10.91Z",
+     "Fabrication d'aliments pour animaux de ferme",
+     "C"
+    ],
+    [
+     "10.92Z",
+     "Fabrication d'aliments pour animaux de compagnie",
+     "C"
+    ],
+    [
+     "11.01Z",
+     "Production de boissons alcooliques distillées",
+     "C"
+    ],
+    [
+     "11.02A",
+     "Fabrication de vins effervescents",
+     "C"
+    ],
+    [
+     "11.02B",
+     "Vinification",
+     "C"
+    ],
+    [
+     "11.03Z",
+     "Fabrication de cidre et de vins de fruits",
+     "C"
+    ],
+    [
+     "11.04Z",
+     "Production d'autres boissons fermentées non distillées",
+     "C"
+    ],
+    [
+     "11.05Z",
+     "Fabrication de bière",
+     "C"
+    ],
+    [
+     "11.06Z",
+     "Fabrication de malt",
+     "C"
+    ],
+    [
+     "11.07A",
+     "Industrie des eaux de table",
+     "C"
+    ],
+    [
+     "11.07B",
+     "Production de boissons rafraîchissantes",
+     "C"
+    ],
+    [
+     "12.00Z",
+     "Fabrication de produits à base de tabac",
+     "C"
+    ]
+   ],
+   "Industrie - Bois": [
+    [
+     "16.10A",
+     "Sciage et rabotage du bois, hors imprégnation",
+     "C"
+    ],
+    [
+     "16.10B",
+     "Imprégnation du bois",
+     "C"
+    ],
+    [
+     "16.21Z",
+     "Fabrication de placage et de panneaux de bois",
+     "C"
+    ],
+    [
+     "16.22Z",
+     "Fabrication de parquets assemblés",
+     "C"
+    ],
+    [
+     "16.23Z",
+     "Fabrication de charpentes et d'autres menuiseries",
+     "C"
+    ],
+    [
+     "16.24Z",
+     "Fabrication d'emballages en bois",
+     "C"
+    ],
+    [
+     "16.29Z",
+     "Fabrication d'objets divers en bois ; fabrication d'objets en liège, vannerie et sparterie",
+     "C"
+    ],
+    [
+     "31.01Z",
+     "Fabrication de meubles de bureau et de magasin",
+     "C"
+    ],
+    [
+     "31.02Z",
+     "Fabrication de meubles de cuisine",
+     "C"
+    ],
+    [
+     "31.03Z",
+     "Fabrication de matelas",
+     "C"
+    ],
+    [
+     "31.09A",
+     "Fabrication de sièges d'ameublement d'intérieur",
+     "C"
+    ],
+    [
+     "31.09B",
+     "Fabrication d'autres meubles et industries connexes de l'ameublement",
+     "C"
+    ]
+   ],
+   "Industrie - Chimie": [
+    [
+     "19.10Z",
+     "Cokéfaction",
+     "C"
+    ],
+    [
+     "19.20Z",
+     "Raffinage du pétrole",
+     "C"
+    ],
+    [
+     "20.11Z",
+     "Fabrication de gaz industriels",
+     "C"
+    ],
+    [
+     "20.12Z",
+     "Fabrication de colorants et de pigments",
+     "C"
+    ],
+    [
+     "20.13A",
+     "Enrichissement et retraitement de matières nucléaires",
+     "C"
+    ],
+    [
+     "20.13B",
+     "Fabrication d'autres produits chimiques inorganiques de base n.c.a.",
+     "C"
+    ],
+    [
+     "20.14Z",
+     "Fabrication d'autres produits chimiques organiques de base",
+     "C"
+    ],
+    [
+     "20.15Z",
+     "Fabrication de produits azotés et d'engrais",
+     "C"
+    ],
+    [
+     "20.16Z",
+     "Fabrication de matières plastiques de base",
+     "C"
+    ],
+    [
+     "20.17Z",
+     "Fabrication de caoutchouc synthétique",
+     "C"
+    ],
+    [
+     "20.20Z",
+     "Fabrication de pesticides et d'autres produits agrochimiques",
+     "C"
+    ],
+    [
+     "20.30Z",
+     "Fabrication de peintures, vernis, encres et mastics",
+     "C"
+    ],
+    [
+     "20.41Z",
+     "Fabrication de savons, détergents et produits d'entretien",
+     "C"
+    ],
+    [
+     "20.42Z",
+     "Fabrication de parfums et de produits pour la toilette",
+     "C"
+    ],
+    [
+     "20.51Z",
+     "Fabrication de produits explosifs",
+     "C"
+    ],
+    [
+     "20.52Z",
+     "Fabrication de colles",
+     "C"
+    ],
+    [
+     "20.53Z",
+     "Fabrication d'huiles essentielles",
+     "C"
+    ],
+    [
+     "20.59Z",
+     "Fabrication d'autres produits chimiques n.c.a.",
+     "C"
+    ],
+    [
+     "20.60Z",
+     "Fabrication de fibres artificielles ou synthétiques",
+     "C"
+    ],
+    [
+     "21.10Z",
+     "Fabrication de produits pharmaceutiques de base",
+     "C"
+    ],
+    [
+     "21.20Z",
+     "Fabrication de préparations pharmaceutiques",
+     "C"
+    ]
+   ],
+   "Industrie - Métallurgie": [
+    [
+     "24.10Z",
+     "Sidérurgie",
+     "C"
+    ],
+    [
+     "24.20Z",
+     "Fabrication de tubes, tuyaux, profilés creux et accessoires correspondants en acier",
+     "C"
+    ],
+    [
+     "24.31Z",
+     "Étirage à froid de barres",
+     "C"
+    ],
+    [
+     "24.32Z",
+     "Laminage à froid de feuillards",
+     "C"
+    ],
+    [
+     "24.33Z",
+     "Profilage à froid par formage ou pliage",
+     "C"
+    ],
+    [
+     "24.34Z",
+     "Tréfilage à froid",
+     "C"
+    ],
+    [
+     "24.41Z",
+     "Production de métaux précieux",
+     "C"
+    ],
+    [
+     "24.42Z",
+     "Métallurgie de l'aluminium",
+     "C"
+    ],
+    [
+     "24.43Z",
+     "Métallurgie du plomb, du zinc ou de l'étain",
+     "C"
+    ],
+    [
+     "24.44Z",
+     "Métallurgie du cuivre",
+     "C"
+    ],
+    [
+     "24.45Z",
+     "Métallurgie des autres métaux non ferreux",
+     "C"
+    ],
+    [
+     "24.46Z",
+     "Élaboration et transformation de matières nucléaires",
+     "C"
+    ],
+    [
+     "24.51Z",
+     "Fonderie de fonte",
+     "C"
+    ],
+    [
+     "24.52Z",
+     "Fonderie d'acier",
+     "C"
+    ],
+    [
+     "24.53Z",
+     "Fonderie de métaux légers",
+     "C"
+    ],
+    [
+     "24.54Z",
+     "Fonderie d'autres métaux non ferreux",
+     "C"
+    ],
+    [
+     "25.11Z",
+     "Fabrication de structures métalliques et de parties de structures",
+     "C"
+    ],
+    [
+     "25.12Z",
+     "Fabrication de portes et fenêtres en métal",
+     "C"
+    ],
+    [
+     "25.21Z",
+     "Fabrication de radiateurs et de chaudières pour le chauffage central",
+     "C"
+    ],
+    [
+     "25.29Z",
+     "Fabrication d'autres réservoirs, citernes et conteneurs métalliques",
+     "C"
+    ],
+    [
+     "25.30Z",
+     "Fabrication de générateurs de vapeur, à l'exception des chaudières pour le chauffage central",
+     "C"
+    ],
+    [
+     "25.40Z",
+     "Fabrication d'armes et de munitions",
+     "C"
+    ],
+    [
+     "25.50A",
+     "Forge, estampage, matriçage ; métallurgie des poudres",
+     "C"
+    ],
+    [
+     "25.50B",
+     "Découpage, emboutissage",
+     "C"
+    ],
+    [
+     "25.61Z",
+     "Traitement et revêtement des métaux",
+     "C"
+    ],
+    [
+     "25.62A",
+     "Décolletage",
+     "C"
+    ],
+    [
+     "25.62B",
+     "Mécanique industrielle",
+     "C"
+    ],
+    [
+     "25.71Z",
+     "Fabrication de coutellerie",
+     "C"
+    ],
+    [
+     "25.72Z",
+     "Fabrication de serrures et de ferrures",
+     "C"
+    ],
+    [
+     "25.73A",
+     "Fabrication de moules et modèles",
+     "C"
+    ],
+    [
+     "25.73B",
+     "Fabrication d'autres outillages",
+     "C"
+    ],
+    [
+     "25.91Z",
+     "Fabrication de fûts et emballages métalliques similaires",
+     "C"
+    ],
+    [
+     "25.92Z",
+     "Fabrication d'emballages métalliques légers",
+     "C"
+    ],
+    [
+     "25.93Z",
+     "Fabrication d'articles en fils métalliques, de chaînes et de ressorts",
+     "C"
+    ],
+    [
+     "25.94Z",
+     "Fabrication de vis et de boulons",
+     "C"
+    ],
+    [
+     "25.99A",
+     "Fabrication d'articles métalliques ménagers",
+     "C"
+    ],
+    [
+     "25.99B",
+     "Fabrication d'autres articles métalliques",
+     "C"
+    ]
+   ],
+   "Industrie - Papier et imprimerie": [
+    [
+     "17.11Z",
+     "Fabrication de pâte à papier",
+     "C"
+    ],
+    [
+     "17.12Z",
+     "Fabrication de papier et de carton",
+     "C"
+    ],
+    [
+     "17.21A",
+     "Fabrication de carton ondulé",
+     "C"
+    ],
+    [
+     "17.21B",
+     "Fabrication de cartonnages",
+     "C"
+    ],
+    [
+     "17.21C",
+     "Fabrication d'emballages en papier",
+     "C"
+    ],
+    [
+     "17.22Z",
+     "Fabrication d'articles en papier à usage sanitaire ou domestique",
+     "C"
+    ],
+    [
+     "17.23Z",
+     "Fabrication d'articles de papeterie",
+     "C"
+    ],
+    [
+     "17.24Z",
+     "Fabrication de papiers peints",
+     "C"
+    ],
+    [
+     "17.29Z",
+     "Fabrication d'autres articles en papier ou en carton",
+     "C"
+    ],
+    [
+     "18.11Z",
+     "Imprimerie de journaux",
+     "C"
+    ],
+    [
+     "18.12Z",
+     "Autre imprimerie (labeur)",
+     "C"
+    ],
+    [
+     "18.13Z",
+     "Activités de pré-presse",
+     "C"
+    ],
+    [
+     "18.14Z",
+     "Reliure et activités connexes",
+     "C"
+    ],
+    [
+     "18.20Z",
+     "Reproduction d'enregistrements",
+     "C"
+    ]
+   ],
+   "Industrie - Textile et mode": [
+    [
+     "13.10Z",
+     "Préparation de fibres textiles et filature",
+     "C"
+    ],
+    [
+     "13.20Z",
+     "Tissage",
+     "C"
+    ],
+    [
+     "13.30Z",
+     "Ennoblissement textile",
+     "C"
+    ],
+    [
+     "13.91Z",
+     "Fabrication d'étoffes à mailles",
+     "C"
+    ],
+    [
+     "13.92Z",
+     "Fabrication d'articles textiles, sauf habillement",
+     "C"
+    ],
+    [
+     "13.93Z",
+     "Fabrication de tapis et moquettes",
+     "C"
+    ],
+    [
+     "13.94Z",
+     "Fabrication de ficelles, cordes et filets",
+     "C"
+    ],
+    [
+     "13.95Z",
+     "Fabrication de non-tissés, sauf habillement",
+     "C"
+    ],
+    [
+     "13.96Z",
+     "Fabrication d'autres textiles techniques et industriels",
+     "C"
+    ],
+    [
+     "13.99Z",
+     "Fabrication d'autres textiles n.c.a.",
+     "C"
+    ],
+    [
+     "14.11Z",
+     "Fabrication de vêtements en cuir",
+     "C"
+    ],
+    [
+     "14.12Z",
+     "Fabrication de vêtements de travail",
+     "C"
+    ],
+    [
+     "14.13Z",
+     "Fabrication de vêtements de dessus",
+     "C"
+    ],
+    [
+     "14.14Z",
+     "Fabrication de vêtements de dessous",
+     "C"
+    ],
+    [
+     "14.19Z",
+     "Fabrication d'autres vêtements et accessoires",
+     "C"
+    ],
+    [
+     "14.20Z",
+     "Fabrication d'articles en fourrure",
+     "C"
+    ],
+    [
+     "14.31Z",
+     "Fabrication d'articles chaussants à mailles",
+     "C"
+    ],
+    [
+     "14.39Z",
+     "Fabrication d'autres articles à mailles",
+     "C"
+    ],
+    [
+     "15.11Z",
+     "Apprêt et tannage des cuirs ; préparation et teinture des fourrures",
+     "C"
+    ],
+    [
+     "15.12Z",
+     "Fabrication d'articles de voyage, de maroquinerie et de sellerie",
+     "C"
+    ],
+    [
+     "15.20Z",
+     "Fabrication de chaussures",
+     "C"
+    ]
+   ],
+   "Industrie - Électronique": [
+    [
+     "26.11Z",
+     "Fabrication de composants électroniques",
+     "C"
+    ],
+    [
+     "26.12Z",
+     "Fabrication de cartes électroniques assemblées",
+     "C"
+    ],
+    [
+     "26.20Z",
+     "Fabrication d'ordinateurs et d'équipements périphériques",
+     "C"
+    ],
+    [
+     "26.30Z",
+     "Fabrication d'équipements de communication",
+     "C"
+    ],
+    [
+     "26.40Z",
+     "Fabrication de produits électroniques grand public",
+     "C"
+    ],
+    [
+     "26.51A",
+     "Fabrication d'équipements d'aide à la navigation",
+     "C"
+    ],
+    [
+     "26.51B",
+     "Fabrication d'instrumentation scientifique et technique",
+     "C"
+    ],
+    [
+     "26.52Z",
+     "Horlogerie",
+     "C"
+    ],
+    [
+     "26.60Z",
+     "Fabrication d'équipements d'irradiation médicale, d'équipements électromédicaux et électrothérapeutiques",
+     "C"
+    ],
+    [
+     "26.70Z",
+     "Fabrication de matériels optique et photographique",
+     "C"
+    ],
+    [
+     "26.80Z",
+     "Fabrication de supports magnétiques et optiques",
+     "C"
+    ]
+   ],
+   "Industries": [
+    [
+     "22.11Z",
+     "Fabrication et rechapage de pneumatiques",
+     "C"
+    ],
+    [
+     "22.19Z",
+     "Fabrication d'autres articles en caoutchouc",
+     "C"
+    ],
+    [
+     "22.21Z",
+     "Fabrication de plaques, feuilles, tubes et profilés en matières plastiques",
+     "C"
+    ],
+    [
+     "22.22Z",
+     "Fabrication d'emballages en matières plastiques",
+     "C"
+    ],
+    [
+     "22.23Z",
+     "Fabrication d'éléments en matières plastiques pour la construction",
+     "C"
+    ],
+    [
+     "22.29A",
+     "Fabrication de pièces techniques à base de matières plastiques",
+     "C"
+    ],
+    [
+     "22.29B",
+     "Fabrication de produits de consommation courante en matières plastiques",
+     "C"
+    ],
+    [
+     "23.11Z",
+     "Fabrication de verre plat",
+     "C"
+    ],
+    [
+     "23.12Z",
+     "Façonnage et transformation du verre plat",
+     "C"
+    ],
+    [
+     "23.13Z",
+     "Fabrication de verre creux",
+     "C"
+    ],
+    [
+     "23.14Z",
+     "Fabrication de fibres de verre",
+     "C"
+    ],
+    [
+     "23.19Z",
+     "Fabrication et façonnage d'autres articles en verre, y compris verre technique",
+     "C"
+    ],
+    [
+     "23.20Z",
+     "Fabrication de produits réfractaires",
+     "C"
+    ],
+    [
+     "23.31Z",
+     "Fabrication de carreaux en céramique",
+     "C"
+    ],
+    [
+     "23.32Z",
+     "Fabrication de briques, tuiles et produits de construction, en terre cuite",
+     "C"
+    ],
+    [
+     "23.41Z",
+     "Fabrication d'articles céramiques à usage domestique ou ornemental",
+     "C"
+    ],
+    [
+     "23.42Z",
+     "Fabrication d'appareils sanitaires en céramique",
+     "C"
+    ],
+    [
+     "23.43Z",
+     "Fabrication d'isolateurs et pièces isolantes en céramique",
+     "C"
+    ],
+    [
+     "23.44Z",
+     "Fabrication d'autres produits céramiques à usage technique",
+     "C"
+    ],
+    [
+     "23.49Z",
+     "Fabrication d'autres produits céramiques",
+     "C"
+    ],
+    [
+     "23.51Z",
+     "Fabrication de ciment",
+     "C"
+    ],
+    [
+     "23.52Z",
+     "Fabrication de chaux et plâtre",
+     "C"
+    ],
+    [
+     "23.61Z",
+     "Fabrication d'éléments en béton pour la construction",
+     "C"
+    ],
+    [
+     "23.62Z",
+     "Fabrication d'éléments en plâtre pour la construction",
+     "C"
+    ],
+    [
+     "23.63Z",
+     "Fabrication de béton prêt à l'emploi",
+     "C"
+    ],
+    [
+     "23.64Z",
+     "Fabrication de mortiers et bétons secs",
+     "C"
+    ],
+    [
+     "23.65Z",
+     "Fabrication d'ouvrages en fibre-ciment",
+     "C"
+    ],
+    [
+     "23.69Z",
+     "Fabrication d'autres ouvrages en béton, en ciment ou en plâtre",
+     "C"
+    ],
+    [
+     "23.70Z",
+     "Taille, façonnage et finissage de pierres",
+     "C"
+    ],
+    [
+     "23.91Z",
+     "Fabrication de produits abrasifs",
+     "C"
+    ],
+    [
+     "23.99Z",
+     "Fabrication d'autres produits minéraux non métalliques n.c.a.",
+     "C"
+    ],
+    [
+     "27.11Z",
+     "Fabrication de moteurs, génératrices et transformateurs électriques",
+     "C"
+    ],
+    [
+     "27.12Z",
+     "Fabrication de matériel de distribution et de commande électrique",
+     "C"
+    ],
+    [
+     "27.20Z",
+     "Fabrication de piles et d'accumulateurs électriques",
+     "C"
+    ],
+    [
+     "27.31Z",
+     "Fabrication de câbles de fibres optiques",
+     "C"
+    ],
+    [
+     "27.32Z",
+     "Fabrication d'autres fils et câbles électroniques ou électriques",
+     "C"
+    ],
+    [
+     "27.33Z",
+     "Fabrication de matériel d'installation électrique",
+     "C"
+    ],
+    [
+     "27.40Z",
+     "Fabrication d'appareils d'éclairage électrique",
+     "C"
+    ],
+    [
+     "27.51Z",
+     "Fabrication d'appareils électroménagers",
+     "C"
+    ],
+    [
+     "27.52Z",
+     "Fabrication d'appareils ménagers non électriques",
+     "C"
+    ],
+    [
+     "27.90Z",
+     "Fabrication d'autres matériels électriques",
+     "C"
+    ],
+    [
+     "28.11Z",
+     "Fabrication de moteurs et turbines, à l'exception des moteurs d'avions et de véhicules",
+     "C"
+    ],
+    [
+     "28.12Z",
+     "Fabrication d'équipements hydrauliques et pneumatiques",
+     "C"
+    ],
+    [
+     "28.13Z",
+     "Fabrication d'autres pompes et compresseurs",
+     "C"
+    ],
+    [
+     "28.14Z",
+     "Fabrication d'autres articles de robinetterie",
+     "C"
+    ],
+    [
+     "28.15Z",
+     "Fabrication d'engrenages et d'organes mécaniques de transmission",
+     "C"
+    ],
+    [
+     "28.21Z",
+     "Fabrication de fours et brûleurs",
+     "C"
+    ],
+    [
+     "28.22Z",
+     "Fabrication de matériel de levage et de manutention",
+     "C"
+    ],
+    [
+     "28.23Z",
+     "Fabrication de machines et d'équipements de bureau (à l'exception des ordinateurs et équipements périphériques)",
+     "C"
+    ],
+    [
+     "28.24Z",
+     "Fabrication d'outillage portatif à moteur incorporé",
+     "C"
+    ],
+    [
+     "28.25Z",
+     "Fabrication d'équipements aérauliques et frigorifiques industriels",
+     "C"
+    ],
+    [
+     "28.29A",
+     "Fabrication d'équipements d'emballage, de conditionnement et de pesage",
+     "C"
+    ],
+    [
+     "28.29B",
+     "Fabrication d'autres machines d'usage général",
+     "C"
+    ],
+    [
+     "28.30Z",
+     "Fabrication de machines agricoles et forestières",
+     "C"
+    ],
+    [
+     "28.41Z",
+     "Fabrication de machines-outils pour le travail des métaux",
+     "C"
+    ],
+    [
+     "28.49Z",
+     "Fabrication d'autres machines-outils",
+     "C"
+    ],
+    [
+     "28.91Z",
+     "Fabrication de machines pour la métallurgie",
+     "C"
+    ],
+    [
+     "28.92Z",
+     "Fabrication de machines pour l'extraction ou la construction",
+     "C"
+    ],
+    [
+     "28.93Z",
+     "Fabrication de machines pour l'industrie agro-alimentaire",
+     "C"
+    ],
+    [
+     "28.94Z",
+     "Fabrication de machines pour les industries textiles",
+     "C"
+    ],
+    [
+     "28.95Z",
+     "Fabrication de machines pour les industries du papier et du carton",
+     "C"
+    ],
+    [
+     "28.96Z",
+     "Fabrication de machines pour le travail du caoutchouc ou des plastiques",
+     "C"
+    ],
+    [
+     "28.99A",
+     "Fabrication de machines d'imprimerie",
+     "C"
+    ],
+    [
+     "28.99B",
+     "Fabrication d'autres machines spécialisées",
+     "C"
+    ],
+    [
+     "30.11Z",
+     "Construction de navires et de structures flottantes",
+     "C"
+    ],
+    [
+     "30.12Z",
+     "Construction de bateaux de plaisance",
+     "C"
+    ],
+    [
+     "30.20Z",
+     "Construction de locomotives et d'autre matériel ferroviaire roulant",
+     "C"
+    ],
+    [
+     "30.30Z",
+     "Construction aéronautique et spatiale",
+     "C"
+    ],
+    [
+     "30.40Z",
+     "Construction de véhicules militaires de combat",
+     "C"
+    ],
+    [
+     "30.91Z",
+     "Fabrication de motocycles",
+     "C"
+    ],
+    [
+     "30.92Z",
+     "Fabrication de bicyclettes et de véhicules pour invalides",
+     "C"
+    ],
+    [
+     "30.99Z",
+     "Fabrication d'autres équipements de transport n.c.a.",
+     "C"
+    ],
+    [
+     "32.11Z",
+     "Frappe de monnaie",
+     "C"
+    ],
+    [
+     "32.12Z",
+     "Fabrication d'articles de joaillerie et bijouterie",
+     "C"
+    ],
+    [
+     "32.13Z",
+     "Fabrication d'articles de bijouterie fantaisie et articles similaires",
+     "C"
+    ],
+    [
+     "32.20Z",
+     "Fabrication d'instruments de musique",
+     "C"
+    ],
+    [
+     "32.30Z",
+     "Fabrication d'articles de sport",
+     "C"
+    ],
+    [
+     "32.40Z",
+     "Fabrication de jeux et jouets",
+     "C"
+    ],
+    [
+     "32.50A",
+     "Fabrication de matériel médico-chirurgical et dentaire",
+     "C"
+    ],
+    [
+     "32.50B",
+     "Fabrication de lunettes",
+     "C"
+    ],
+    [
+     "32.91Z",
+     "Fabrication d'articles de brosserie",
+     "C"
+    ],
+    [
+     "32.99Z",
+     "Autres activités manufacturières n.c.a.",
+     "C"
+    ]
+   ],
+   "Informatique et télécommunication": [
+    [
+     "61.10Z",
+     "Télécommunications filaires",
+     "J"
+    ],
+    [
+     "61.20Z",
+     "Télécommunications sans fil",
+     "J"
+    ],
+    [
+     "61.30Z",
+     "Télécommunications par satellite",
+     "J"
+    ],
+    [
+     "61.90Z",
+     "Autres activités de télécommunication",
+     "J"
+    ],
+    [
+     "62.01Z",
+     "Programmation informatique",
+     "J"
+    ],
+    [
+     "62.02A",
+     "Conseil en systèmes et logiciels informatiques",
+     "J"
+    ],
+    [
+     "62.02B",
+     "Tierce maintenance de systèmes et d'applications informatiques",
+     "J"
+    ],
+    [
+     "62.03Z",
+     "Gestion d'installations informatiques",
+     "J"
+    ],
+    [
+     "62.09Z",
+     "Autres activités informatiques",
+     "J"
+    ],
+    [
+     "63.11Z",
+     "Traitement de données, hébergement et activités connexes",
+     "J"
+    ],
+    [
+     "63.12Z",
+     "Portails Internet",
+     "J"
+    ],
+    [
+     "63.91Z",
+     "Activités des agences de presse",
+     "J"
+    ],
+    [
+     "63.99Z",
+     "Autres services d'information n.c.a.",
+     "J"
+    ],
+    [
+     "95.11Z",
+     "Réparation d'ordinateurs et d'équipements périphériques",
+     "S"
+    ],
+    [
+     "95.12Z",
+     "Réparation d'équipements de communication",
+     "S"
+    ]
+   ],
+   "Logistique et transport": [
+    [
+     "49.10Z",
+     "Transport ferroviaire interurbain de voyageurs",
+     "H"
+    ],
+    [
+     "49.20Z",
+     "Transports ferroviaires de fret",
+     "H"
+    ],
+    [
+     "49.31Z",
+     "Transports urbains et suburbains de voyageurs",
+     "H"
+    ],
+    [
+     "49.32Z",
+     "Transports de voyageurs par taxis",
+     "H"
+    ],
+    [
+     "49.39A",
+     "Transports routiers réguliers de voyageurs",
+     "H"
+    ],
+    [
+     "49.39B",
+     "Autres transports routiers de voyageurs",
+     "H"
+    ],
+    [
+     "49.39C",
+     "Téléphériques et remontées mécaniques",
+     "H"
+    ],
+    [
+     "49.41A",
+     "Transports routiers de fret interurbains",
+     "H"
+    ],
+    [
+     "49.41B",
+     "Transports routiers de fret de proximité",
+     "H"
+    ],
+    [
+     "49.41C",
+     "Location de camions avec chauffeur",
+     "H"
+    ],
+    [
+     "49.42Z",
+     "Services de déménagement",
+     "H"
+    ],
+    [
+     "49.50Z",
+     "Transports par conduites",
+     "H"
+    ],
+    [
+     "50.10Z",
+     "Transports maritimes et côtiers de passagers",
+     "H"
+    ],
+    [
+     "50.20Z",
+     "Transports maritimes et côtiers de fret",
+     "H"
+    ],
+    [
+     "50.30Z",
+     "Transports fluviaux de passagers",
+     "H"
+    ],
+    [
+     "50.40Z",
+     "Transports fluviaux de fret",
+     "H"
+    ],
+    [
+     "51.10Z",
+     "Transports aériens de passagers",
+     "H"
+    ],
+    [
+     "51.21Z",
+     "Transports aériens de fret",
+     "H"
+    ],
+    [
+     "51.22Z",
+     "Transports spatiaux",
+     "H"
+    ],
+    [
+     "52.10A",
+     "Entreposage et stockage frigorifique",
+     "H"
+    ],
+    [
+     "52.10B",
+     "Entreposage et stockage non frigorifique",
+     "H"
+    ],
+    [
+     "52.21Z",
+     "Services auxiliaires des transports terrestres",
+     "H"
+    ],
+    [
+     "52.22Z",
+     "Services auxiliaires des transports par eau",
+     "H"
+    ],
+    [
+     "52.23Z",
+     "Services auxiliaires des transports aériens",
+     "H"
+    ],
+    [
+     "52.24A",
+     "Manutention portuaire",
+     "H"
+    ],
+    [
+     "52.24B",
+     "Manutention non portuaire",
+     "H"
+    ],
+    [
+     "52.29A",
+     "Messagerie, fret express",
+     "H"
+    ],
+    [
+     "52.29B",
+     "Affrètement et organisation des transports",
+     "H"
+    ],
+    [
+     "53.10Z",
+     "Activités de poste dans le cadre d'une obligation de service universel",
+     "H"
+    ],
+    [
+     "53.20Z",
+     "Autres activités de poste et de courrier",
+     "H"
+    ]
+   ],
+   "Maintenance, entretien et nettoyage": [
+    [
+     "33.11Z",
+     "Réparation d'ouvrages en métaux",
+     "C"
+    ],
+    [
+     "33.12Z",
+     "Réparation de machines et équipements mécaniques",
+     "C"
+    ],
+    [
+     "33.13Z",
+     "Réparation de matériels électroniques et optiques",
+     "C"
+    ],
+    [
+     "33.14Z",
+     "Réparation d'équipements électriques",
+     "C"
+    ],
+    [
+     "33.15Z",
+     "Réparation et maintenance navale",
+     "C"
+    ],
+    [
+     "33.16Z",
+     "Réparation et maintenance d'aéronefs et d'engins spatiaux",
+     "C"
+    ],
+    [
+     "33.17Z",
+     "Réparation et maintenance d'autres équipements de transport",
+     "C"
+    ],
+    [
+     "33.19Z",
+     "Réparation d'autres équipements",
+     "C"
+    ],
+    [
+     "33.20A",
+     "Installation de structures métalliques, chaudronnées et de tuyauterie",
+     "C"
+    ],
+    [
+     "33.20B",
+     "Installation de machines et équipements mécaniques",
+     "C"
+    ],
+    [
+     "33.20C",
+     "Conception d'ensemble et assemblage sur site industriel d'équipements de contrôle des processus industriels",
+     "C"
+    ],
+    [
+     "33.20D",
+     "Installation d'équipements électriques, de matériels électroniques et optiques ou d'autres matériels",
+     "C"
+    ],
+    [
+     "81.10Z",
+     "Activités combinées de soutien lié aux bâtiments",
+     "N"
+    ],
+    [
+     "81.21Z",
+     "Nettoyage courant des bâtiments",
+     "N"
+    ],
+    [
+     "81.22Z",
+     "Autres activités de nettoyage des bâtiments et nettoyage industriel",
+     "N"
+    ],
+    [
+     "81.29A",
+     "Désinfection, désinsectisation, dératisation",
+     "N"
+    ],
+    [
+     "81.29B",
+     "Autres activités de nettoyage n.c.a.",
+     "N"
+    ]
+   ],
+   "Recherche": [
+    [
+     "72.11Z",
+     "Recherche-développement en biotechnologie",
+     "M"
+    ],
+    [
+     "72.19Z",
+     "Recherche-développement en autres sciences physiques et naturelles",
+     "M"
+    ],
+    [
+     "72.20Z",
+     "Recherche-développement en sciences humaines et sociales",
+     "M"
+    ]
+   ],
+   "Santé": [
+    [
+     "75.00Z",
+     "Activités vétérinaires",
+     "M"
+    ],
+    [
+     "86.10Z",
+     "Activités hospitalières",
+     "Q"
+    ],
+    [
+     "86.21Z",
+     "Activité des médecins généralistes",
+     "Q"
+    ],
+    [
+     "86.22A",
+     "Activités de radiodiagnostic et de radiothérapie",
+     "Q"
+    ],
+    [
+     "86.22B",
+     "Activités chirurgicales",
+     "Q"
+    ],
+    [
+     "86.22C",
+     "Autres activités des médecins spécialistes",
+     "Q"
+    ],
+    [
+     "86.23Z",
+     "Pratique dentaire",
+     "Q"
+    ],
+    [
+     "86.90A",
+     "Ambulances",
+     "Q"
+    ],
+    [
+     "86.90B",
+     "Laboratoires d'analyses médicales",
+     "Q"
+    ],
+    [
+     "86.90C",
+     "Centres de collecte et banques d'organes",
+     "Q"
+    ],
+    [
+     "86.90D",
+     "Activités des infirmiers et des sages-femmes",
+     "Q"
+    ],
+    [
+     "86.90E",
+     "Activités des professionnels de la rééducation, de l'appareillage et des pédicures-podologues",
+     "Q"
+    ],
+    [
+     "86.90F",
+     "Activités de santé humaine non classées ailleurs",
+     "Q"
+    ],
+    [
+     "87.10A",
+     "Hébergement médicalisé pour personnes âgées",
+     "Q"
+    ],
+    [
+     "87.10B",
+     "Hébergement médicalisé pour enfants handicapés",
+     "Q"
+    ],
+    [
+     "87.10C",
+     "Hébergement médicalisé pour adultes handicapés et autre hébergement médicalisé",
+     "Q"
+    ]
+   ],
+   "Service public, défense et sécurité": [
+    [
+     "80.10Z",
+     "Activités de sécurité privée",
+     "N"
+    ],
+    [
+     "80.20Z",
+     "Activités liées aux systèmes de sécurité",
+     "N"
+    ],
+    [
+     "80.30Z",
+     "Activités d'enquête",
+     "N"
+    ],
+    [
+     "84.11Z",
+     "Administration publique générale",
+     "O"
+    ],
+    [
+     "84.12Z",
+     "Administration publique (tutelle) de la santé, de la formation, de la culture et des services sociaux, autre que sécurité sociale",
+     "O"
+    ],
+    [
+     "84.13Z",
+     "Administration publique (tutelle) des activités économiques",
+     "O"
+    ],
+    [
+     "84.21Z",
+     "Affaires étrangères",
+     "O"
+    ],
+    [
+     "84.22Z",
+     "Défense",
+     "O"
+    ],
+    [
+     "84.23Z",
+     "Justice",
+     "O"
+    ],
+    [
+     "84.24Z",
+     "Activités d'ordre public et de sécurité",
+     "O"
+    ],
+    [
+     "84.25Z",
+     "Services du feu et de secours",
+     "O"
+    ],
+    [
+     "84.30A",
+     "Activités générales de sécurité sociale",
+     "O"
+    ],
+    [
+     "84.30B",
+     "Gestion des retraites complémentaires",
+     "O"
+    ],
+    [
+     "84.30C",
+     "Distribution sociale de revenus",
+     "O"
+    ]
+   ],
+   "Service à la personne": [
+    [
+     "88.10A",
+     "Aide à domicile",
+     "Q"
+    ],
+    [
+     "96.02A",
+     "Coiffure",
+     "S"
+    ],
+    [
+     "96.02B",
+     "Soins de beauté",
+     "S"
+    ],
+    [
+     "96.04Z",
+     "Entretien corporel",
+     "S"
+    ],
+    [
+     "97.00Z",
+     "Activités des ménages en tant qu'employeurs de personnel domestique",
+     "T"
+    ]
+   ],
+   "Social": [
+    [
+     "87.20A",
+     "Hébergement social pour handicapés mentaux et malades mentaux",
+     "Q"
+    ],
+    [
+     "87.20B",
+     "Hébergement social pour toxicomanes",
+     "Q"
+    ],
+    [
+     "87.30A",
+     "Hébergement social pour personnes âgées",
+     "Q"
+    ],
+    [
+     "87.30B",
+     "Hébergement social pour handicapés physiques",
+     "Q"
+    ],
+    [
+     "87.90A",
+     "Hébergement social pour enfants en difficultés",
+     "Q"
+    ],
+    [
+     "87.90B",
+     "Hébergement social pour adultes et familles en difficultés et autre hébergement social",
+     "Q"
+    ],
+    [
+     "88.10A",
+     "Aide à domicile",
+     "Q"
+    ],
+    [
+     "88.10B",
+     "Accueil ou accompagnement sans hébergement d'adultes handicapés ou de personnes âgées",
+     "Q"
+    ],
+    [
+     "88.10C",
+     "Aide par le travail",
+     "Q"
+    ],
+    [
+     "88.91A",
+     "Accueil de jeunes enfants",
+     "Q"
+    ],
+    [
+     "88.91B",
+     "Accueil ou accompagnement sans hébergement d'enfants handicapés",
+     "Q"
+    ],
+    [
+     "88.99A",
+     "Autre accueil ou accompagnement sans hébergement d'enfants et d'adolescents",
+     "Q"
+    ],
+    [
+     "88.99B",
+     "Action sociale sans hébergement n.c.a.",
+     "Q"
+    ],
+    [
+     "94.99Z",
+     "Autres organisations fonctionnant par adhésion volontaire",
+     "S"
+    ]
+   ],
+   "Sport, animation et loisir": [
+    [
+     "92.00Z",
+     "Organisation de jeux de hasard et d'argent",
+     "R"
+    ],
+    [
+     "93.11Z",
+     "Gestion d'installations sportives",
+     "R"
+    ],
+    [
+     "93.12Z",
+     "Activités de clubs de sports",
+     "R"
+    ],
+    [
+     "93.13Z",
+     "Activités des centres de culture physique",
+     "R"
+    ],
+    [
+     "93.19Z",
+     "Autres activités liées au sport",
+     "R"
+    ],
+    [
+     "93.21Z",
+     "Activités des parcs d'attractions et parcs à thèmes",
+     "R"
+    ],
+    [
+     "93.29Z",
+     "Autres activités récréatives et de loisirs",
+     "R"
+    ]
+   ],
+   "Tourisme": [
+    [
+     "55.20Z",
+     "Hébergement touristique et autre hébergement de courte durée",
+     "I"
+    ],
+    [
+     "55.30Z",
+     "Terrains de camping et parcs pour caravanes ou véhicules de loisirs",
+     "I"
+    ],
+    [
+     "79.11Z",
+     "Activités des agences de voyage",
+     "N"
+    ],
+    [
+     "79.12Z",
+     "Activités des voyagistes",
+     "N"
+    ],
+    [
+     "79.90Z",
+     "Autres services de réservation et activités connexes",
+     "N"
+    ]
+   ],
+   "Édition": [
+    [
+     "58.11Z",
+     "Édition de livres",
+     "J"
+    ],
+    [
+     "58.12Z",
+     "Édition de répertoires et de fichiers d'adresses",
+     "J"
+    ],
+    [
+     "58.13Z",
+     "Édition de journaux",
+     "J"
+    ],
+    [
+     "58.14Z",
+     "Édition de revues et périodiques",
+     "J"
+    ],
+    [
+     "58.19Z",
+     "Autres activités d'édition",
+     "J"
+    ],
+    [
+     "58.21Z",
+     "Édition de jeux électroniques",
+     "J"
+    ],
+    [
+     "58.29A",
+     "Édition de logiciels système et de réseau",
+     "J"
+    ],
+    [
+     "58.29B",
+     "Édition de logiciels outils de développement et de langages",
+     "J"
+    ],
+    [
+     "58.29C",
+     "Édition de logiciels applicatifs",
+     "J"
+    ]
+   ],
+   "Énergie": [
+    [
+     "05.10Z",
+     "Extraction de houille",
+     "B"
+    ],
+    [
+     "05.20Z",
+     "Extraction de lignite",
+     "B"
+    ],
+    [
+     "06.10Z",
+     "Extraction de pétrole brut",
+     "B"
+    ],
+    [
+     "06.20Z",
+     "Extraction de gaz naturel",
+     "B"
+    ],
+    [
+     "35.11Z",
+     "Production d'électricité",
+     "D"
+    ],
+    [
+     "35.12Z",
+     "Transport d'électricité",
+     "D"
+    ],
+    [
+     "35.13Z",
+     "Distribution d'électricité",
+     "D"
+    ],
+    [
+     "35.14Z",
+     "Commerce d'électricité",
+     "D"
+    ],
+    [
+     "35.21Z",
+     "Production de combustibles gazeux",
+     "D"
+    ],
+    [
+     "35.22Z",
+     "Distribution de combustibles gazeux par conduites",
+     "D"
+    ],
+    [
+     "35.23Z",
+     "Commerce de combustibles gazeux par conduites",
+     "D"
+    ],
+    [
+     "35.30Z",
+     "Production et distribution de vapeur et d'air conditionné",
+     "D"
+    ]
+   ]
+  }
+ },
+ "it_IT": {
+  "country": "Italy",
+  "place_names": {
+   "country": "Italia"
+  },
+  "currency": "EUR",
+  "contracts": {
+   "Tempo indeterminato": {
+    "kind": "permanent",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Tempo determinato": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Somministrazione": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Apprendistato": {
+    "kind": "apprentice",
+    "salary_factor": 0.65,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Stage": {
+    "kind": "intern",
+    "salary_factor": 0.3,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Partita IVA": {
+    "kind": "freelance",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": false
+   }
+  },
+  "salary_format": {
+   "template": "RAL {min} € - {max} €",
+   "thousands": "."
+  },
+  "minimum_wage": null,
+  "experience_none": "Anche prima esperienza",
+  "experience_range": "Da {min} a {max} anni di esperienza",
+  "qualifications": {
+   "high": [
+    "Laurea magistrale",
+    "Laurea triennale",
+    "Laurea magistrale in {field}",
+    "Laurea triennale in {field}",
+    "Master di I livello in {field}",
+    "Dottorato di ricerca"
+   ],
+   "mid": [
+    "Laurea triennale",
+    "Diploma ITS",
+    "Diploma di scuola superiore",
+    "Diploma di istituto tecnico",
+    "Laurea triennale in {field}",
+    "Diploma ITS Academy in {field}"
+   ],
+   "low": [
+    "Licenza media",
+    "Qualifica professionale",
+    "Diploma di scuola superiore",
+    "Diploma di istituto professionale",
+    "Qualifica professionale in {field}"
+   ]
+  },
+  "benefits": {
+   "Buoni pasto": {
+    "requires": null,
+    "not_for": []
+   },
+   "Assistenza sanitaria integrativa": {
+    "requires": null,
+    "not_for": [
+     "Stage"
+    ]
+   },
+   "Welfare aziendale": {
+    "requires": null,
+    "not_for": [
+     "Stage",
+     "Somministrazione"
+    ]
+   },
+   "Smart working": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Orario flessibile": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Premio di produzione": {
+    "requires": null,
+    "not_for": [
+     "Stage"
+    ]
+   },
+   "Quattordicesima": {
+    "requires": null,
+    "not_for": [
+     "Stage"
+    ]
+   },
+   "Fondo pensione integrativo": {
+    "requires": null,
+    "not_for": [
+     "Stage",
+     "Somministrazione"
+    ]
+   },
+   "Formazione continua": {
+    "requires": null,
+    "not_for": []
+   },
+   "Convenzioni per i dipendenti": {
+    "requires": null,
+    "not_for": []
+   },
+   "Auto aziendale": {
+    "requires": "executive",
+    "not_for": [
+     "Stage",
+     "Apprendistato"
+    ]
+   }
+  },
+  "job_portals": {
+   "all": [
+    "Indeed",
+    "LinkedIn",
+    "InfoJobs",
+    "Monster",
+    "Subito Lavoro",
+    "Bakeca",
+    "Jobrapido"
+   ]
+  },
+  "contract_weights": {
+   "0": {
+    "Tempo indeterminato": 77.1,
+    "Tempo determinato": 7.69,
+    "Somministrazione": 3.21,
+    "Apprendistato": 7,
+    "Stage": 5,
+    "Partita IVA": 0.0
+   },
+   "1": {
+    "Tempo indeterminato": 64.62,
+    "Tempo determinato": 8.03,
+    "Somministrazione": 3.35,
+    "Apprendistato": 7,
+    "Stage": 5,
+    "Partita IVA": 12
+   },
+   "2": {
+    "Tempo indeterminato": 47.42,
+    "Tempo determinato": 24.84,
+    "Somministrazione": 10.35,
+    "Apprendistato": 7,
+    "Stage": 5,
+    "Partita IVA": 5.38
+   },
+   "3": {
+    "Tempo indeterminato": 66.06,
+    "Tempo determinato": 12.56,
+    "Somministrazione": 5.23,
+    "Apprendistato": 7,
+    "Stage": 5,
+    "Partita IVA": 4.15
+   },
+   "4": {
+    "Tempo indeterminato": 63.62,
+    "Tempo determinato": 16.91,
+    "Somministrazione": 7.04,
+    "Apprendistato": 7,
+    "Stage": 5,
+    "Partita IVA": 0.43
+   },
+   "5": {
+    "Tempo indeterminato": 35.23,
+    "Tempo determinato": 34.34,
+    "Somministrazione": 14.31,
+    "Apprendistato": 7,
+    "Stage": 5,
+    "Partita IVA": 4.13
+   },
+   "6": {
+    "Tempo indeterminato": 10.0,
+    "Tempo determinato": 49.81,
+    "Somministrazione": 20.75,
+    "Apprendistato": 5.67,
+    "Stage": 4.05,
+    "Partita IVA": 9.72
+   },
+   "7": {
+    "Tempo indeterminato": 56.34,
+    "Tempo determinato": 18.97,
+    "Somministrazione": 7.9,
+    "Apprendistato": 7,
+    "Stage": 5,
+    "Partita IVA": 4.79
+   },
+   "8": {
+    "Tempo indeterminato": 59.05,
+    "Tempo determinato": 19.41,
+    "Somministrazione": 8.09,
+    "Apprendistato": 7,
+    "Stage": 5,
+    "Partita IVA": 1.45
+   },
+   "9": {
+    "Tempo indeterminato": 26.19,
+    "Tempo determinato": 42.57,
+    "Somministrazione": 17.74,
+    "Apprendistato": 7,
+    "Stage": 5,
+    "Partita IVA": 1.5
+   }
+  },
+  "experience": {
+   "high": {
+    "low": [
+     0,
+     8
+    ],
+    "gap": [
+     2,
+     5
+    ]
+   },
+   "mid": {
+    "low": [
+     0,
+     6
+    ],
+    "gap": [
+     2,
+     4
+    ]
+   },
+   "low": {
+    "low": [
+     0,
+     4
+    ],
+    "gap": [
+     1,
+     3
+    ]
+   }
+  },
+  "skill_levels": {
+   "1": "high",
+   "2": "high",
+   "3": "mid",
+   "0": "mid",
+   "4": "low",
+   "5": "low",
+   "6": "low",
+   "7": "low",
+   "8": "low",
+   "9": "low"
+  },
+  "benefits_per_posting": 4,
+  "office_domains": [
+   "Banche, assicurazioni e immobiliare",
+   "Comunicazione, media e multimedia",
+   "Supporto alle imprese"
+  ],
+  "salary": {
+   "base": {
+    "0": {
+     "*": 74593,
+     "O": 46679
+    },
+    "1": {
+     "*": 129937,
+     "C": 171330,
+     "E": 106021,
+     "F": 113475,
+     "G": 105593,
+     "H": 122875,
+     "I": 39826,
+     "J": 153283,
+     "K": 210939,
+     "L": 114487,
+     "M": 178234,
+     "N": 130441,
+     "O": 106956,
+     "P": 77362,
+     "Q": 90231,
+     "R": 94481,
+     "S": 99971
+    },
+    "2": {
+     "*": 44773,
+     "B": 76833,
+     "C": 53835,
+     "D": 65642,
+     "E": 56582,
+     "F": 45166,
+     "G": 58230,
+     "H": 50553,
+     "I": 42330,
+     "J": 49625,
+     "K": 75129,
+     "L": 51749,
+     "M": 55110,
+     "N": 42994,
+     "O": 49206,
+     "P": 34486,
+     "Q": 72828,
+     "R": 38033,
+     "S": 44123
+    },
+    "3": {
+     "*": 42419,
+     "B": 52424,
+     "C": 43299,
+     "D": 50833,
+     "E": 39772,
+     "F": 37998,
+     "G": 43723,
+     "H": 47562,
+     "I": 32124,
+     "J": 40906,
+     "K": 61278,
+     "L": 41571,
+     "M": 44913,
+     "N": 33765,
+     "O": 48630,
+     "P": 27075,
+     "Q": 34397,
+     "R": 96781,
+     "S": 30182
+    },
+    "4": {
+     "*": 34349,
+     "B": 41417,
+     "C": 36527,
+     "D": 46927,
+     "E": 37039,
+     "F": 31837,
+     "G": 34028,
+     "H": 34297,
+     "I": 28627,
+     "J": 36037,
+     "K": 51813,
+     "L": 35745,
+     "M": 34488,
+     "N": 28218,
+     "O": 31974,
+     "P": 28785,
+     "Q": 28445,
+     "R": 34104,
+     "S": 32301
+    },
+    "5": {
+     "*": 27782,
+     "C": 34601,
+     "E": 30847,
+     "F": 29421,
+     "G": 28938,
+     "H": 32321,
+     "I": 25345,
+     "J": 46762,
+     "K": 36806,
+     "L": 27225,
+     "M": 26952,
+     "N": 26350,
+     "O": 40309,
+     "P": 23429,
+     "Q": 26102,
+     "R": 26463,
+     "S": 21916
+    },
+    "6": {
+     "*": 27911,
+     "C": 29473,
+     "E": 36102,
+     "G": 29668,
+     "I": 25068,
+     "N": 25290,
+     "O": 33879,
+     "R": 27184
+    },
+    "7": {
+     "*": 30259,
+     "B": 34339,
+     "C": 31396,
+     "D": 43906,
+     "E": 34565,
+     "F": 29363,
+     "G": 30308,
+     "H": 33327,
+     "I": 25482,
+     "J": 30236,
+     "K": 51758,
+     "M": 30114,
+     "N": 24235,
+     "O": 31903,
+     "Q": 22575,
+     "R": 31568,
+     "S": 25154
+    },
+    "8": {
+     "*": 31577,
+     "B": 39195,
+     "C": 32115,
+     "D": 56308,
+     "E": 33130,
+     "F": 33154,
+     "G": 31364,
+     "H": 31657,
+     "I": 23777,
+     "J": 23357,
+     "M": 27946,
+     "N": 25239,
+     "O": 25761,
+     "Q": 25975,
+     "R": 23518,
+     "S": 24144
+    },
+    "9": {
+     "*": 25128,
+     "B": 31590,
+     "C": 28069,
+     "D": 50434,
+     "E": 28850,
+     "F": 25702,
+     "G": 25036,
+     "H": 25910,
+     "I": 23001,
+     "J": 30876,
+     "L": 24484,
+     "M": 35200,
+     "N": 23497,
+     "O": 28002,
+     "P": 21750,
+     "Q": 23512,
+     "R": 25340,
+     "S": 21821
+    }
+   },
+   "age_ratio": {
+    "0": {
+     "Y_LT30": 1.0,
+     "Y30-49": 1.0,
+     "Y_GE50": 1.0
+    },
+    "1": {
+     "Y_LT30": 0.277542,
+     "Y30-49": 0.824376,
+     "Y_GE50": 1.149803
+    },
+    "2": {
+     "Y_LT30": 0.670114,
+     "Y30-49": 0.954392,
+     "Y_GE50": 1.099502
+    },
+    "3": {
+     "Y_LT30": 0.730192,
+     "Y30-49": 0.964238,
+     "Y_GE50": 1.144228
+    },
+    "4": {
+     "Y_LT30": 0.762526,
+     "Y30-49": 0.967626,
+     "Y_GE50": 1.114094
+    },
+    "5": {
+     "Y_LT30": 0.888741,
+     "Y30-49": 1.005003,
+     "Y_GE50": 1.061047
+    },
+    "6": {
+     "Y_LT30": 0.987639,
+     "Y30-49": 0.992404,
+     "Y_GE50": 1.013937
+    },
+    "7": {
+     "Y_LT30": 0.837371,
+     "Y30-49": 1.008559,
+     "Y_GE50": 1.055818
+    },
+    "8": {
+     "Y_LT30": 0.888115,
+     "Y30-49": 0.99544,
+     "Y_GE50": 1.035659
+    },
+    "9": {
+     "Y_LT30": 0.945877,
+     "Y30-49": 1.012655,
+     "Y_GE50": 1.00386
+    }
+   }
+  },
+  "section_by_sector": {
+   "Agricoltura e allevamento": "A",
+   "Alberghi e ristorazione": "I",
+   "Ambiente": "E",
+   "Amministrazione e risorse umane": "N",
+   "Architettura, ingegneria e normazione": "M",
+   "Artigianato, audiovisivo e spettacolo": "J",
+   "Commercio e distribuzione": "G",
+   "Comunicazione e marketing": "M",
+   "Cultura e patrimonio": "R",
+   "Edilizia e lavori pubblici": "F",
+   "Editoria": "J",
+   "Energia": "D",
+   "Finanza, banche e assicurazioni": "K",
+   "Immobiliare": "L",
+   "Industria alimentare": "C",
+   "Industria automobilistica": "G",
+   "Industria cartaria e grafica": "C",
+   "Industria chimica": "C",
+   "Industria del legno": "C",
+   "Industria elettronica": "C",
+   "Industria manifatturiera": "C",
+   "Industria metalmeccanica": "C",
+   "Industria tessile e moda": "C",
+   "Informatica e telecomunicazioni": "J",
+   "Istruzione e formazione": "P",
+   "Legale e contabilità": "M",
+   "Logistica e trasporti": "H",
+   "Manutenzione e pulizie": "C",
+   "Pubblica amministrazione, difesa e sicurezza": "O",
+   "Ricerca": "M",
+   "Sanità": "Q",
+   "Servizi alla persona": "S",
+   "Servizi sociali": "Q",
+   "Sport e tempo libero": "R",
+   "Turismo": "N"
+  },
+  "fields_of_study": {
+   "Industria metalmeccanica": "Meccanica",
+   "Turismo": "Turismo",
+   "Alberghi e ristorazione": "Enogastronomia e ospitalità alberghiera",
+   "Amministrazione e risorse umane": "Economia aziendale",
+   "Industria elettronica": "Elettronica",
+   "Ricerca": "Scienze naturali",
+   "Industria chimica": "Chimica",
+   "Industria del legno": "Tecnologia del legno",
+   "Energia": "Ingegneria energetica",
+   "Servizi sociali": "Servizio sociale",
+   "Legale e contabilità": "Giurisprudenza o Economia",
+   "Pubblica amministrazione, difesa e sicurezza": "Scienze dell'amministrazione",
+   "Istruzione e formazione": "Scienze della formazione",
+   "Logistica e trasporti": "Logistica e trasporti",
+   "Agricoltura e allevamento": "Scienze agrarie",
+   "Ambiente": "Scienze ambientali",
+   "Manutenzione e pulizie": "Manutenzione e assistenza tecnica",
+   "Cultura e patrimonio": "Beni culturali",
+   "Industria alimentare": "Scienze e tecnologie alimentari",
+   "Industria manifatturiera": "Ingegneria industriale",
+   "Sanità": "Professioni sanitarie",
+   "Servizi alla persona": "Acconciatura ed estetica",
+   "Artigianato, audiovisivo e spettacolo": "Arti e spettacolo",
+   "Commercio e distribuzione": "Servizi commerciali",
+   "Industria cartaria e grafica": "Grafica e comunicazione",
+   "Industria tessile e moda": "Moda",
+   "Finanza, banche e assicurazioni": "Economia e finanza",
+   "Immobiliare": "Economia immobiliare",
+   "Sport e tempo libero": "Scienze motorie",
+   "Comunicazione e marketing": "Comunicazione e marketing",
+   "Industria automobilistica": "Manutenzione dei mezzi di trasporto",
+   "Informatica e telecomunicazioni": "Informatica",
+   "Editoria": "Editoria e giornalismo",
+   "Architettura, ingegneria e normazione": "Architettura o Ingegneria",
+   "Edilizia e lavori pubblici": "Costruzioni, ambiente e territorio"
+  }
+ }
+}

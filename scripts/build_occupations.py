@@ -29,8 +29,14 @@ Inputs (DATAS/ is not published):
 - faker_jobs/data/jobs_data.json: companies, matched to the ROME sectors
   (re-run this script after build_data.py)
 
-The outputs are gzipped JSON (~4x smaller installed), written with a fixed
-timestamp so that an unchanged build gives the same bytes.
+The occupation files are gzipped JSON (~4x smaller installed), written
+with a fixed timestamp so that an unchanged build gives the same bytes.
+The posting conditions of every locale (contracts, diplomas, benefits,
+salaries...) go to faker_jobs/data/conditions.json, plain indented JSON:
+they change more often than the occupations, and git stores and diffs a
+text file line by line, where each change to a gzipped file would add a
+full copy of it to the history. Floats are rounded to FLOAT_DIGITS so that
+a build with another Python version gives the same files.
 
 Requires openpyxl and xlrd (`pip install -e ".[dev]"`). Re-run whenever an input changes.
 """
@@ -45,7 +51,7 @@ import unicodedata
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import fetch_esco  # noqa: E402
 import fetch_salaries  # noqa: E402
-from posting_conditions import BENEFITS_PER_POSTING, CONDITIONS, EXPERIENCE, SKILL_LEVELS  # noqa: E402
+from posting_conditions import BENEFITS_PER_POSTING, CONDITIONS, EXPERIENCE, FIELDS_OF_STUDY, SKILL_LEVELS  # noqa: E402
 from rome_labels import DOMAINS, SECTORS, SOFT_SKILLS  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -550,9 +556,10 @@ def contract_weights(contracts, lfs):
     return result
 
 
-def make_conditions(locale, office_domains, salary, sections, lfs, naf=None):
+def make_conditions(locale, office_domains, salary, sector_names, naf, lfs, naf_sectors=None):
     """The posting conditions of a locale (see posting_conditions.py), with
-    its salaries and contract weights."""
+    its salaries, contract weights, the NACE section and field of study of
+    each activity sector ({ROME sector code: name} in `sector_names`)."""
     local = CONDITIONS[locale]
     contracts = {name: {"kind": spec["kind"], "salary_factor": spec.get("salary_factor", 1),
                         "max_experience": spec.get("max_experience"), "employee": spec.get("employee", True)}
@@ -560,9 +567,10 @@ def make_conditions(locale, office_domains, salary, sections, lfs, naf=None):
     conditions = {**local, "contracts": contracts, "contract_weights": contract_weights(local["contracts"], lfs),
                   "experience": EXPERIENCE, "skill_levels": SKILL_LEVELS,
                   "benefits_per_posting": BENEFITS_PER_POSTING, "office_domains": sorted(office_domains),
-                  "salary": salary, "section_by_sector": sections}
-    if naf is not None:
-        conditions["naf_by_sector"] = naf
+                  "salary": salary, "section_by_sector": section_by_sector(sector_names, naf),
+                  "fields_of_study": {sector_names[code]: field for code, field in FIELDS_OF_STUDY[locale].items()}}
+    if naf_sectors is not None:
+        conditions["naf_by_sector"] = naf_sectors
     return conditions
 
 
@@ -587,7 +595,7 @@ def build_fr(sectors, jobs, weights, seasonal, naf, isco, salary, lfs):
                       f"{lfs_source(lfs)}",
             "language": "fr", "gender": GENDER["fr"]}
     office_domains = {job["domain"] for job in jobs.values() if job["domain_code"] in OFFICE_DOMAIN_CODES}
-    conditions = make_conditions("fr_FR", office_domains, salary, section_by_sector(sectors, naf),
+    conditions = make_conditions("fr_FR", office_domains, salary, sectors, naf,
                                  lfs_country("fr_FR", lfs), naf_by_sector(sectors, naf))
     return {**package(meta, sectors.values(), occupations), "conditions": conditions}
 
@@ -686,7 +694,7 @@ def build_esco(locale, jobs, weights, seasonal, naf, salary, salary_source, lfs)
                       f"{salary_source}" + (f"; {lfs_source(lfs)}" if lfs_country(locale, lfs) else ""),
             "language": language, "gender": GENDER.get(language)}
     office_domains = {domain_labels[code] for code in OFFICE_DOMAIN_CODES}
-    conditions = make_conditions(locale, office_domains, salary, section_by_sector(sector_labels, naf),
+    conditions = make_conditions(locale, office_domains, salary, sector_labels, naf,
                                  lfs_country(locale, lfs))
     return {**package(meta, sector_labels.values(), occupations), "conditions": conditions}
 
@@ -790,17 +798,47 @@ def build_occupations():
     return dict(sorted(built.items()))
 
 
+CONDITIONS_PATH = os.path.join(OUTPUT_DIR, "conditions.json")
+FLOAT_DIGITS = 6
+
+
 def output_path(locale):
     return os.path.join(OUTPUT_DIR, f"occupations_{locale}.json.gz")
 
 
+def round_floats(value):
+    """`value` with every float rounded to FLOAT_DIGITS digits."""
+    if isinstance(value, float):
+        return round(value, FLOAT_DIGITS)
+    if isinstance(value, dict):
+        return {key: round_floats(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [round_floats(item) for item in value]
+    return value
+
+
+def split_outputs(built):
+    """({locale: occupation data}, {locale: posting conditions}), floats rounded."""
+    occupations, conditions = {}, {}
+    for locale, data in built.items():
+        data = round_floats(data)
+        conditions[locale] = data.pop("conditions")
+        occupations[locale] = data
+    return occupations, conditions
+
+
 def main():
-    for locale, data in build_occupations().items():
+    occupations, conditions = split_outputs(build_occupations())
+    for locale, data in occupations.items():
         text = json.dumps(data, ensure_ascii=False, separators=(",", ":")) + "\n"
         with open(output_path(locale), "wb") as raw, gzip.GzipFile(fileobj=raw, mode="wb", mtime=0) as f:
             f.write(text.encode("utf-8"))
         print(f"{locale}: {len(data['occupations'])} occupations, {len(data['sectors'])} sectors, "
               f"{len(data['strings'])} strings → {output_path(locale)}")
+    with open(CONDITIONS_PATH, "w", encoding="utf-8") as f:
+        json.dump(conditions, f, ensure_ascii=False, indent=1)
+        f.write("\n")
+    print(f"conditions of {', '.join(conditions)} → {CONDITIONS_PATH}")
 
 
 if __name__ == "__main__":

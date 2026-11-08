@@ -17,11 +17,13 @@ sectors, skills, knowledge and soft skills. The posting conditions
 are those of France, Germany, Spain, Italy or, for every other locale, the
 United States.
 
-Cities and companies come from the "Job Description Dataset" (Kaggle):
-457 geocoded cities worldwide and 888 companies with their profile, used as
-is in English locales; German, Spanish, French and Italian locales make
-their companies up. Contact names and phone numbers always come from the
-Faker locale.
+Job locations are the ~29,500 cities of 15,000 inhabitants or more of
+GeoNames in 216 countries, picked in proportion to their population, with
+their local names in France, Germany, Spain and Italy. Companies come from
+the "Job Description Dataset" (Kaggle): 888 companies with their profile,
+used as is in English locales; German, Spanish, French and Italian locales
+make their companies up. Contact names and phone numbers always come from
+the Faker locale.
 """
 import difflib
 import gzip
@@ -39,11 +41,16 @@ __version__ = "0.5.0"
 _DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 _DATA_PATH = os.path.join(_DATA_DIR, "jobs_data.json")
 _data_cache: dict[str, Any] | None = None
+_CITIES_PATH = os.path.join(_DATA_DIR, "cities.json.gz")
+_cities_cache: dict[str, Any] | None = None
 
 # Locales with their own occupation data, and the one used for every other locale.
 OCCUPATION_LOCALES = ("de_DE", "en_US", "es_ES", "fr_FR", "it_IT")
 DEFAULT_OCCUPATION_LOCALE = "en_US"
 _occupation_cache: dict[str, dict[str, Any]] = {}
+# Posting conditions of every occupation locale (contracts, diplomas, salaries...).
+_CONDITIONS_PATH = os.path.join(_DATA_DIR, "conditions.json")
+_conditions_cache: dict[str, Any] | None = None
 
 
 def _suggest_similar(value: str, options: list[str], n: int = 3) -> list[str]:
@@ -247,8 +254,29 @@ def _load_data() -> dict[str, Any]:
     return _data_cache
 
 
+def _load_cities() -> dict[str, Any]:
+    """{lowercase country: {"country": name, "cities": rows, "cum_weights":
+    cumulative populations, or None for a uniform pick}}; a row is [English
+    name, latitude, longitude, population, local name (France, Germany,
+    Spain, Italy only)]."""
+    global _cities_cache
+    if _cities_cache is None:
+        with gzip.open(_CITIES_PATH, "rt", encoding="utf-8") as f:
+            raw = json.load(f)
+        _cities_cache = {
+            country.lower(): {
+                "country": country,
+                "cities": entry["cities"],
+                "cum_weights": None if any(row[3] is None for row in entry["cities"])
+                else list(itertools.accumulate(row[3] for row in entry["cities"])),
+            }
+            for country, entry in raw["countries"].items()
+        }
+    return _cities_cache
+
+
 def _build_index(raw: dict[str, Any]) -> dict[str, Any]:
-    """Lookups on the Kaggle cities and companies."""
+    """Lookups on the Kaggle companies."""
     by_sector: dict[str, list[dict[str, Any]]] = {}
     for company in raw["companies"]:
         if company["sector"]:
@@ -256,22 +284,25 @@ def _build_index(raw: dict[str, Any]) -> dict[str, Any]:
 
     return {
         **raw,
-        "locations_by_country": {
-            country.lower(): list(locations)
-            for country, locations in itertools.groupby(
-                sorted(raw["locations"], key=lambda x: x["country"]), key=lambda x: x["country"]
-            )
-        },
         "company_by_name": {company["company"].lower(): company for company in raw["companies"]},
         "companies_by_sector": by_sector,
         "sector_by_name": {sector.lower(): sector for sector in by_sector},
     }
 
 
+def _load_conditions() -> dict[str, Any]:
+    global _conditions_cache
+    if _conditions_cache is None:
+        with open(_CONDITIONS_PATH, encoding="utf-8") as f:
+            _conditions_cache = json.load(f)
+    return _conditions_cache
+
+
 def _load_occupations(locale: str) -> dict[str, Any]:
     if locale not in _occupation_cache:
         with gzip.open(os.path.join(_DATA_DIR, f"occupations_{locale}.json.gz"), "rt", encoding="utf-8") as f:
             raw = json.load(f)
+        raw["conditions"] = _load_conditions()[locale]
         _occupation_cache[locale] = _build_occupation_index(raw)
     return _occupation_cache[locale]
 
@@ -320,7 +351,7 @@ def _build_occupation_index(raw: dict[str, Any]) -> dict[str, Any]:
         "sector_by_name": {sector.lower(): sector for sector in raw["sectors"]},
         # Kaggle companies by sector (used in English only: see _local_companies).
         "companies_by_sector": raw.get("companies_by_sector", {}),
-        "conditions": raw.get("conditions"),
+        "conditions": raw["conditions"],
         # None (titles are not gendered) or {"titles": "rome" | "esco", "posting_suffix": str | None}.
         "gender": raw["meta"].get("gender"),
     }
@@ -549,13 +580,20 @@ class JobsProvider(BaseProvider):
 
     # -- qualifications / experience / salary -----------------------------------
 
-    def _local_qualifications(self, conditions: dict[str, Any]) -> list[str]:
-        return sorted({name for names in conditions["qualifications"].values() for name in names})
+    def _default_qualification(self, conditions: dict[str, Any], level: str, sector: str) -> str:
+        """A default local diploma of a skill level, in the field of study of
+        `sector` when the diploma names one ("Bachelor im Bereich Logistik")."""
+        template = self.random_element(conditions["qualifications"][level])
+        return str(template).format(field=conditions["fields_of_study"][sector])
 
     def job_qualification(self) -> str:
-        """Return a random local diploma ('Bac+2 (BTS, DUT)', 'Ausbildung',
-        "Bachelor's degree"...)."""
-        return self.random_element(self._local_qualifications(self._local_conditions()))
+        """Return a random local diploma ('Bac+2 (BTS, DUT)', 'Abgeschlossene
+        Berufsausbildung im Bereich Logistik', "Bachelor's degree in Computer
+        Science"...): one of a random skill level, in the field of study of a
+        random activity sector when it names one."""
+        conditions = self._local_conditions()
+        level = self.random_element(sorted(conditions["qualifications"]))
+        return self._default_qualification(conditions, level, self.job_activity_sector())
 
     def job_experience_range(self) -> tuple[int, int]:
         """Return a random (min, max) years-of-experience range, e.g. (1, 3):
@@ -612,43 +650,53 @@ class JobsProvider(BaseProvider):
 
     @property
     def job_countries(self) -> list[str]:
-        """list: every country a job can be located in."""
-        return [location["country"] for location in self._data["locations"]]
+        """list: every country a job can be located in (216), sorted, with
+        the English names of `job_location(country=...)` ('France', 'USA'...)."""
+        return sorted(entry["country"] for entry in _load_cities().values())
 
     def job_location(self, country: str | None = None) -> LocationRecord:
         """Return a random job location (city, country and coordinates), in
         the locale's country by default (the United States for locales
-        without conditions of their own), or in the given `country`."""
+        without conditions of their own), or in the given `country` (see
+        `job_countries`).
+
+        Cities are those of 15,000 inhabitants or more (GeoNames), picked in
+        proportion to their population: Paris comes up more often than
+        Annecy. Their names are in English ('Munich'), except in the
+        locale's own country for German, Spanish, French and Italian
+        locales ('München', 'Deutschland')."""
         return self._local_location(self._local_conditions(), country)
 
     def _local_location(self, conditions: dict[str, Any], country: str | None) -> LocationRecord:
         """A location, in the locale's country by default (its local name is
         accepted too), with the local names of the country and its cities."""
-        names = conditions.get("place_names") or {"country": conditions["country"], "cities": {}}
-        if country is None or str(country).strip().lower() == names["country"].lower():
+        local_country = (conditions.get("place_names") or {}).get("country", conditions["country"])
+        if country is None or str(country).strip().lower() == local_country.lower():
             country = conditions["country"]
-        location = self._city(country)
-        if location["country"] == conditions["country"]:
-            location["city"] = names["cities"].get(location["city"], location["city"])
-            location["country"] = names["country"]
-        return location
+        local = country == conditions["country"]
+        return self._city(country, local_country if local else None)
 
-    def _city(self, country: str) -> LocationRecord:
-        """A city of `country` from the Kaggle location data."""
-        locations = self._data["locations_by_country"].get(str(country).strip().lower())
-        if locations is None:
-            countries = sorted({loc["country"] for loc in self._data["locations"]})
-            similar = _suggest_similar(country, countries)
+    def _city(self, country: str, local_country: str | None = None) -> LocationRecord:
+        """A city of `country`, picked by population; with `local_country`,
+        the local names of the city and the country."""
+        entry = _load_cities().get(str(country).strip().lower())
+        if entry is None:
+            similar = _suggest_similar(country, self.job_countries)
             msg = f"Unknown country: {country!r}"
             if similar:
                 msg += f". Did you mean: {', '.join(similar)}?"
             raise ValueError(msg)
-        location = self.random_element(locations)
+        rng = self.generator.random
+        if entry["cum_weights"] is None:
+            row = rng.choice(entry["cities"])
+        else:
+            row = rng.choices(entry["cities"], cum_weights=entry["cum_weights"])[0]
+        local = local_country is not None and len(row) > 4
         return {
-            "city": location["city"],
-            "country": location["country"],
-            "latitude": location["latitude"],
-            "longitude": location["longitude"],
+            "city": row[4] if local else row[0],
+            "country": local_country if local_country is not None else entry["country"],
+            "latitude": row[1],
+            "longitude": row[2],
         }
 
     # -- companies --------------------------------------------------------------
@@ -1073,9 +1121,12 @@ class JobsProvider(BaseProvider):
         salary_min, salary_max = self._local_salary(
             occupation["isco_group"], section, (experience_min, experience_max), spec, conditions)
         portals = conditions["job_portals"]
-        qualifications = occupation["qualifications"] or conditions["qualifications"][level]
+        if occupation["qualifications"]:
+            qualification = self.random_element(occupation["qualifications"])
+        else:
+            qualification = self._default_qualification(conditions, level, occupation["sector"])
         return {
-            "qualification": self.random_element(qualifications),
+            "qualification": qualification,
             "experience": _local_experience_text(conditions, experience_min, experience_max),
             "experience_min": experience_min,
             "experience_max": experience_max,

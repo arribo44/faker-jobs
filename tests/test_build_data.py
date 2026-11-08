@@ -26,24 +26,9 @@ class TestBuildData(unittest.TestCase):
         self.assertEqual(packaged, json.loads(json.dumps(self.data)),
                          msg="faker_jobs/data/jobs_data.json is stale: re-run scripts/build_data.py")
 
-    def test_only_cities_and_companies(self):
-        self.assertEqual(set(self.data), {"meta", "locations", "companies", "ranges"})
+    def test_only_companies(self):
+        self.assertEqual(set(self.data), {"meta", "companies", "ranges"})
         self.assertEqual(set(self.data["ranges"]), {"company_size"})
-
-    def test_multiple_locations_per_country(self):
-        # Now we have multiple cities per country
-        countries = [location["country"] for location in self.data["locations"]]
-        unique_countries = set(countries)
-        # Verify we have locations for multiple countries
-        self.assertGreater(len(unique_countries), 1)
-        # Verify total locations is greater than unique countries (multiple cities per country)
-        self.assertGreater(len(countries), len(unique_countries))
-        # Verify each location has required fields
-        for location in self.data["locations"]:
-            self.assertIn("city", location)
-            self.assertIn("country", location)
-            self.assertIn("latitude", location)
-            self.assertIn("longitude", location)
 
     def test_unique_company_names(self):
         names = [company["company"].lower() for company in self.data["companies"]]
