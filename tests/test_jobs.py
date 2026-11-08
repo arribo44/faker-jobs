@@ -9,7 +9,7 @@ import unittest
 
 from faker import Faker
 
-from faker_jobs import _DATA_PATH, JobsProvider
+from faker_jobs import _DATA_PATH, JobsProvider, _load_cities
 
 
 class TestJobsProvider(unittest.TestCase):
@@ -38,7 +38,7 @@ class TestJobsProvider(unittest.TestCase):
 
     def test_no_kaggle_job_data_is_shipped(self):
         with open(_DATA_PATH, encoding="utf-8") as f:
-            self.assertEqual(set(json.load(f)), {"meta", "locations", "companies", "ranges"})
+            self.assertEqual(set(json.load(f)), {"meta", "companies", "ranges"})
         self.assertFalse(hasattr(JobsProvider, "use_kaggle_data"))
 
     # -- titles / roles -----------------------------------------------------------
@@ -75,7 +75,8 @@ class TestJobsProvider(unittest.TestCase):
     # -- conditions (US) ----------------------------------------------------------
 
     def test_us_conditions(self):
-        qualifications = {name for names in self.conditions["qualifications"].values() for name in names}
+        qualifications = {name.format(field=field) for names in self.conditions["qualifications"].values()
+                          for name in names for field in self.conditions["fields_of_study"].values()}
         portals = set(self.conditions["job_portals"]["all"]) | set(self.conditions["job_portals"].get("executive", []))
         for _ in range(30):
             self.assertIn(self.fake.job_qualification(), qualifications)
@@ -111,8 +112,9 @@ class TestJobsProvider(unittest.TestCase):
         self.assertEqual(location["country"], "France")
         self.assertIn(location["country"], self.provider.job_countries)
         self.assertTrue(-90 <= location["latitude"] <= 90 and -180 <= location["longitude"] <= 180)
-        french_cities = [loc["city"] for loc in self.provider._data["locations"] if loc["country"] == "France"]
-        self.assertIn(location["city"], french_cities)
+        self.assertIn(location["city"], [row[0] for row in _load_cities()["france"]["cities"]])
+        self.assertEqual(len(self.provider.job_countries), 216)
+        self.assertEqual(self.provider.job_countries, sorted(set(self.provider.job_countries)))
         with self.assertRaisesRegex(ValueError, "Unknown country"):
             self.fake.job_location(country="Atlantis")
 

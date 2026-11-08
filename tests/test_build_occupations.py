@@ -30,7 +30,7 @@ SOURCES = (build_occupations.ROME_PATH, build_occupations.BMO_PATH, build_occupa
 class TestBuildOccupations(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.data = build_occupations.build_occupations()
+        cls.data, cls.conditions = build_occupations.split_outputs(build_occupations.build_occupations())
 
     def test_packaged_json_is_up_to_date(self):
         for locale, data in self.data.items():
@@ -38,6 +38,13 @@ class TestBuildOccupations(unittest.TestCase):
                 packaged = json.load(f)
             self.assertEqual(packaged, json.loads(json.dumps(data)),
                              msg=f"occupations_{locale}.json.gz is stale: re-run scripts/build_occupations.py")
+        with open(build_occupations.CONDITIONS_PATH, encoding="utf-8") as f:
+            self.assertEqual(json.load(f), json.loads(json.dumps(self.conditions)),
+                             msg="conditions.json is stale: re-run scripts/build_occupations.py")
+
+    def test_floats_are_rounded(self):
+        self.assertEqual(build_occupations.round_floats({"a": [0.48871358277284155, 2, "x"]}),
+                         {"a": [0.488714, 2, "x"]})
 
     def test_every_esco_occupation_is_cached(self):
         mapped = {uri for uri, *_ in fetch_esco.read_mapping()}

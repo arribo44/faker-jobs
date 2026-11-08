@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
 Build faker_jobs/data/jobs_data.json from the curated CSV files in DATAS/
-(Job Description Dataset, Kaggle). Only its cities and companies are kept:
-jobs come from the ROME / ESCO occupations (see build_occupations.py).
+(Job Description Dataset, Kaggle). Only its companies are kept: jobs come
+from the ROME / ESCO occupations (see build_occupations.py), cities from
+GeoNames (see build_cities.py, which reads the Kaggle country names of
+faker_locations.csv).
 
-- faker_locations.csv: cities per country, geocoded (see geocode_locations.py)
 - faker_firms.csv: companies and their profile (see transform_firms.py)
 - posting_ranges.csv: the company size range measured on the full postings
   file (see build_job_stats.py)
@@ -43,17 +44,8 @@ def optional(value):
 def build_data():
     return {
         "meta": {
-            "source": "Job Description Dataset (Kaggle, ~1.6M synthetic postings): cities and companies",
+            "source": "Job Description Dataset (Kaggle, ~1.6M synthetic postings): companies",
         },
-        "locations": [
-            {
-                "city": row["location"],
-                "country": row["Country"],
-                "latitude": float(row["latitude"]),
-                "longitude": float(row["longitude"]),
-            }
-            for row in read_csv("faker_locations.csv")
-        ],
         "companies": [
             {
                 "company": row["company"],
@@ -78,7 +70,7 @@ def main():
     with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
         f.write("\n")
-    print(f"Wrote {OUTPUT_PATH}: {len(data['companies'])} companies, {len(data['locations'])} locations")
+    print(f"Wrote {OUTPUT_PATH}: {len(data['companies'])} companies")
 
 
 if __name__ == "__main__":

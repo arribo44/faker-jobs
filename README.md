@@ -10,9 +10,11 @@ occupations** mapped to them in English, German, Spanish and Italian, with **~14
 conditions (contracts, diplomas, salaries from official earnings, benefits,
 job boards) are those of France, Germany, Spain, Italy and the United States.
 
-Cities and companies come from the [Job Description Dataset](https://www.kaggle.com/datasets/ravindrasinghrana/job-description-dataset)
-(Kaggle): **457 geocoded cities** worldwide and **888 companies** with their
-profile.
+Job locations are the **~29,500 cities** of 15,000 inhabitants or more of
+[GeoNames](https://www.geonames.org/) in 216 countries, picked in proportion
+to their population, with their local names in France, Germany, Spain and
+Italy. Companies come from the [Job Description Dataset](https://www.kaggle.com/datasets/ravindrasinghrana/job-description-dataset)
+(Kaggle): **888 companies** with their profile.
 
 ---
 
@@ -98,7 +100,7 @@ assistants come up far more often than air traffic controllers. Pass
 ### 🎓 Qualifications, experience, salary
 
 ```python
-fake.job_qualification()                # "Bachelor's degree", "Professional certification"...
+fake.job_qualification()                # "Bachelor's degree in Computer Science", "Associate degree"...
 
 fake.job_experience()                   # "4-7 years of experience" or "Entry level"
 fake.job_experience_range()             # (4, 7)
@@ -134,9 +136,17 @@ fake.job_company_profile(company="3M")  # a specific company
 fake.job_company_size()                 # 57916 (employees)
 
 fake.job_location()                     # the locale's country by default (the USA here)
-# {'city': 'Houston', 'country': 'USA', 'latitude': 29.7604, 'longitude': -95.3698}
+# {'city': 'Houston', 'country': 'USA', 'latitude': 29.7633, 'longitude': -95.3633}
 fake.job_location(country="France")     # {'city': 'Paris', 'country': 'France', ...}
+fake.job_location(country="Germany")    # {'city': 'Munich', ...}  (English names outside the locale's country)
 ```
+
+Cities are the 29,500 cities of 15,000 inhabitants or more of GeoNames,
+picked in proportion to their population (Houston comes up more often than
+Boise; 2,849 cities in the USA, 462 in France, 945 in Germany). Districts
+counted in their city are left out ("Paris 15 Vaugirard"), but GeoNames
+lists some boroughs as cities of their own (Brooklyn). `job_countries`
+lists the 216 countries.
 
 Company profile fields missing from the source data (no state outside the
 US, no CEO for some companies...) are `None`.
@@ -179,8 +189,8 @@ fake.job_company_profile(sector="Santé")
 | `job_location()` | the USA by default | the locale's country by default, with local names (Deutschland, München, Sevilla, Roma...) |
 | `job_company()`, `job_company_profile()`, `job_sectors` | Kaggle companies and their sectors | made up by the locale, in an activity sector |
 
-`job_countries`, `job_companies` and `job_company_size()` use the Kaggle
-data in every locale. Countries other than the locale's keep their English
+`job_companies` and `job_company_size()` use the Kaggle data in every
+locale. Countries other than the locale's keep their English
 name (`country="Belgium"`); the local name of the locale's country is
 accepted too (`country="Deutschland"`).
 
@@ -361,7 +371,11 @@ States). That mean is then adjusted:
 - and kept above the minimum wage for a full-time employee.
 
 The experience asked and the default diploma follow the skill level of the
-group (managers and professionals, technicians, other jobs). Expect a
+group (managers and professionals, technicians, other jobs). The default
+diploma (ESCO occupations, ROME sheets without diploma) often names the
+field of study of the occupation's sector: "Abgeschlossene Berufsausbildung
+im Bereich Logistik", "Ciclo Formativo de Grado Medio en Sanidad",
+"Bachelor's degree in Computer Science", "BTS commerce". Expect a
 specialist doctor to earn far more than a kitchen assistant, and a senior
 more than a junior; but the figures are 2022 (Eurostat) or latest-year
 (BLS) means of broad groups, not the pay of the exact job: an
@@ -384,8 +398,8 @@ French postings, as in the BMO survey (hiring plans, which count every
 seasonal hire), so the CDI is only about 40% of them. The United States
 keep the national mix for every occupation.
 
-Benefit rules, job boards and default diplomas are hand-made and
-**illustrative** (`scripts/posting_conditions.py`).
+Benefit rules, job boards, default diplomas and their fields of study are
+hand-made and **illustrative** (`scripts/posting_conditions.py`).
 
 The NAF activities of each sector are chosen by hand (`NAF_BY_SECTOR` in
 `scripts/build_occupations.py`) and picked at random within the sector: a
@@ -550,11 +564,11 @@ The source files in `DATAS/` are not published in this repository: the
 package only needs the generated files of `faker_jobs/data/`. They are
 only needed to rebuild them.
 
-The cities and companies come from the Kaggle dataset:
+The companies come from the Kaggle dataset:
 
 ```
 DATAS/                          curated source files (not published)
-  faker_locations.csv           cities per country (geocode_locations.py)
+  faker_locations.csv           Kaggle cities: only their country names are used (build_cities.py)
   faker_firms.csv               companies and profiles (transform_firms.py)
   posting_ranges.csv            min/max of numeric fields, measured on the full postings
                                 file by scripts/build_job_stats.py (only the company size is kept)
@@ -562,7 +576,16 @@ DATAS/                          curated source files (not published)
 scripts/
   build_job_stats.py            job_descriptions2.csv -> the statistics files
   build_data.py                 DATAS/*.csv -> faker_jobs/data/jobs_data.json
-faker_jobs/data/jobs_data.json  packaged cities and companies (~225 KB)
+faker_jobs/data/jobs_data.json  packaged companies (~190 KB)
+```
+
+The cities come from GeoNames:
+
+```
+DATAS/geonames/cities15000.zip, countryInfo.txt   GeoNames dump (download.geonames.org/export/dump/)
+DATAS/geonames/alt_{FR,DE,ES,IT}.zip              alternatenames/{FR,DE,ES,IT}.zip: local and English names
+scripts/
+  build_cities.py [--download]  -> faker_jobs/data/cities.json.gz (~500 KB)
 ```
 
 Occupations have their own sources and scripts:
@@ -586,6 +609,7 @@ scripts/
   posting_conditions.py         local contracts, benefits, job boards, diplomas by locale
   rome_labels.py                ROME sectors, domains and soft skills in English, German, Spanish, Italian
   build_occupations.py          -> faker_jobs/data/occupations_{de_DE,en_US,es_ES,fr_FR,it_IT}.json.gz (gzipped)
+                                   and faker_jobs/data/conditions.json (posting conditions, plain JSON)
                                    (also matches the companies of jobs_data.json to the ROME sectors)
 ```
 
@@ -632,3 +656,5 @@ Occupation data:
   Union (reuse authorised, source acknowledged); BLS OEWS, U.S. Bureau of Labor Statistics (public domain).
 - English, German, Spanish and Italian labels of the 35 ROME activity
   sectors, 14 domains and 16 soft skills are translated by this project.
+
+Cities: [GeoNames](https://www.geonames.org/), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
