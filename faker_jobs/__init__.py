@@ -186,9 +186,12 @@ class OccupationPosting(TypedDict):
 
     The company is in the occupation's sector (`company_sector`) and in the
     country of the job (see `job_occupation_posting`); `company_size` is its
-    number of employees. In French locales `company_naf` is a NAF rév. 2
-    activity code of the sector (e.g. '86.10Z'), whose label is the
-    company's `industry`; it is None elsewhere."""
+    number of employees. `company_naf` is the activity code of the company,
+    in the sector and among those that employ the occupation: a NAF rév. 2
+    sub-class in French locales (e.g. '86.10Z'), a NACE Rev. 2 class in
+    German, Spanish and Italian ones (e.g. '86.10', also the class of WZ
+    2008, CNAE-2009 and ATECO 2007), whose label is the company's
+    `industry`; it is None in English locales."""
 
     job_id: int
     job_title: str
@@ -394,6 +397,9 @@ def _build_occupation_index(raw: dict[str, Any]) -> dict[str, Any]:
         "cum_weights_by_sector": {sector: cum_weights(rows) for sector, rows in by_sector.items()},
         "sector_by_name": {sector.lower(): sector for sector in raw["sectors"]},
         "conditions": raw["conditions"],
+        # {ISCO unit group: {sector: [[index in conditions["naf_by_sector"][sector], weight], ...]}}:
+        # the activities of the sector that employ the occupation (see `_pick_naf`).
+        "naf_by_isco": raw.get("naf_by_isco", {}),
         # None (titles are not gendered) or {"titles": "rome" | "esco", "posting_suffix": str | None}.
         "gender": raw["meta"].get("gender"),
     }
@@ -780,8 +786,8 @@ class JobsProvider(BaseProvider):
         of the country. With `company`: that company of `job_companies`
         ('ibm' -> IBM, case-insensitive), else a company of that name made
         up by the Faker locale, with a city of the country and a CEO, in
-        `sector` (else a random one). In French locales, a NAF activity of
-        the sector as `industry`."""
+        `sector` (else a random one). In French, German, Spanish and Italian
+        locales, an activity (NAF / NACE) of the sector as `industry`."""
         conditions = self._local_conditions()
         if company is not None:
             country = self._home_country(conditions)
@@ -817,34 +823,48 @@ class JobsProvider(BaseProvider):
         country = conditions["country"] if location["country"] == local_country else location["country"]
         return country if country in _load_companies()["countries"] else None
 
-    def _pick_naf(self, sector: str, conditions: dict[str, Any], industry: str | None = None) -> list[Any] | None:
-        """A NAF activity [code, label, NACE section, weight] of the activity
-        sector (French locales; None elsewhere), picked by employment: those
-        that fit the company's LinkedIn `industry` when some do."""
+    def _pick_naf(
+        self, sector: str, conditions: dict[str, Any], industry: str | None = None, isco: str | None = None,
+    ) -> list[Any] | None:
+        """An activity [code, label, NACE section, weight] of the activity
+        sector: a NAF sub-class in French locales, a NACE class in German,
+        Spanish and Italian ones, None in English ones. Only those that fit
+        the company's LinkedIn `industry`, when some do; then, for an
+        occupation (ISCO unit group `isco`), picked by its employees in each
+        activity (French census), else by employment."""
         if "naf_by_sector" not in conditions:
             return None
-        candidates = conditions["naf_by_sector"][sector]
+        candidates = list(enumerate(conditions["naf_by_sector"][sector]))
         prefixes = conditions["naf_by_industry"].get(industry.lower()) if industry else None
         if prefixes:
-            candidates = [naf for naf in candidates if naf[0].startswith(tuple(prefixes))] or candidates
-        found: list[Any] = self.generator.random.choices(candidates, weights=[naf[3] for naf in candidates])[0]
+            candidates = [(i, naf) for i, naf in candidates if naf[0].startswith(tuple(prefixes))] or candidates
+        fit = dict(map(tuple, self._occupations["naf_by_isco"].get(isco, {}).get(sector, ())))
+        weights = [fit.get(i, 0) for i, _ in candidates]
+        if not any(weights):
+            weights = [naf[3] for _, naf in candidates]
+        found: list[Any] = self.generator.random.choices(candidates, weights=weights)[0][1]
         return found
 
     def _hiring_company(
-        self, sector: str, conditions: dict[str, Any], location: LocationRecord,
+        self, sector: str, conditions: dict[str, Any], location: LocationRecord, isco: str | None = None,
     ) -> tuple[CompanyProfile, int, LocationRecord, list[Any] | None]:
         """A company of the activity sector `sector` hiring in `location`,
-        its number of employees, the job location and, in French locales,
-        its NAF activity.
+        its number of employees, the job location and its activity (NAF /
+        NACE, None in English locales) for an occupation of ISCO unit group
+        `isco`.
 
         Its size class is picked by the share of jobs of each class in the
-        sector and the country of the job (People Data Labs): a real company
-        of that sector and class, else (1-10 employees, a country without
-        companies, or at random in a class of fewer than 10 companies) a
-        company made up by the Faker locale in the job's city.
-        Companies of up to 500 employees hire in their headquarters city
-        when it is one of the cities of `job_location`. In French locales,
-        the NAF activity (see `_pick_naf`) is the industry."""
+        sector and the country of the job (People Data Labs), then a real
+        company of that sector and class, else (1-10 employees, a country
+        without companies, or at random in a class of fewer than 10
+        companies) a company made up by the Faker locale in the job's city.
+        When the activities that employ the occupation are known (French,
+        German, Spanish and Italian locales), the activity is picked first
+        (see `_pick_naf`), then a real company whose LinkedIn industry has
+        that activity (no farming cooperative for an aquaculture worker),
+        else a made-up one. Companies of up to 500 employees hire in their
+        headquarters city when it is one of the cities of `job_location`.
+        The activity is the company's industry."""
         data = _load_companies()
         country = self._company_country(conditions, location)
         entry = data["countries"][country or self._home_country(conditions)]
@@ -853,12 +873,20 @@ class JobsProvider(BaseProvider):
         rows = entry["by_class"][code][size_class] if country is not None and code in entry["by_class"] else []
         if rows and self.generator.random.random() * _COMPANIES_PER_CLASS >= entry["counts"][code][size_class]:
             rows = []  # a class of few companies: a made-up one in its place
+        naf = None
+        if "naf_by_sector" in conditions and sector in self._occupations["naf_by_isco"].get(isco, {}):
+            naf = self._pick_naf(sector, conditions, isco=isco)
+            assert naf is not None
+            industries, by_industry = data["industries"], conditions["naf_by_industry"]
+            rows = [row for row in rows if naf[0].startswith(tuple(by_industry.get(industries[row[6]].lower(), ())))]
         if country is None or not rows:
-            naf = self._pick_naf(sector, conditions)
+            if naf is None:
+                naf = self._pick_naf(sector, conditions, isco=isco)
             company = self._local_company(sector, conditions, location, naf=naf)
             return company, self._class_size(size_class), location, naf
         row = self.random_element(rows)
-        naf = self._pick_naf(sector, conditions, data["industries"][row[6]])
+        if naf is None:
+            naf = self._pick_naf(sector, conditions, data["industries"][row[6]], isco)
         profile, size, headquarters = self._real_company(row, sector, country, conditions, naf)
         if headquarters is not None and size_class <= _SINGLE_SITE_MAX_CLASS:
             location = headquarters
@@ -1045,7 +1073,8 @@ class JobsProvider(BaseProvider):
           employees or outside the United States, the United Kingdom,
           France, Germany, Spain and Italy. Companies of up to 500 employees
           hire in their headquarters city when it is a city of
-          `job_location`. French locales add a NAF activity of the sector.
+          `job_location`. French, German, Spanish and Italian locales add an
+          activity of the sector that employs the occupation (NAF / NACE).
         - `skills`: how many of the occupation's skills to list (default 5).
         - `country` sets the job location (default: the locale's country,
           the United States for locales without conditions of their own).
@@ -1074,9 +1103,10 @@ class JobsProvider(BaseProvider):
     def _occupation_posting(self, occupation: OccupationRecord, country: str | None, skills: int) -> OccupationPosting:
         conditions = self._local_conditions()
         terms = self._local_terms(occupation, conditions, country)
-        company, company_size, location, naf = self._hiring_company(occupation["sector"], conditions, terms["location"])
-        # The salary follows the NACE section of the company's NAF activity (French
-        # locales), else that of the occupation's sector.
+        company, company_size, location, naf = self._hiring_company(
+            occupation["sector"], conditions, terms["location"], occupation["isco_code"])
+        # The salary follows the NACE section of the company's activity (NAF /
+        # NACE), else that of the occupation's sector (English locales).
         section = naf[2] if naf is not None else conditions["section_by_sector"].get(occupation["sector"])
         salary_min, salary_max = self._local_salary(
             occupation["isco_group"], section, (terms["experience_min"], terms["experience_max"]),
@@ -1123,8 +1153,8 @@ class JobsProvider(BaseProvider):
         naf: list[str] | None = None,
     ) -> CompanyProfile:
         """A company made up by the Faker locale (or named `name`) in
-        `sector`, in the city of the posting; in French locales with a NAF
-        rév. 2 activity of the sector (`naf`, else one picked by employment) as industry."""
+        `sector`, in the city of the posting; with an activity of the sector
+        (`naf`, else one picked by employment; NAF / NACE, none in English locales) as industry."""
         if naf is None:
             naf = self._pick_naf(sector, conditions)
         return {
