@@ -71,6 +71,10 @@ class CompaniesDataTests(unittest.TestCase):
         self.assertTrue(0.1 < micro["France"] < 0.25, micro)
         self.assertGreater(micro["Italy"], micro["France"])
         self.assertTrue(all(share > 0.05 for share in micro.values()), micro)
+        # French mining and waste: confidential, the EU split.
+        with gzip.open(os.path.join(ROOT, "faker_jobs", "data", "companies.json.gz"), "rt", encoding="utf-8") as f:
+            sections = json.load(f)["countries"]["France"]["official_sizes"]["sections"]
+        self.assertTrue({"B", "E"} <= set(sections), sections)
 
     def test_real_company_has_an_activity_of_its_industry(self):
         for locale in ("fr_FR", "it_IT"):
