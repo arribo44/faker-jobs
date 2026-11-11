@@ -197,7 +197,7 @@ fake.job_portal()             # "France Travail", "HelloWork", "APEC"...
 fake.job_location()           # {'city': 'Nice', 'country': 'France', ...}  (the locale's country by default)
 fake.job_company_profile(sector="Santé")   # as the hiring companies of the postings
 # {'company': 'Pharmacie le Fournier', 'sector': 'Santé',
-#  'industry': 'Hébergement médicalisé pour personnes âgées',   # NAF label (French locales)
+#  'industry': 'Hébergement médicalisé pour personnes âgées',   # NAF label (NACE in de, es, it)
 #  'city': 'Grenoble', 'state': None, 'zip': None, 'website': 'pharmacie-alliance.fr', 'ticker': None,
 #  'ceo': None, 'founded': None}
 ```
@@ -207,7 +207,7 @@ fake.job_company_profile(sector="Santé")   # as the hiring companies of the pos
 | `job_title()`, `job_role()`, `job_role_record()`... | ESCO occupations, in English | ROME (fr) or ESCO (de, es, it) occupations, in the language |
 | conditions (`job_qualification()`, `job_salary_range()`, `job_work_type()`...) | US | the country's |
 | `job_location()` | the United States by default (the United Kingdom for `en_GB`) | the locale's country by default, with local names (Deutschland, München, Sevilla, Roma...) |
-| `job_company()`, `job_company_profile()`, `job_companies` | companies of the United States (United Kingdom for `en_GB`), LinkedIn industry | companies of the country, NAF activity in French |
+| `job_company()`, `job_company_profile()`, `job_companies` | companies of the United States (United Kingdom for `en_GB`), LinkedIn industry | companies of the country, NAF (fr) or NACE (de, es, it) activity |
 
 Countries other than the locale's keep their English
 name (`country="Belgium"`); the local name of the locale's country is
@@ -350,12 +350,13 @@ million companies from their LinkedIn pages, CC BY 4.0), built by
 - Companies of up to 500 employees hire in their headquarters city when it
   is a city of `job_location()`; larger ones anywhere in the country.
 - `company_size` is the company's number of employees; `industry` its
-  LinkedIn industry in English locales, `None` in German, Spanish and
-  Italian ones; in French locales an activity of the sector from the French
-  NAF rév. 2 classification (`company_naf`, e.g. '86.10Z', and its label as
-  `industry`): one that fits the LinkedIn industry of a real company (Air
-  France: air transport, not passenger water transport), picked by
-  employment (see below).
+  LinkedIn industry in English locales; elsewhere an activity of the
+  sector (`company_naf`, and its label as `industry`): a sub-class of the
+  French NAF rév. 2 in French locales ('86.10Z'), a class of NACE Rev. 2 in
+  German, Spanish and Italian ones ('86.10', also the class of WZ 2008,
+  CNAE-2009 and ATECO 2007), one that employs the occupation and fits the
+  LinkedIn industry of a real company (Air France: air transport, not
+  passenger water transport; see below).
 
 LinkedIn industries are mapped by hand to the 35 activity sectors
 (`INDUSTRY_SECTORS` in `scripts/build_companies.py`); the dataset has some
@@ -387,7 +388,7 @@ fake.job_occupation_posting(sector="Logistique et transport")
 #                 'city': 'Paris', 'website': 'trusk.com', 'founded': 2015, 'ceo': None, ...},
 #     'company_size': 141,
 #     'company_sector': 'Logistique et transport',
-#     'company_naf': '49.41A',                  # NAF rév. 2 activity of the sector (None outside French locales)
+#     'company_naf': '49.41A',                  # NAF rév. 2 activity (NACE class in de, es, it; None in English)
 #     'seniority': 'mid',                       # 'junior' (< 3 years asked), 'mid' (3-7), 'senior' (8+)
 #     'job_portal': 'HelloWork',                # APEC and Cadremploi for executive jobs only
 #     'contact_person': 'Agathe Evrard de Lopez', 'contact': '+33 (0)3 51 39 07 57',
@@ -423,8 +424,8 @@ companies, for `en_GB`).
 **Salaries follow the occupation.** The occupation's ISCO-08 major group
 (`isco_group`, from ESCO) gives its mean gross annual earnings in the
 country: [Eurostat SES 2022](https://ec.europa.eu/eurostat/web/microdata/structure-of-earnings-survey)
-by major group and NACE section of the company (that of its NAF activity
-in French locales, else that of the occupation's sector; France, Germany,
+by major group and NACE section of the company (that of its NAF / NACE
+activity, else that of the occupation's sector; France, Germany,
 Spain, Italy), [BLS OEWS](https://www.bls.gov/oes/) by SOC major group (United
 States). That mean is then adjusted:
 - to the experience asked, by the ratio of the matching age band (under
@@ -464,18 +465,24 @@ keep the national mix for every occupation.
 Benefit rules, job boards, default diplomas and their fields of study are
 hand-made and **illustrative** (`scripts/posting_conditions.py`).
 
-The NAF activities of each sector are chosen by hand (`NAF_BY_SECTOR` in
-`scripts/build_occupations.py`) and picked by **employment**: each
-sub-class weighs the persons employed in its NACE group in France
-(Eurostat structural business statistics), shared by the sub-classes of the
-group, so road freight comes up about 30 times more often than passenger
-water transport (the median weight of the sector for public
-administration and associations, which have no figures). For a real
-company, only the activities that fit its LinkedIn industry
-(`scripts/naf_industries.py`, hand-made: "logistics and supply chain" ->
-49.4 road freight, 52 warehousing and support) are picked, when the sector
-has some. The activity is still not chosen for the occupation itself: a
-wastewater plant manager may work for a waste treatment company.
+The activities of each sector are chosen by hand (`NAF_BY_SECTOR` in
+`scripts/build_occupations.py`; NACE classes are those of the NAF
+sub-classes) and picked **for the occupation**: by the employees of its
+ISCO unit group in each activity, from the 2022 French census (INSEE
+detailed file: profession × NAF sub-class of the employees, professions
+mapped to ISCO-08 by the INSEE PCS 2020 × ISCO matrix), so an aquaculture
+worker works in aquaculture or sea fishing, not fibre crops, and a nurse
+mostly in hospitals. The French figures are used for German, Spanish and
+Italian postings too. Then a real company whose LinkedIn industry has that
+activity (`scripts/naf_industries.py`, hand-made: "logistics and supply
+chain" -> 49.4 road freight, 52 warehousing and support), else a made-up
+one. Occupations without census figures in the sector get an activity by
+**employment**: each sub-class or class weighs the persons employed in its
+NACE group in the country (Eurostat structural business statistics),
+shared by the sub-classes or classes of the group, so road freight comes up
+about 30 times more often than passenger water transport (the median weight
+of the sector for public administration and associations, which have no
+figures), among those that fit the LinkedIn industry of a real company.
 
 ROME sheets have no description (`None`).
 
@@ -549,7 +556,7 @@ fake.job_posting(job_title="Infirmier / Infirmière en gériatrie")          # b
 ```
 
 It is `job_occupation_posting()` in the `JobPosting` shape: use that one for
-the NAF code and company sector.
+the NAF / NACE code and company sector.
 
 `job_posting_text()` writes the full text of a posting, as published on a
 job board, in the locale's language: headline, company, the job, missions,
@@ -654,6 +661,11 @@ DATAS/bmo/Base-open-data-BMO-2026.xlsx       BMO 2026 recruitment projects (Fran
 DATAS/bmo/Dares_FAP2021_Table_passage_ROME.xlsx   FAP 2021 -> ROME table (DARES; its site blocks
                                              scripts: download it in a browser or from the Web Archive)
 DATAS/naf/naf2008_liste_n5.xls               NAF rév. 2 sub-classes (INSEE)
+DATAS/nace/labels.json                       NACE Rev. 2 classes in German, Spanish, Italian, by fetch_activities.py
+DATAS/insee_rp/RP2022_indreg.parquet         2022 census detailed file "Individus localisés à la région"
+                                             (INSEE, ~620 MB: --download)
+DATAS/insee_rp/Matrice_PCS_ISCO.csv          PCS 2020 -> ISCO-08 matrix (INSEE)
+DATAS/insee_rp/isco_naf.json                 employees by ISCO unit group and NAF sub-class, by fetch_activities.py
 DATAS/salaries/eurostat_ses2022.json         Eurostat SES 2022 earnings, cached by fetch_salaries.py
 DATAS/salaries/bls_oews.json                 BLS OEWS mean wages, cached by fetch_salaries.py
 DATAS/salaries/eurostat_lfs.json             Eurostat LFS 2025 temporary, part-time, self-employed workers
@@ -661,6 +673,7 @@ DATAS/salaries/eurostat_lfs.json             Eurostat LFS 2025 temporary, part-t
 scripts/
   fetch_esco.py [language]      ESCO web-service API -> the caches above (~2,000 requests each, resumable)
   fetch_salaries.py             Eurostat and BLS APIs -> the salary and labour caches above
+  fetch_activities.py [--download]   census + matrix -> isco_naf.json; EU Vocabularies SPARQL -> labels.json
   posting_conditions.py         local contracts, benefits, job boards, diplomas by locale
   rome_labels.py                ROME sectors, domains and soft skills in English, German, Spanish, Italian
   build_occupations.py          -> faker_jobs/data/occupations_{de_DE,en_US,es_ES,fr_FR,it_IT}.json.gz (gzipped)
@@ -684,7 +697,8 @@ scripts/
 
 ```bash
 for l in en de es it; do python scripts/fetch_esco.py $l; done   # only if the crosswalk changed
-pip install -e ".[build]"         # openpyxl and xlrd, to read the xlsx/xls sources
+pip install -e ".[build]"         # openpyxl, xlrd and pyarrow, to read the xlsx/xls/parquet sources
+python scripts/fetch_activities.py   # only for a new census (--download it, ~620 MB)
 python scripts/build_cities.py      # first: build_companies.py matches cities to its output
 python scripts/build_occupations.py
 python scripts/fetch_business_sizes.py   # only when newer statistics are out (--download the spreadsheets)
@@ -716,8 +730,11 @@ Occupation data:
 - ROME 4.0 © France Travail, [Licence Ouverte / Etalab 2.0](https://www.etalab.gouv.fr/licence-ouverte-open-licence/).
 - ESCO © European Union, reused under [Commission Decision 2011/833/EU](https://eur-lex.europa.eu/eli/dec/2011/833/oj);
   ROME 4.0 → ESCO crosswalk by France Travail, from the [ESCO portal](https://esco.ec.europa.eu/en/use-esco/eures-countries-mapping-tables).
-- BMO 2026 © France Travail, FAP 2021 → ROME table © DARES, NAF rév. 2 ©
-  INSEE: [Licence Ouverte / Etalab 2.0](https://www.etalab.gouv.fr/licence-ouverte-open-licence/).
+- BMO 2026 © France Travail, FAP 2021 → ROME table © DARES, NAF rév. 2,
+  2022 census and PCS 2020 × ISCO-08 matrix © INSEE:
+  [Licence Ouverte / Etalab 2.0](https://www.etalab.gouv.fr/licence-ouverte-open-licence/).
+- NACE Rev. 2 labels in German, Spanish and Italian: [EU Vocabularies](https://op.europa.eu/en/web/eu-vocabularies)
+  © European Union, reused under Commission Decision 2011/833/EU.
 - Earnings and labour figures: Eurostat SES 2022 and LFS 2025 © European
   Union (reuse authorised, source acknowledged); BLS OEWS, U.S. Bureau of Labor Statistics (public domain).
 - Employment by enterprise size: Eurostat structural business statistics

@@ -70,6 +70,31 @@ class CompaniesDataTests(unittest.TestCase):
         self.assertGreater(micro["Italy"], micro["France"])
         self.assertTrue(all(share > 0.05 for share in micro.values()), micro)
 
+    def test_real_company_has_an_activity_of_its_industry(self):
+        for locale in ("fr_FR", "it_IT"):
+            fake = Faker(locale)
+            fake.add_provider(JobsProvider)
+            Faker.seed(0)
+            provider = next(p for p in fake.providers if isinstance(p, JobsProvider))
+            conditions, data = provider._local_conditions(), _load_companies()
+            country = provider._home_country(conditions)
+            checked = 0
+            for _ in range(200):
+                posting = fake.job_occupation_posting()
+                company = posting["company"]
+                if company["website"] is None:
+                    continue
+                found = data["by_name"][country].get(company["company"].lower())
+                if found is None or found[2][1] != company["website"]:
+                    continue
+                prefixes = conditions["naf_by_industry"][data["industries"][found[2][6]].lower()]
+                activities = {entry[0] for entry in conditions["naf_by_sector"][posting["company_sector"]]}
+                if any(code.startswith(tuple(prefixes)) for code in activities):
+                    self.assertTrue(posting["company_naf"].startswith(tuple(prefixes)),
+                                    (company, posting["company_naf"]))
+                    checked += 1
+            self.assertGreater(checked, 50, locale)
+
     def test_company_size_follows_the_locale_country(self):
         fake = Faker("it_IT")
         fake.add_provider(JobsProvider)
@@ -136,6 +161,29 @@ class BuildCompaniesTests(unittest.TestCase):
         self.assertEqual(weights["52.10A"], 30)
         self.assertEqual(weights["52.21Z"], 40)  # no group figure: the rest of its division
         self.assertIsNone(weights["84.11Z"])  # no figures at all
+
+    def test_nace_classes_of_naf_prefixes(self):
+        self.assertTrue(build_occupations.matches("70.22", "70.22Z"))
+        self.assertTrue(build_occupations.matches("49.41", "49.4"))
+        self.assertTrue(build_occupations.matches("88.10A", "88.10A"))
+        self.assertFalse(build_occupations.matches("88.10B", "88.10A"))
+        # A NACE class for each prefix: '62' -> '62.00', '49.4' -> '49.40', '70.22Z' -> '70.22'.
+        classes = {prefix[:5] + "00.00"[len(prefix[:5]):]: "" for prefixes in INDUSTRY_NAF.values()
+                   for prefix in prefixes}
+        cut = build_occupations.naf_by_industry(classes)
+        self.assertEqual(cut["airlines/aviation"], ["51", "52.23"])
+        self.assertEqual(cut["management consulting"], ["70.22"])
+        self.assertEqual(cut, _load_conditions()["de_DE"]["naf_by_industry"])
+
+    def test_activity_fit(self):
+        occupations = [{"isco_code": "6221", "sectors": ["Agri"]}, {"isco_code": "9999", "sectors": ["Agri"]}]
+        naf_sectors = {"Agri": [["01.16Z"], ["01.62Z"], ["03.21Z"]]}
+        isco_naf = {"6221": {"03.21Z": 990, "01.62Z": 3, "78.20Z": 50}, "9999": {"78.20Z": 10}}
+        fit = build_occupations.activity_fit(occupations, naf_sectors, isco_naf)
+        # 01.62Z: 0.3% of the occupation's employees in the sector, left out; no figures for 9999.
+        self.assertEqual(fit, {"6221": {"Agri": [[2, 997]]}})
+        nace = build_occupations.activity_fit(occupations, {"Agri": [["01.62"], ["03.21"]]}, isco_naf)
+        self.assertEqual(nace["6221"]["Agri"], [[1, 997]])
 
     def test_job_shares(self):
         shares = build_companies.shares(collections.Counter({0: 100, 7: 1}))

@@ -28,7 +28,13 @@ Inputs (DATAS/ is not published):
   activity codes of the French companies (see NAF_BY_SECTOR), weighted by
   the employment of their NACE group (DATAS/business_sizes/sizes.json, see
   fetch_business_sizes.py), and those of each LinkedIn industry
-  (naf_industries.py)
+  (naf_industries.py); in de_DE, es_ES and it_IT, the NACE Rev. 2 classes
+  of those sub-classes, with the labels of DATAS/nace/labels.json and the
+  employment of the country
+- DATAS/insee_rp/isco_naf.json (see fetch_activities.py): the employees of
+  each ISCO unit group by activity of their employer (2022 French census),
+  so that the company of a posting has an activity that employs the
+  occupation (see activity_fit())
 
 The occupation files are gzipped JSON (~4x smaller installed), written
 with a fixed timestamp so that an unchanged build gives the same bytes.
@@ -44,12 +50,14 @@ Requires openpyxl and xlrd (`pip install -e ".[build]"`). Re-run whenever an inp
 import collections
 import gzip
 import json
+import math
 import os
 import re
 import sys
 import unicodedata
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import fetch_activities  # noqa: E402
 import fetch_business_sizes  # noqa: E402
 import fetch_esco  # noqa: E402
 import fetch_salaries  # noqa: E402
@@ -69,6 +77,9 @@ BMO_SOURCE = ("demand weights: BMO 2026 (France Travail) and FAP 2021 → ROME t
 NAF_PATH = os.path.join(ROOT, "DATAS", "naf", "naf2008_liste_n5.xls")
 NAF_SOURCE = ("NAF rév. 2 (INSEE), Licence Ouverte / Etalab 2.0, weighted by employment: Eurostat SBS "
               "(sbs_sc_ovw), persons employed by NACE group")
+NACE_SOURCE = ("NACE Rev. 2 classes, " + fetch_activities.LABELS_SOURCE.removeprefix("NACE Rev. 2 labels: ")
+               + ", weighted by employment: Eurostat SBS (sbs_sc_ovw), persons employed by NACE group")
+FIT_SOURCE = f"activity by occupation: {fetch_activities.SOURCE}"
 ROME_SOURCE = "ROME 4.0 v62 (France Travail, 19/10/2026), Licence Ouverte / Etalab 2.0"
 ESCO_SOURCE = ("ESCO 1.0.9 (© European Union), reused under Commission Decision 2011/833/EU; "
                "ROME 4.0 → ESCO crosswalk by France Travail (19.11.2025)")
@@ -324,6 +335,10 @@ ROME_ATTRIBUTES = ("qualifications", "executive", "regulated", "riasec", "transi
 
 # Countries of the Eurostat earnings, by locale (en_US: BLS earnings).
 EUROSTAT_COUNTRIES = {"fr_FR": "FR", "de_DE": "DE", "es_ES": "ES", "it_IT": "IT"}
+# Locales whose companies get a NACE Rev. 2 class (their national
+# classifications, WZ 2008, CNAE-2009 and ATECO 2007, share its classes),
+# and the country of their employment figures.
+NACE_LOCALES = {"de_DE": "Germany", "es_ES": "Spain", "it_IT": "Italy"}
 # ISCO-08 major groups the earnings survey does not cover (agriculture,
 # armed forces), and the group whose earnings they take instead.
 ISCO_FALLBACK = {"6": "9", "0": "3"}
@@ -439,11 +454,19 @@ def naf_weights(naf, employment):
     return weights
 
 
+def matches(code, prefix):
+    """Whether NAF sub-class or NACE class `code` is in the activity `prefix`
+    (a NAF prefix: '62', '49.4', '70.22Z'; a NACE class is in the class of a
+    NAF sub-class: '70.22' in '70.22Z')."""
+    return code.startswith(prefix[:len(code)])
+
+
 def naf_by_sector(sectors, naf, employment):
     """{ROME sector name: [[NAF code, label, NACE section, weight], ...]}, from
     NAF_BY_SECTOR; the weight is the employment of the sub-class (see
     naf_weights), the median of the sector's for those without figures
-    (public administration, associations...), 1 for a sector without any."""
+    (public administration, associations...), 1 for a sector without any.
+    `naf` is {NAF sub-class or NACE class: label}."""
     missing = set(NAF_BY_SECTOR) ^ set(sectors)
     if missing:
         raise ValueError(f"NAF_BY_SECTOR out of sync with the ROME sectors: {sorted(missing)}")
@@ -452,7 +475,7 @@ def naf_by_sector(sectors, naf, employment):
     for sector_code, prefixes in NAF_BY_SECTOR.items():
         codes = []
         for prefix in prefixes:
-            matched = [code for code in naf if code.startswith(prefix)]
+            matched = [code for code in naf if matches(code, prefix)]
             if not matched:
                 raise ValueError(f"NAF prefix {prefix!r} (sector {sector_code}) matches no NAF sub-class")
             codes += matched
@@ -466,12 +489,48 @@ def naf_by_sector(sectors, naf, employment):
 
 
 def naf_by_industry(naf):
-    """{LinkedIn industry: NAF prefixes} (INDUSTRY_NAF), every prefix checked against the NAF list."""
-    for industry, prefixes in INDUSTRY_NAF.items():
+    """{LinkedIn industry: NAF prefixes} (INDUSTRY_NAF), every prefix checked
+    against the NAF list; for NACE classes (`naf` keys of 5 characters), the
+    prefixes cut to classes ('70.22Z' -> '70.22')."""
+    width = len(next(iter(naf)))
+    result = {}
+    for industry, prefixes in sorted(INDUSTRY_NAF.items()):
         for prefix in prefixes:
-            if not any(code.startswith(prefix) for code in naf):
+            if not any(matches(code, prefix) for code in naf):
                 raise ValueError(f"NAF prefix {prefix!r} (industry {industry!r}) matches no NAF sub-class")
-    return dict(sorted(INDUSTRY_NAF.items()))
+        result[industry] = list(dict.fromkeys(prefix[:width] for prefix in prefixes))
+    return result
+
+
+# Share of the employees of an occupation in a sector below which an
+# activity is left out (the activities of a sector that employ almost
+# nobody in the occupation: 'Ouvrier aquacole' in fibre crops).
+MIN_FIT_SHARE = 0.005
+
+
+def activity_fit(occupations, naf_sectors, isco_naf):
+    """{ISCO unit group: {sector name: [[index in naf_sectors[sector], weight], ...]}}:
+    for each ISCO unit group and sector of the occupations, the employees of
+    the occupation in each activity of the sector (isco_naf: {ISCO unit
+    group: {NAF sub-class: employees}}; a NACE class gets those of its
+    sub-classes), in thousandths of the sector's total, those under
+    MIN_FIT_SHARE left out. Pairs without employees in the sector are left
+    out: the company's activity is then picked by employment alone."""
+    pairs = sorted({(occupation["isco_code"], sector) for occupation in occupations
+                    for sector in occupation["sectors"] if occupation["isco_code"] in isco_naf})
+    result = collections.defaultdict(dict)
+    for isco, sector in pairs:
+        employees = collections.Counter()
+        for code, n in isco_naf[isco].items():
+            employees[code] += n
+            employees[code[:5]] += n
+        found = [employees[naf[0]] for naf in naf_sectors[sector]]
+        total = math.fsum(found)  # the same sum in every Python version
+        if not total:
+            continue
+        kept = [[i, round(1000 * n / total)] for i, n in enumerate(found) if n >= MIN_FIT_SHARE * total]
+        result[isco][sector] = [[i, max(weight, 1)] for i, weight in kept]
+    return dict(sorted(result.items()))
 
 
 def section_by_sector(sector_names, naf):
@@ -623,7 +682,7 @@ def make_conditions(locale, office_domains, salary, sector_names, naf, lfs, naf_
     return conditions
 
 
-def build_fr(sectors, jobs, weights, seasonal, naf, isco, salary, lfs, employment):
+def build_fr(sectors, jobs, weights, seasonal, naf, isco, salary, lfs, employment, isco_naf):
     occupations = [{
         "code": job["code"],
         "title": job["title"],
@@ -640,13 +699,15 @@ def build_fr(sectors, jobs, weights, seasonal, naf, isco, salary, lfs, employmen
         "seasonal": seasonal[job["code"]],
         "weight": weights[job["code"]],
     } for job in jobs.values()]
-    meta = {"source": f"{ROME_SOURCE}; {BMO_SOURCE}; NAF: {NAF_SOURCE}; {SALARY_SOURCES['eurostat']}; "
-                      f"{lfs_source(lfs)}",
+    meta = {"source": f"{ROME_SOURCE}; {BMO_SOURCE}; NAF: {NAF_SOURCE}; {FIT_SOURCE}; "
+                      f"{SALARY_SOURCES['eurostat']}; {lfs_source(lfs)}",
             "language": "fr", "gender": GENDER["fr"]}
     office_domains = {job["domain"] for job in jobs.values() if job["domain_code"] in OFFICE_DOMAIN_CODES}
+    naf_sectors = naf_by_sector(sectors, naf, employment)
     conditions = make_conditions("fr_FR", office_domains, salary, sectors, naf, lfs_country("fr_FR", lfs),
-                                 naf_by_sector(sectors, naf, employment), naf_by_industry(naf))
-    return {**package(meta, sectors.values(), occupations), "conditions": conditions}
+                                 naf_sectors, naf_by_industry(naf))
+    return {**package(meta, sectors.values(), occupations), "conditions": conditions,
+            "naf_by_isco": activity_fit(occupations, naf_sectors, isco_naf)}
 
 
 def link_esco_to_rome(jobs):
@@ -696,7 +757,9 @@ def esco_weights(jobs, links, weights, seasonal):
     return demand, shares
 
 
-def build_esco(locale, jobs, weights, seasonal, naf, salary, salary_source, lfs):
+def build_esco(locale, jobs, weights, seasonal, naf, salary, salary_source, lfs, nace=None):
+    """`nace`: (NACE labels {class: label}, employment {NACE group: persons})
+    in the locales whose companies get a NACE class (NACE_LOCALES)."""
     """Occupations of an ESCO language, with the ROME sectors, domains and soft skills in it."""
     language = ESCO_LOCALES[locale]
     sector_labels, domain_labels, soft_skill_labels = SECTORS[language], DOMAINS[language], SOFT_SKILLS[language]
@@ -743,9 +806,16 @@ def build_esco(locale, jobs, weights, seasonal, naf, salary, salary_source, lfs)
                       f"{salary_source}" + (f"; {lfs_source(lfs)}" if lfs_country(locale, lfs) else ""),
             "language": language, "gender": GENDER.get(language)}
     office_domains = {domain_labels[code] for code in OFFICE_DOMAIN_CODES}
-    conditions = make_conditions(locale, office_domains, salary, sector_labels, naf,
-                                 lfs_country(locale, lfs))
-    return {**package(meta, sector_labels.values(), occupations), "conditions": conditions}
+    if nace is None:
+        conditions = make_conditions(locale, office_domains, salary, sector_labels, naf, lfs_country(locale, lfs))
+        return {**package(meta, sector_labels.values(), occupations), "conditions": conditions}
+    labels, employment, isco_naf = nace
+    meta["source"] += f"; NACE: {NACE_SOURCE}; {FIT_SOURCE}"
+    naf_sectors = naf_by_sector(sector_labels, labels, employment)
+    conditions = make_conditions(locale, office_domains, salary, sector_labels, naf, lfs_country(locale, lfs),
+                                 naf_sectors, naf_by_industry(labels))
+    return {**package(meta, sector_labels.values(), occupations), "conditions": conditions,
+            "naf_by_isco": activity_fit(occupations, naf_sectors, isco_naf)}
 
 
 def lfs_country(locale, lfs):
@@ -781,13 +851,19 @@ def build_occupations():
     with open(fetch_salaries.LFS_PATH, encoding="utf-8") as f:
         lfs = json.load(f)
     with open(fetch_business_sizes.OUTPUT_PATH, encoding="utf-8") as f:
-        employment = json.load(f)["France"]["employment_by_nace"]
+        employment = {country: entry.get("employment_by_nace") for country, entry in json.load(f).items()}
+    with open(fetch_activities.OUTPUT_PATH, encoding="utf-8") as f:
+        isco_naf = json.load(f)["isco_naf"]
+    with open(fetch_activities.LABELS_PATH, encoding="utf-8") as f:
+        nace_labels = json.load(f)["labels"]
     built = {"fr_FR": build_fr(sectors, jobs, weights, seasonal, naf, isco,
-                               salary_table("fr_FR", eurostat, bls), lfs, employment)}
+                               salary_table("fr_FR", eurostat, bls), lfs, employment["France"], isco_naf)}
     for locale in ESCO_LOCALES:
         source = SALARY_SOURCES["bls"].format(year=bls["year"]) if locale == "en_US" else SALARY_SOURCES["eurostat"]
+        country = NACE_LOCALES.get(locale)
+        nace = (nace_labels[ESCO_LOCALES[locale]], employment[country], isco_naf) if country else None
         built[locale] = build_esco(locale, jobs, weights, seasonal, naf, salary_table(locale, eurostat, bls),
-                                   source, lfs)
+                                   source, lfs, nace)
     return dict(sorted(built.items()))
 
 

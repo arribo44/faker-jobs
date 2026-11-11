@@ -324,6 +324,21 @@ class TestRomeOccupations(HiringCompanyTests, OccupationTests, unittest.TestCase
         air_france = self.fake.job_company_profile(company="Air France")
         self.assertIn("aériens", air_france["industry"], air_france)
 
+    def test_naf_activity_fits_the_occupation(self):
+        conditions = self.provider._local_conditions()
+        # 'Ouvrier aquacole' (ISCO 6221): fishing and aquaculture, not fibre crops.
+        for _ in range(50):
+            naf = self.provider._pick_naf("Agriculture et élevage", conditions, isco="6221")
+            self.assertTrue(naf[0].startswith(("03", "01.62")), naf)
+        # The activity is picked first, then a company of that activity: no farming cooperative.
+        postings = [self.fake.job_occupation_posting(code="A1430")["company_naf"] for _ in range(100)]
+        self.assertGreater(sum(code.startswith("03") for code in postings), 90, postings)
+        # A nurse (ISCO 2221) works in hospitals far more than in dental practices.
+        codes = collections.Counter(self.provider._pick_naf("Santé", conditions, isco="2221")[0] for _ in range(300))
+        self.assertGreater(codes["86.10Z"], 5 * codes["86.23Z"])
+        # An occupation without census figures in the sector: by employment.
+        self.assertIsNotNone(self.provider._pick_naf("Santé", conditions, isco="0110"))
+
     def test_salary_follows_the_company_activity(self):
         # The salary of a posting uses the NACE section of its company's NAF activity.
         for _ in range(20):
@@ -586,10 +601,30 @@ class TestEscoOccupations(HiringCompanyTests, OccupationTests, unittest.TestCase
 
 
 class LocalCompanyTests(HiringCompanyTests):
-    """Postings of the German, Spanish and Italian locales: no NAF code."""
+    """Postings of the German, Spanish and Italian locales: a NACE Rev. 2 class."""
 
-    def test_no_naf_code(self):
-        self.assertIsNone(self.fake.job_occupation_posting()["company_naf"])
+    def test_nace_class_of_the_sector(self):
+        nace = self.provider._occupations["conditions"]["naf_by_sector"]
+        self.assertEqual(set(nace), set(self.provider.job_activity_sectors))
+        for _ in range(30):
+            posting = self.fake.job_occupation_posting()
+            sector = posting["occupation"]["sector"]
+            self.assertRegex(posting["company_naf"], r"^\d\d\.\d\d$")
+            self.assertIn([posting["company_naf"], posting["company"]["industry"]],
+                          [entry[:2] for entry in nace[sector]])
+
+    def test_nace_classes_weighted_by_employment(self):
+        weights = {entry[0]: entry[3] for sector in self.provider._local_conditions()["naf_by_sector"].values()
+                   for entry in sector}
+        self.assertGreater(weights["49.41"], 10 * weights["50.30"])
+
+    def test_aquaculture_worker_in_aquaculture(self):
+        record = self.fake.job_occupation_record()
+        conditions = self.provider._local_conditions()
+        sector = next(sector for sector, entries in conditions["naf_by_sector"].items()
+                      if "01.11" in {entry[0] for entry in entries})
+        codes = {self.provider._pick_naf(sector, conditions, isco="6221")[0] for _ in range(50)}
+        self.assertTrue(codes <= {"03.11", "03.12", "03.21", "03.22", "01.62"}, (record["code"], codes))
 
 
 class EscoLanguageTests(LocalCompanyTests, OccupationTests):

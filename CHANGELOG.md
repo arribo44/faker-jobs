@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- The activity of the hiring company follows the occupation: French, German, Spanish and Italian postings pick it among the activities of the sector by the employees of the occupation's ISCO unit group in each of them, from the 2022 French census (INSEE detailed file "Individus localisés à la région": profession × NAF sub-class of the employees; professions mapped to ISCO-08 by the INSEE PCS 2020 × ISCO matrix; Licence Ouverte / Etalab 2.0). An aquaculture worker now works in aquaculture or sea fishing (99.9% of the postings, was fibre crops, cereals...), a nurse mostly in hospitals. The activity is picked first, then a real company of the class whose LinkedIn industry has it, else a made-up company (real companies: 54-63% of the postings in these locales instead of 61-68%). Occupations without census figures in the sector keep the activities picked by employment. New `scripts/fetch_activities.py` caches the figures in `DATAS/insee_rp/isco_naf.json`; the occupation files hold them by ISCO unit group and sector (`naf_by_isco`, ~40 KB more each, gzipped).
+- German, Spanish and Italian postings and companies get an activity: a NACE Rev. 2 class of the sector (`company_naf`, e.g. '86.10', also the class of WZ 2008, CNAE-2009 and ATECO 2007; its label in the language as the company's `industry`, instead of None), weighted by the persons employed in its NACE group in the country (Eurostat SBS) and fitted to the LinkedIn industry of real companies, as in French locales. Their salary follows the NACE section of that activity. Labels from EU Vocabularies (Commission Decision 2011/833/EU), cached in `DATAS/nace/labels.json`; `conditions.json` gives `naf_by_sector` and `naf_by_industry` (prefixes cut to classes) for these locales.
+- The `build` extra adds pyarrow (to read the census Parquet file).
+
 ---
 
 ## [0.8.0] - 2026-11-11
