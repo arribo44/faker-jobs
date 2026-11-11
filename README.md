@@ -13,8 +13,11 @@ job boards) are those of France, Germany, Spain, Italy and the United States.
 Job locations are the **~29,500 cities** of 15,000 inhabitants or more of
 [GeoNames](https://www.geonames.org/) in 216 countries, picked in proportion
 to their population, with their local names in France, Germany, Spain and
-Italy. Companies come from the [Job Description Dataset](https://www.kaggle.com/datasets/ravindrasinghrana/job-description-dataset)
-(Kaggle): **888 companies** with their profile.
+Italy. Hiring companies are **~10,000 real companies** of the United States,
+the United Kingdom, France, Germany, Spain and Italy from the [People Data Labs
+company dataset](https://docs.peopledatalabs.com/docs/free-company-dataset)
+(LinkedIn pages), by activity sector and size class, from small businesses
+to large groups.
 
 ---
 
@@ -26,10 +29,10 @@ in those locales (`de_DE`, `de_AT`, `es_ES`, `es_MX`, `it_IT`...), with the
 conditions of France, Germany, Spain or Italy; **English** (ESCO) with the
 **US** conditions in every other one (`en_US`, `en_GB`, `nl_NL`...).
 
-Companies are made up by the locale in German, Spanish, French and Italian
-locales, in the activity sector of the job; English locales use the Kaggle
-companies. Contact names and phone numbers always come from the Faker
-locale (`fr_FR` -> "Luc Renaud", "04 97 52 87 61").
+Companies of a posting are in the country of the job (the United Kingdom
+for `en_GB`, whose jobs are in the UK with US conditions) and the activity
+sector of the job. Contact names and phone numbers always come from the
+Faker locale (`fr_FR` -> "Luc Renaud", "04 97 52 87 61").
 
 ---
 
@@ -133,7 +136,7 @@ fake.job_company_profile()
 #     'website': 'www.3m.com', 'ticker': 'MMM', 'ceo': 'Michael F. Roman',
 # }
 fake.job_company_profile(company="3M")  # a specific company
-fake.job_company_size()                 # 57916 (employees)
+fake.job_company_size()                 # 180 (employees, by size class: see below)
 
 fake.job_location()                     # the locale's country by default (the USA here)
 # {'city': 'Houston', 'country': 'USA', 'latitude': 29.7633, 'longitude': -95.3633}
@@ -147,6 +150,16 @@ Boise; 2,849 cities in the USA, 462 in France, 945 in Germany). Districts
 counted in their city are left out ("Paris 15 Vaugirard"), but GeoNames
 lists some boroughs as cities of their own (Brooklyn). `job_countries`
 lists the 216 countries.
+
+In English locales `job_company()`, `job_company_profile()`,
+`job_companies` and `job_sectors` use the 888 companies of the Kaggle [Job
+Description Dataset](https://www.kaggle.com/datasets/ravindrasinghrana/job-description-dataset),
+all large groups; job postings use the People Data Labs companies (see
+[Occupations](#-occupations-rome--esco)). `job_company_size()` picks a size
+class by the share of jobs in the companies of each class in the locale's
+country (People Data Labs: about 1 job in 3 in companies of up to 500
+employees in France, 1 in 2 in Spain and Italy), then a number of employees
+in that class.
 
 Company profile fields missing from the source data (no state outside the
 US, no CEO for some companies...) are `None`.
@@ -177,9 +190,11 @@ fake.job_work_type()          # "CDI", "CDD", "CDD saisonnier", "Intérim", "Alt
 fake.job_benefits()           # ['Tickets restaurant', 'RTT', ...]
 fake.job_portal()             # "France Travail", "HelloWork", "APEC"...
 fake.job_location()           # {'city': 'Nice', 'country': 'France', ...}  (the locale's country by default)
-fake.job_company_profile(sector="Santé")
-# {'company': 'Vallet', 'sector': 'Santé', 'industry': 'Activités hospitalières',   # NAF label (French locales)
-#  'city': 'Nice', 'state': None, 'zip': None, 'website': None, 'ticker': None, 'ceo': 'Alfred Roux-Bertrand'}
+fake.job_company_profile(sector="Santé")   # as the hiring companies of the postings
+# {'company': 'Pharmacie le Fournier', 'sector': 'Santé',
+#  'industry': 'Hébergement médicalisé pour personnes âgées',   # NAF label (French locales)
+#  'city': 'Grenoble', 'state': None, 'zip': None, 'website': 'pharmacie-alliance.fr', 'ticker': None,
+#  'ceo': None, 'founded': None}
 ```
 
 | Method | English locales | German, Spanish, French, Italian locales |
@@ -187,10 +202,9 @@ fake.job_company_profile(sector="Santé")
 | `job_title()`, `job_role()`, `job_role_record()`... | ESCO occupations, in English | ROME (fr) or ESCO (de, es, it) occupations, in the language |
 | conditions (`job_qualification()`, `job_salary_range()`, `job_work_type()`...) | US | the country's |
 | `job_location()` | the USA by default | the locale's country by default, with local names (Deutschland, München, Sevilla, Roma...) |
-| `job_company()`, `job_company_profile()`, `job_sectors` | Kaggle companies and their sectors | made up by the locale, in an activity sector |
+| `job_company()`, `job_company_profile()`, `job_sectors` | Kaggle companies and their sectors | People Data Labs companies of the country (or made up by the locale), in an activity sector |
 
-`job_companies` and `job_company_size()` use the Kaggle data in every
-locale. Countries other than the locale's keep their English
+`job_companies` lists the Kaggle companies in every locale. Countries other than the locale's keep their English
 name (`country="Belgium"`); the local name of the locale's country is
 accepted too (`country="Deutschland"`).
 
@@ -295,14 +309,43 @@ them as a popularity weight, not as statistics.
 
 `job_occupation_posting()` builds a full posting on an occupation: the job
 title, its skills and the hiring company fit together, in the occupation's
-sector (the requested one, else its main one). In English locales the
-company is one of the packaged companies of that sector; when none is
-(social work, public service, research..., about 1 posting in 5), it is a
-name made up by the Faker locale and `company_sector` is `None`. In German,
-Spanish, French and Italian locales the company is made up by the Faker
-locale, in the occupation's sector and the city of the posting; in French
-locales with an activity of that sector from the French NAF rév. 2
-classification (`company_naf`, e.g. '86.10Z', and its label as `industry`).
+sector (the requested one, else its main one) and the country of the job.
+
+The hiring company comes from the [People Data Labs company
+dataset](https://docs.peopledatalabs.com/docs/free-company-dataset) (7
+million companies from their LinkedIn pages, CC BY 4.0), built by
+`scripts/build_companies.py`:
+
+- Its **size class** (1-10, 11-50, 51-200, 201-500, 501-1,000,
+  1,001-5,000, 5,001-10,000, 10,001+ employees) is picked by the share of
+  jobs in the companies of each class, in the sector and country (number
+  of companies × typical size): 45-50% of the postings are in companies of
+  up to 250 employees in Germany, Spain and Italy, 30-35% in France and the
+  USA. LinkedIn lists few very small businesses, so 1-10 employees are
+  rarer than in national statistics (3-15% of the postings).
+- Then a **real company** of that sector and class: up to 10 per class,
+  sector and country (~10,000 in all, 250 KB), with its name, website,
+  founding year, headquarters city (and US state) and number of employees.
+  Companies of 1-10 employees are left out (many are one-person businesses
+  named after their owner): they are made up by the Faker locale, as the
+  companies of a class with fewer than 10 companies in the dataset at
+  random (so that no large group gets every job of its class) and those of
+  the jobs outside these six countries. Made-up companies are in the city
+  of the job, with a made-up CEO.
+- Companies of up to 500 employees hire in their headquarters city when it
+  is a city of `job_location()`; larger ones anywhere in the country.
+- `company_size` is the company's number of employees; `industry` its
+  LinkedIn industry in English locales, `None` in German, Spanish and
+  Italian ones; in French locales an activity of the sector from the French
+  NAF rév. 2 classification (`company_naf`, e.g. '86.10Z', and its label as
+  `industry`).
+
+LinkedIn industries are mapped by hand to the 35 activity sectors
+(`INDUSTRY_SECTORS` in `scripts/build_companies.py`); the dataset has some
+noise (a public employment agency filed under utilities, a few wrong
+websites), and its names are lower case: they are capitalized by rules
+("bnp paribas" -> "BNP Paribas", "enel spa" -> "Enel SpA"), which miss some
+("Aphp" for AP-HP).
 
 In French locales the whole posting is French: the job title follows the
 French usage for job ads (masculine form + "(H/F)": an ad may not target a
@@ -323,8 +366,9 @@ fake.job_occupation_posting(sector="Logistique et transport")
 #     'work_type': 'CDI',                       # CDI, CDD, CDD saisonnier, Intérim, Alternance, Stage, Freelance
 #     'benefits': ['Intéressement et participation', 'Tickets restaurant', ...],   # fit the job and contract
 #     'location': {'city': 'Lyon', 'country': 'France', ...},
-#     'company': {'company': 'Lemaire SARL', 'sector': 'Logistique et transport',
-#                 'industry': 'Transports routiers de fret interurbains', 'city': 'Lyon', 'ceo': 'Paul Gomez', ...},
+#     'company': {'company': 'Trusk', 'sector': 'Logistique et transport', 'industry': 'Transports fluviaux de passagers',
+#                 'city': 'Paris', 'website': 'trusk.com', 'founded': 2015, 'ceo': None, ...},
+#     'company_size': 141,
 #     'company_sector': 'Logistique et transport',
 #     'company_naf': '49.41A',                  # NAF rév. 2 activity of the sector (None outside French locales)
 #     'seniority': 'mid',                       # 'junior' (< 3 years asked), 'mid' (3-7), 'senior' (8+)
@@ -468,8 +512,8 @@ fake.job_posting(job_title="Infirmier / Infirmière en gériatrie")          # b
 #     'work_type': 'CDI',
 #     'benefits': ['Mutuelle d\'entreprise', ...],
 #     'location': {'city': 'Lyon', 'country': 'France', ...},
-#     'company': {'company': 'Vallet', 'sector': 'Santé', ...},
-#     'company_size': 90587,
+#     'company': {'company': 'Pharmacie le Fournier', 'sector': 'Santé', ...},
+#     'company_size': 180,
 #     'seniority': 'junior',
 #     'job_portal': 'HelloWork',
 #     'job_posting_date': datetime.date(2025, 6, 1),
@@ -564,7 +608,7 @@ The source files in `DATAS/` are not published in this repository: the
 package only needs the generated files of `faker_jobs/data/`. They are
 only needed to rebuild them.
 
-The companies come from the Kaggle dataset:
+The companies of the generic English methods come from the Kaggle dataset:
 
 ```
 DATAS/                          curated source files (not published)
@@ -612,7 +656,15 @@ scripts/
   rome_labels.py                ROME sectors, domains and soft skills in English, German, Spanish, Italian
   build_occupations.py          -> faker_jobs/data/occupations_{de_DE,en_US,es_ES,fr_FR,it_IT}.json.gz (gzipped)
                                    and faker_jobs/data/conditions.json (posting conditions, plain JSON)
-                                   (also matches the companies of jobs_data.json to the ROME sectors)
+                                   (with the ROME code of each sector, the key of companies.json.gz)
+```
+
+The hiring companies come from People Data Labs:
+
+```
+DATAS/7millionscompanies/companies_sorted.csv   People Data Labs Free Company Dataset (7.2 million rows, 1 GB)
+scripts/
+  build_companies.py [csv]      -> faker_jobs/data/companies.json.gz (~250 KB; run after build_cities.py)
 ```
 
 ```bash
@@ -661,3 +713,7 @@ Occupation data:
   sectors, 14 domains and 16 soft skills are translated by this project.
 
 Cities: [GeoNames](https://www.geonames.org/), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+
+Hiring companies: [People Data Labs Free Company Dataset](https://docs.peopledatalabs.com/docs/free-company-dataset),
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) (a sample of it,
+names capitalized and industries mapped to activity sectors by this project).
