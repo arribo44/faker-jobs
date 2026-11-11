@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.8.0] - 2026-11-11
+
 ### Changed
 - The size of the hiring companies follows official statistics of employment by enterprise size, as LinkedIn (People Data Labs) lists few small companies: Eurostat structural business statistics (France, Germany, Spain, Italy: persons employed by NACE section and size group 2-9, 10-49, 50-249, 250+), Census Statistics of US Businesses 2022 and the UK business population estimates 2026. Each official size group gets its share in the sector's NACE section, split between the LinkedIn size classes it holds as LinkedIn splits them. Postings in companies of up to 10 employees go from 3-10% to 10% (United States) to 27% (Italy); 44% (United States) to 69% (Italy) of the postings are in companies of up to 250 employees. `job_company_size()` follows the same shares. Sectors without official figures (agriculture and public administration in Europe, mining and water in France) keep the LinkedIn shares. New `scripts/fetch_business_sizes.py` caches the figures in `DATAS/business_sizes/sizes.json`.
 - French postings: the NAF activity of the company is picked by employment (persons employed of its NACE group in France, Eurostat SBS, shared by the sub-classes of the group) instead of uniformly within the sector: road freight comes up ~30 times more often than passenger water transport (4.3% → 0.2% of the "Logistique et transport" postings). A real company only gets the activities of the sector that fit its LinkedIn industry (new `scripts/naf_industries.py`: 148 industries → NAF prefixes), so Air France is in air transport. `conditions.json` gives a weight to each NAF activity of `naf_by_sector` (4th element) and the NAF prefixes of each LinkedIn industry (`naf_by_industry`).
