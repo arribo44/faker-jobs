@@ -259,7 +259,7 @@ class HiringCompanyTests:
             else:  # made up by the locale, in the job's city
                 self.assertTrue(company["company"] and company["ceo"])
                 self.assertEqual(company["city"], posting["location"]["city"])
-        self.assertGreater(real, 30)
+        self.assertGreater(real, 20)  # ~2/3 of the postings; 1-10 employees are made up
 
     def test_company_sizes_vary(self):
         sizes = [self.fake.job_occupation_posting()["company_size"] for _ in range(200)]

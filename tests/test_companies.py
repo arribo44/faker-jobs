@@ -61,6 +61,13 @@ class CompaniesDataTests(unittest.TestCase):
         counts = collections.Counter(fake.job_occupation_posting()["company"]["company"] for _ in range(1000))
         self.assertLess(counts.most_common(1)[0][1], 30)
 
+    def test_official_size_shares(self):
+        micro = {country: entry["cum_weights_all"][0] for country, entry in _load_companies()["countries"].items()}
+        # Official statistics: 2-9 persons employed hold ~16% of the jobs in France, ~28% in Italy.
+        self.assertTrue(0.1 < micro["France"] < 0.25, micro)
+        self.assertGreater(micro["Italy"], micro["France"])
+        self.assertTrue(all(share > 0.05 for share in micro.values()), micro)
+
     def test_company_size_follows_the_locale_country(self):
         fake = Faker("it_IT")
         fake.add_provider(JobsProvider)
@@ -98,6 +105,21 @@ class BuildCompaniesTests(unittest.TestCase):
         for estimate in (0, 3, 500):
             self.assertTrue(11 <= build_companies.company_size(rng, 1, estimate) <= 50)
         self.assertEqual(build_companies.company_size(rng, 7, 250000), 250000)
+
+    def test_calibrate_to_official_shares(self):
+        linkedin = [0.02, 0.08, 0.1, 0.1, 0.1, 0.2, 0.1, 0.3]
+        groups = [[2, 9], [10, 49], [50, 249], [250, None]]
+        calibrated = build_companies.calibrate(linkedin, groups, [20, 20, 20, 40], linkedin)
+        self.assertAlmostEqual(sum(calibrated), 1, places=4)
+        self.assertEqual(calibrated[:3], [0.2, 0.2, 0.2])
+        # 250+ keeps the LinkedIn split of its classes: 201-500 is 1/8 of them.
+        self.assertAlmostEqual(calibrated[3], 0.4 * 0.1 / 0.8, places=5)
+        # A group without LinkedIn companies in the sector: the country's split.
+        country = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.3]
+        empty = build_companies.calibrate([0, 0.5, 0.5, 0, 0, 0, 0, 0], groups, [20, 20, 20, 40], country)
+        self.assertAlmostEqual(empty[7], 0.4 * 0.3 / 0.7, places=5)
+        with self.assertRaises(ValueError):
+            build_companies.calibrate(linkedin, [[2, 9], [10, 14], [15, 49], [50, None]], [1, 1, 1, 1], linkedin)
 
     def test_job_shares(self):
         shares = build_companies.shares(collections.Counter({0: 100, 7: 1}))

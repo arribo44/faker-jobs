@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- The size of the hiring companies follows official statistics of employment by enterprise size, as LinkedIn (People Data Labs) lists few small companies: Eurostat structural business statistics (France, Germany, Spain, Italy: persons employed by NACE section and size group 2-9, 10-49, 50-249, 250+), Census Statistics of US Businesses 2022 and the UK business population estimates 2026. Each official size group gets its share in the sector's NACE section, split between the LinkedIn size classes it holds as LinkedIn splits them. Postings in companies of up to 10 employees go from 3-10% to 10% (United States) to 27% (Italy); 44% (United States) to 69% (Italy) of the postings are in companies of up to 250 employees. `job_company_size()` follows the same shares. Sectors without official figures (agriculture and public administration in Europe, mining and water in France) keep the LinkedIn shares. New `scripts/fetch_business_sizes.py` caches the figures in `DATAS/business_sizes/sizes.json`.
+
 ---
 
 ## [0.7.0] - 2026-11-11

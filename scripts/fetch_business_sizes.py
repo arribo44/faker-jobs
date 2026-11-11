@@ -1,0 +1,210 @@
+#!/usr/bin/env python3
+"""
+Fetch the official share of employees by enterprise size class and
+industry, used by build_companies.py to pick the size of the hiring
+companies (LinkedIn, the source of the companies, lists few small ones),
+and cache it in DATAS/business_sizes/sizes.json:
+
+- France, Germany, Spain, Italy: Eurostat structural business statistics
+  (sbs_sc_ovw), persons employed (EMP_NR: employees and working owners;
+  employees alone are not published by size for services) by NACE Rev. 2
+  section (B to R: market economy, without agriculture, public
+  administration and other services) and size class 2-9 (one-person
+  businesses left out: they do not hire), 10-49, 50-249, 250+ persons
+  employed; latest year with the figures (a single confidential class is
+  the total minus the others; where only 0-9 is published, 2-9 is estimated
+  with the country's share of 2-9 in 0-9 elsewhere; sections with two
+  confidential classes are left out).
+- United States: Census Statistics of US Businesses 2022, employment by
+  NAICS sector and enterprise size (employer firms; sizes up to 10,000+),
+  from two spreadsheets saved in DATAS/business_sizes/ (no API):
+  us_state_naics_detailedsizes_2022.xlsx and
+  us_naicssector_large_emplsize_2022.xlsx, from
+  https://www.census.gov/data/tables/2022/econ/susb/2022-susb-annual.html
+  (run with --download to fetch them).
+- United Kingdom: Business population estimates 2026 (Department for
+  Business and Trade), table 5, private sector employment by SIC section
+  and employee size band (businesses with employees), from
+  BPE_2026_detailed_tables.xlsx, saved in DATAS/business_sizes/ (--download).
+
+NAICS sectors and the UK section groups are mapped to NACE sections. Every
+country gets {section: [employees of each size group]} with its own size
+groups (`groups`, [low, high] employees, high None for no upper bound).
+
+Needs openpyxl (`pip install -e ".[build]"`).
+"""
+import json
+import os
+import sys
+import urllib.request
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SIZES_DIR = os.path.join(ROOT, "DATAS", "business_sizes")
+OUTPUT_PATH = os.path.join(SIZES_DIR, "sizes.json")
+USER_AGENT = "faker-jobs data build (https://github.com/arribo44/faker-jobs)"
+
+EUROSTAT_URL = ("https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/sbs_sc_ovw"
+                "?format=JSON&lang=EN&indic_sbs=EMP_NR")
+EUROSTAT_COUNTRIES = {"FR": "France", "DE": "Germany", "ES": "Spain", "IT": "Italy"}
+# Eurostat size classes, and the group of EUROSTAT_GROUPS of each.
+# 2-9: without the one-person businesses (0_1), which do not hire.
+EUROSTAT_CLASSES = {"2-9": 0, "10-19": 1, "20-49": 1, "50-249": 2, "GE250": 3}
+EUROSTAT_GROUPS = [[2, 9], [10, 49], [50, 249], [250, None]]
+
+US_FILES = {
+    "us_state_naics_detailedsizes_2022.xlsx":
+        "https://www2.census.gov/programs-surveys/susb/tables/2022/us_state_naics_detailedsizes_2022.xlsx",
+    "us_naicssector_large_emplsize_2022.xlsx":
+        "https://www2.census.gov/programs-surveys/susb/tables/2022/us_naicssector_large_emplsize_2022.xlsx",
+}
+UK_FILE = ("BPE_2026_detailed_tables.xlsx",
+           "https://assets.publishing.service.gov.uk/media/6ae3162ec591dbfc31fb67f0/BPE_2026_detailed_tables.xlsx")
+
+# The groups of the LinkedIn size classes of the companies (1-10, 11-50,
+# 51-200, 201-500, 501-1,000, 1,001-5,000, 5,001-10,000, 10,001+).
+US_GROUPS = [[1, 9], [10, 49], [50, 199], [200, 499], [500, 999], [1000, 4999], [5000, 9999], [10000, None]]
+# SUSB size rows ("02: <5 employees") → index into US_GROUPS.
+US_DETAILED_ROWS = {"02": 0, "03": 0, "04": 1, "05": 1, "07": 1, "08": 1, "09": 1, "10": 1, "11": 1,
+                    "12": 2, "13": 2, "14": 2, "15": 2, "16": 3, "17": 3, "18": 3, "20": 4, "21": 4,
+                    "22": 5, "23": 5, "24": 5, "25": 5}
+US_LARGE_ROWS = {"09": 6, "10": 7, "11": 7}  # 5,000-9,999, 10,000-19,999, 20,000+
+# NACE section → NAICS sectors (approximate: water and waste with utilities,
+# head offices with professional services).
+NAICS_SECTIONS = {
+    "A": ["11"], "B": ["21"], "C": ["31-33"], "D": ["22"], "E": ["22"], "F": ["23"], "G": ["42", "44-45"],
+    "H": ["48-49"], "I": ["72"], "J": ["51"], "K": ["52"], "L": ["53"], "M": ["54", "55"], "N": ["56"],
+    "P": ["61"], "Q": ["62"], "R": ["71"], "S": ["81"],
+}
+
+UK_GROUPS = [[1, 9], [10, 49], [50, 199], [200, 499], [500, None]]
+UK_BANDS = {"1": 0, "2 to 4": 0, "5 to 9": 0, "10 to 19": 1, "20 to 49": 1, "50 to 99": 2, "100 to 199": 2,
+            "200 to 249": 3, "250 to 499": 3, "500 or more": 4}
+
+
+def download():
+    os.makedirs(SIZES_DIR, exist_ok=True)
+    for name, url in [*US_FILES.items(), UK_FILE]:
+        print(f"Downloading {url}", file=sys.stderr)
+        request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+        with urllib.request.urlopen(request, timeout=300) as response, \
+                open(os.path.join(SIZES_DIR, name), "wb") as f:
+            f.write(response.read())
+
+
+def fetch_eurostat():
+    """{country: {"year": year, "sections": {section: [employees of each EUROSTAT_GROUPS]}}}."""
+    url = EUROSTAT_URL + "".join(f"&geo={geo}" for geo in EUROSTAT_COUNTRIES)
+    with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": USER_AGENT}), timeout=300) as r:
+        raw = json.load(r)
+    ids, sizes = raw["id"], raw["size"]
+    codes = {dim: {index: code for code, index in raw["dimension"][dim]["category"]["index"].items()} for dim in ids}
+    values = {}
+    for flat, value in raw["value"].items():
+        flat, coords = int(flat), {}
+        for dim, size in zip(reversed(ids), reversed(sizes), strict=True):
+            coords[dim] = codes[dim][flat % size]
+            flat //= size
+        values[(coords["geo"], coords["nace_r2"], coords["size_emp"], coords["time"])] = value
+    sections = sorted({key[1] for key in values if len(key[1]) == 1})
+    years = sorted({key[3] for key in values}, reverse=True)
+    result = {}
+    for geo, country in EUROSTAT_COUNTRIES.items():
+        # Where only 0-9 is published (French industry), 2-9 is estimated with the
+        # country's share of 2-9 in 0-9 in the other sections.
+        both = [(values[(geo, s, "2-9", y)], values[(geo, s, "0-9", y)]) for s in sections for y in years
+                if (geo, s, "2-9", y) in values and (geo, s, "0-9", y) in values]
+        micro_ratio = sum(pair[0] for pair in both) / sum(pair[1] for pair in both)
+        found = {}
+        for section in sections:
+            for year in years:
+                row = [values.get((geo, section, size, year)) for size in EUROSTAT_CLASSES]
+                total = values.get((geo, section, "TOTAL", year))
+                micro = values.get((geo, section, "0-9", year))
+                if row[0] is None and micro is not None:
+                    row[0] = round(micro * micro_ratio)
+                if total is not None and micro is not None:
+                    total -= micro - row[0]  # without the one-person businesses
+                missing = [i for i, value in enumerate(row) if value is None]
+                if len(missing) == 1 and total is not None:
+                    row[missing[0]] = max(total - sum(value for value in row if value is not None), 0)
+                    missing = []
+                if not missing:
+                    grouped = [0] * len(EUROSTAT_GROUPS)
+                    for size, value in zip(EUROSTAT_CLASSES.values(), row, strict=True):
+                        grouped[size] += value
+                    found[section] = {"year": year, "employees": grouped}
+                    break
+        result[country] = {"source": "Eurostat SBS (sbs_sc_ovw), persons employed (EMP_NR) by size class "
+                                     "of persons employed, without one-person businesses", "groups": EUROSTAT_GROUPS,
+                           "sections": {section: entry["employees"] for section, entry in found.items()},
+                           "years": {section: entry["year"] for section, entry in found.items()}}
+    return result
+
+
+def sheet_rows(name, sheet=None):
+    import openpyxl
+    workbook = openpyxl.load_workbook(os.path.join(SIZES_DIR, name), read_only=True, data_only=True)
+    try:
+        worksheet = workbook[sheet] if sheet else workbook.worksheets[0]
+        return list(worksheet.iter_rows(values_only=True))
+    finally:
+        workbook.close()
+
+
+def read_us():
+    """{"groups": US_GROUPS, "sections": {NACE section: [employment of each group]}}."""
+    by_naics = {}
+    for row in sheet_rows("us_state_naics_detailedsizes_2022.xlsx"):
+        if row[0] == "00" and isinstance(row[4], str) and row[4][:2] in US_DETAILED_ROWS:
+            group = US_DETAILED_ROWS[row[4][:2]]
+            by_naics.setdefault(row[2], [0] * len(US_GROUPS))[group] += row[7]
+    for row in sheet_rows("us_naicssector_large_emplsize_2022.xlsx"):
+        if isinstance(row[2], str) and row[2][:2] in US_LARGE_ROWS and row[0] in by_naics:
+            by_naics[row[0]][US_LARGE_ROWS[row[2][:2]]] += row[5]
+    sections = {}
+    for section, sectors in NAICS_SECTIONS.items():
+        sections[section] = [sum(by_naics[sector][i] for sector in sectors) for i in range(len(US_GROUPS))]
+    return {"source": "Census Statistics of US Businesses 2022, employment by enterprise employment size",
+            "groups": US_GROUPS, "sections": sections}
+
+
+def read_uk():
+    """{"groups": UK_GROUPS, "sections": {NACE section: [employment (thousands) of each group]}}."""
+    sections, current = {}, None
+    for row in sheet_rows(UK_FILE[0], "Table 5"):
+        label = row[0]
+        if isinstance(label, str) and row[1] is None and label[:1].isupper() and label[1:2] in (" ", ","):
+            # "B, D and E Mining..." / "C Manufacturing": the sections of the rows below.
+            letters = label.split(" ")[0].rstrip(",")
+            current = [letters] + ([part.strip(" ,") for part in label.split(" ")[1:4]
+                                    if len(part.strip(" ,")) == 1 and part.strip(" ,").isupper()]
+                                   if label[1] == "," else [])
+            for section in current:
+                sections[section] = [0] * len(UK_GROUPS)
+        elif current and str(label).strip() in UK_BANDS and isinstance(row[2], (int, float)):
+            for section in current:
+                sections[section][UK_BANDS[str(label).strip()]] += row[2]
+    return {"source": "Business population estimates for the UK and regions 2026 (Department for Business and "
+                      "Trade), table 5, employment of businesses with employees", "groups": UK_GROUPS,
+            "sections": sections}
+
+
+def main():
+    if "--download" in sys.argv:
+        download()
+    data = {**fetch_eurostat(), "United States": read_us(), "United Kingdom": read_uk()}
+    for country, entry in data.items():
+        if len(entry["sections"]) < 13:
+            sys.exit(f"{country}: only {sorted(entry['sections'])} sections")
+    with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=1, sort_keys=True)
+        f.write("\n")
+    for country, entry in data.items():
+        total = [sum(values[i] for values in entry["sections"].values()) for i in range(len(entry["groups"]))]
+        shares = [round(value / sum(total), 3) for value in total]
+        print(f"{country}: {len(entry['sections'])} sections, employees by size group {shares}")
+    print(f"→ {OUTPUT_PATH}")
+
+
+if __name__ == "__main__":
+    main()
