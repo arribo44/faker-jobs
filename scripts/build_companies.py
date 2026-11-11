@@ -9,9 +9,16 @@ For the six countries of the locales (United States, United Kingdom,
 France, Germany, Spain, Italy) and each of the 35 ROME activity sectors
 (LinkedIn industry → sector, see INDUSTRY_SECTORS):
 
-- `weights`: the share of jobs in each company size class, i.e. the number
-  of companies of the class times its typical size (TYPICAL_SIZES). Sectors
-  with fewer than MIN_SECTOR_COMPANIES companies take the country's shares.
+- `weights`: the share of jobs in each company size class. LinkedIn lists
+  few small companies, so the shares are those of official statistics
+  (fetch_business_sizes.py: Eurostat, US Census, UK business population
+  estimates) by size group (e.g. 2-9, 10-49, 50-249, 250+ persons employed)
+  in the NACE section of the sector, split between the LinkedIn classes of
+  each group as LinkedIn splits them: the number of companies of the class
+  times its typical size (TYPICAL_SIZES). Sectors without official figures
+  (agriculture and public administration in Europe...) keep the LinkedIn
+  shares; sectors with fewer than MIN_SECTOR_COMPANIES companies take the
+  country's LinkedIn split.
 - `companies`: up to PER_CLASS real companies per size class of 11
   employees or more, with a name, website, founding year, headquarters city
   (an index into the country's cities of cities.json.gz when GeoNames knows
@@ -26,7 +33,8 @@ France, Germany, Spain, Italy) and each of the 35 ROME activity sectors
   can make some up where a class has fewer than PER_CLASS companies (a
   single large group would otherwise get every job of its class).
 
-Run build_cities.py first (cities are matched to its output), then:
+Run build_cities.py, build_occupations.py (conditions.json) and
+fetch_business_sizes.py first, then:
 
     python scripts/build_companies.py [path/to/companies_sorted.csv]
 """
@@ -45,6 +53,10 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_INPUT = os.path.join(ROOT, "DATAS", "7millionscompanies", "companies_sorted.csv")
 CITIES_PATH = os.path.join(ROOT, "faker_jobs", "data", "cities.json.gz")
 OUTPUT_PATH = os.path.join(ROOT, "faker_jobs", "data", "companies.json.gz")
+# Official shares of employment by size (fetch_business_sizes.py), and the NACE
+# section of each activity sector (conditions.json, built by build_occupations.py).
+SIZES_PATH = os.path.join(ROOT, "DATAS", "business_sizes", "sizes.json")
+CONDITIONS_PATH = os.path.join(ROOT, "faker_jobs", "data", "conditions.json")
 
 SOURCE = ("People Data Labs Free Company Dataset (7+ million companies, LinkedIn company pages), CC BY 4.0, "
           "https://docs.peopledatalabs.com/docs/free-company-dataset")
@@ -257,6 +269,38 @@ def shares(counter):
     return [round(w / total, 6) for w in weighted]
 
 
+def size_group(groups, size):
+    """Index of the official size group ([low, high], high None for no bound) that holds `size` employees."""
+    return next(i for i, (low, high) in enumerate(groups) if size >= low and (high is None or size <= high))
+
+
+def calibrate(weights, groups, employees, fallback):
+    """LinkedIn job shares of the size classes (`weights`) brought to the official
+    shares of the size groups (`employees` of each of `groups`): each group gets
+    its official share, split between the LinkedIn classes it holds (the class
+    of a typical size) as LinkedIn splits them (`fallback`, the country's shares,
+    where LinkedIn has no company of the group)."""
+    member = [size_group(groups, typical) for typical in TYPICAL_SIZES]
+    if set(member) != set(range(len(groups))):
+        raise ValueError(f"a size group holds no LinkedIn class: {groups}")
+    total = sum(employees)
+    calibrated = [0.0] * len(weights)
+    for group, value in enumerate(employees):
+        classes = [k for k in range(len(weights)) if member[k] == group]
+        base = weights if sum(weights[k] for k in classes) > 0 else fallback
+        within = sum(base[k] for k in classes)
+        for k in classes:
+            calibrated[k] = value / total * (base[k] / within if within else 1 / len(classes))
+    return [round(w, 6) for w in calibrated]
+
+
+def sector_sections():
+    """{ROME sector code: NACE section} (the main section of each activity sector)."""
+    with open(CONDITIONS_PATH, encoding="utf-8") as f:
+        conditions = json.load(f)["en_US"]
+    return {code: conditions["section_by_sector"][name] for name, code in conditions["sector_codes"].items()}
+
+
 def company_record(row, klass, country, cities, industries, rng):
     """[name, website, founding year, city (index or name), state, employees, industry index]."""
     parts = [part.strip() for part in row["locality"].split(",")]  # city, region, country
@@ -274,6 +318,9 @@ def build(path):
     with gzip.open(CITIES_PATH, "rt", encoding="utf-8") as f:
         cities = city_index(json.load(f))
     counts, samples = read(path, cities)
+    with open(SIZES_PATH, encoding="utf-8") as f:
+        official = json.load(f)
+    sections = sector_sections()
     rng = random.Random(SEED)
     industries = []
     countries = {}
@@ -282,17 +329,25 @@ def build(path):
         for counter in counts[country].values():
             total.update(counter)
         weights, companies, class_counts = {}, {}, {}
+        sizes = official[country]
+        country_shares = shares(total)
         for sector in sorted(counts[country], key=int):
             counter = counts[country][sector]
-            weights[sector] = shares(counter if counter.total() >= MIN_SECTOR_COMPANIES else total)
+            linkedin = shares(counter if counter.total() >= MIN_SECTOR_COMPANIES else total)
+            employees = sizes["sections"].get(sections[sector])
+            weights[sector] = (calibrate(linkedin, sizes["groups"], employees, country_shares) if employees
+                               else linkedin)
             rows = []
             for klass in range(1, len(SIZE_CLASSES)):
                 picked = sorted(samples[(country, sector, klass)], key=lambda row: row["name"])
                 rows += [company_record(row, klass, country, cities, industries, rng) for row in picked]
             companies[sector] = rows
             class_counts[sector] = [counter[k] for k in range(len(SIZE_CLASSES))]
-        countries[country] = {"weights_all": shares(total), "weights": weights, "counts": class_counts,
-                              "companies": companies}
+        every = [sum(values[i] for values in sizes["sections"].values()) for i in range(len(sizes["groups"]))]
+        countries[country] = {"weights_all": calibrate(country_shares, sizes["groups"], every, country_shares),
+                              "weights": weights, "counts": class_counts, "companies": companies,
+                              "official_sizes": {"source": sizes["source"], "groups": sizes["groups"],
+                                                 "sections": sorted(sizes["sections"])}}
     industries_sorted = sorted(industries)
     remap = [industries_sorted.index(name) for name in industries]
     for entry in countries.values():

@@ -162,8 +162,8 @@ ones of the country (2,257 in the United States: IBM, Apple, Walmart,
 Microsoft...), `job_sectors` is the list of the 35 activity sectors (as
 `job_activity_sectors`). `job_company_size()` picks a size
 class by the share of jobs in the companies of each class in the locale's
-country (People Data Labs: about 1 job in 3 in companies of up to 500
-employees in France, 1 in 2 in Spain and Italy), then a number of employees
+country (official statistics: about half of the jobs in companies of up to
+250 employees in France, two thirds in Italy), then a number of employees
 in that class.
 
 Company profile fields missing from the source data (no state outside the
@@ -323,11 +323,21 @@ million companies from their LinkedIn pages, CC BY 4.0), built by
 
 - Its **size class** (1-10, 11-50, 51-200, 201-500, 501-1,000,
   1,001-5,000, 5,001-10,000, 10,001+ employees) is picked by the share of
-  jobs in the companies of each class, in the sector and country (number
-  of companies × typical size): 45-50% of the postings are in companies of
-  up to 250 employees in Germany, Spain and Italy, 30-35% in France and the
-  United States. LinkedIn lists few very small businesses, so 1-10 employees are
-  rarer than in national statistics (3-15% of the postings).
+  jobs in the companies of each class, in the sector and country, from
+  **official statistics** of employment by enterprise size
+  (`scripts/fetch_business_sizes.py`): Eurostat structural business
+  statistics for France, Germany, Spain and Italy (persons employed by NACE
+  section and size group 2-9, 10-49, 50-249, 250+), the Census Statistics
+  of US Businesses 2022 and the UK business population estimates 2026. Each
+  official size group gets its share, split between the LinkedIn classes it
+  holds as LinkedIn splits them (number of companies × typical size), as
+  LinkedIn lists few small companies. About 1 posting in 10 is in a company
+  of up to 10 employees in the United States, 1 in 6 in France and
+  Germany, 1 in 4 in Italy; 44% (United States) to 69% (Italy) in companies of up to 250
+  employees (a third or less before the official shares). Building works
+  hire in small companies, energy in large groups. Sectors without official
+  figures (agriculture and public administration in Europe, mining and
+  water in France) keep the LinkedIn shares.
 - Then a **real company** of that sector and class: up to 10 per class,
   sector and country (~10,000 in all, 250 KB), with its name, website,
   founding year, headquarters city (and US state) and number of employees.
@@ -646,12 +656,18 @@ scripts/
                                    (with the ROME code of each sector, the key of companies.json.gz)
 ```
 
-The hiring companies come from People Data Labs:
+The hiring companies come from People Data Labs, their sizes from official statistics:
 
 ```
 DATAS/7millionscompanies/companies_sorted.csv   People Data Labs Free Company Dataset (7.2 million rows, 1 GB)
+DATAS/business_sizes/us_state_naics_detailedsizes_2022.xlsx, us_naicssector_large_emplsize_2022.xlsx
+                                             Census SUSB 2022 (census.gov, no API: --download)
+DATAS/business_sizes/BPE_2026_detailed_tables.xlsx   UK business population estimates 2026 (gov.uk)
+DATAS/business_sizes/sizes.json              employment by size group and NACE section, by fetch_business_sizes.py
 scripts/
-  build_companies.py [csv]      -> faker_jobs/data/companies.json.gz (~250 KB; run after build_cities.py)
+  fetch_business_sizes.py [--download]   Eurostat API (sbs_sc_ovw) + the spreadsheets above -> sizes.json
+  build_companies.py [csv]      -> faker_jobs/data/companies.json.gz (~250 KB; after build_cities.py,
+                                   build_occupations.py and fetch_business_sizes.py)
 ```
 
 ```bash
@@ -659,6 +675,7 @@ for l in en de es it; do python scripts/fetch_esco.py $l; done   # only if the c
 pip install -e ".[build]"         # openpyxl and xlrd, to read the xlsx/xls sources
 python scripts/build_cities.py      # first: build_companies.py matches cities to its output
 python scripts/build_occupations.py
+python scripts/fetch_business_sizes.py   # only when newer statistics are out (--download the spreadsheets)
 python scripts/build_companies.py
 ```
 
@@ -691,6 +708,11 @@ Occupation data:
   INSEE: [Licence Ouverte / Etalab 2.0](https://www.etalab.gouv.fr/licence-ouverte-open-licence/).
 - Earnings and labour figures: Eurostat SES 2022 and LFS 2025 © European
   Union (reuse authorised, source acknowledged); BLS OEWS, U.S. Bureau of Labor Statistics (public domain).
+- Employment by enterprise size: Eurostat structural business statistics
+  (sbs_sc_ovw) © European Union (reuse authorised, source acknowledged);
+  Statistics of US Businesses 2022, U.S. Census Bureau (public domain);
+  Business population estimates 2026, Department for Business and Trade,
+  [Open Government Licence v3.0](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/).
 - English, German, Spanish and Italian labels of the 35 ROME activity
   sectors, 14 domains and 16 soft skills are translated by this project.
 
