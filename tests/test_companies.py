@@ -71,6 +71,8 @@ class CompaniesDataTests(unittest.TestCase):
         self.assertTrue(0.1 < micro["France"] < 0.25, micro)
         self.assertGreater(micro["Italy"], micro["France"])
         self.assertTrue(all(share > 0.05 for share in micro.values()), micro)
+        # French mining and waste: confidential, the EU split.
+        self.assertTrue({"B", "E"} <= set(_load_companies()["countries"]["France"]["official_sizes"]["sections"]))
 
     def test_real_company_has_an_activity_of_its_industry(self):
         for locale in ("fr_FR", "it_IT"):
