@@ -569,11 +569,13 @@ The companies come from the Kaggle dataset:
 ```
 DATAS/                          curated source files (not published)
   faker_locations.csv           Kaggle cities: only their country names are used (build_cities.py)
-  faker_firms.csv               companies and profiles (transform_firms.py)
+  faker_firms.csv               companies and profiles (scripts/transform_firms.py)
   posting_ranges.csv            min/max of numeric fields, measured on the full postings
                                 file by scripts/build_job_stats.py (only the company size is kept)
-  job_descriptions2.csv         full postings file, 1.7 GB
+  job_descriptions2.csv         full postings file, 1.7 GB (scripts/transform_job_descriptions.py)
 scripts/
+  transform_firms.py            DATAS/firms.csv -> faker_firms.csv
+  transform_job_descriptions.py DATAS/save/archive.zip -> job_descriptions2.csv
   build_job_stats.py            job_descriptions2.csv -> the statistics files
   build_data.py                 DATAS/*.csv -> faker_jobs/data/jobs_data.json
 faker_jobs/data/jobs_data.json  packaged companies (~190 KB)
@@ -615,7 +617,8 @@ scripts/
 
 ```bash
 for l in en de es it; do python scripts/fetch_esco.py $l; done   # only if the crosswalk changed
-python scripts/build_occupations.py # needs openpyxl and xlrd (dev extra); after build_data.py
+pip install -e ".[build]"         # openpyxl and xlrd, to read the xlsx/xls sources
+python scripts/build_occupations.py # after build_data.py
 ```
 
 After changing anything in `DATAS/`:

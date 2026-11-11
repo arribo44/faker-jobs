@@ -38,7 +38,7 @@ text file line by line, where each change to a gzipped file would add a
 full copy of it to the history. Floats are rounded to FLOAT_DIGITS so that
 a build with another Python version gives the same files.
 
-Requires openpyxl and xlrd (`pip install -e ".[dev]"`). Re-run whenever an input changes.
+Requires openpyxl and xlrd (`pip install -e ".[build]"`). Re-run whenever an input changes.
 """
 import collections
 import gzip

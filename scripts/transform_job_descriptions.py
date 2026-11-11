@@ -8,7 +8,7 @@ en job_descriptions2.csv
 
 Le fichier est lu en flux directement dans l'archive (pas besoin de la décompresser).
 
-Usage : python3 transform_job_descriptions.py [fichier_sortie]
+Usage : python3 scripts/transform_job_descriptions.py [fichier_sortie]
 """
 
 import csv
@@ -17,7 +17,7 @@ import sys
 import zipfile
 from pathlib import Path
 
-DATA_DIR = Path(__file__).resolve().parent / 'DATAS'
+DATA_DIR = Path(__file__).resolve().parent.parent / 'DATAS'
 
 # Chemins des fichiers
 archive_file = DATA_DIR / 'save' / 'archive.zip'

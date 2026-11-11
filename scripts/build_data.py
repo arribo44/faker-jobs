@@ -6,7 +6,7 @@ from the ROME / ESCO occupations (see build_occupations.py), cities from
 GeoNames (see build_cities.py, which reads the Kaggle country names of
 faker_locations.csv).
 
-- faker_firms.csv: companies and their profile (see transform_firms.py)
+- faker_firms.csv: companies and their profile (see scripts/transform_firms.py)
 - posting_ranges.csv: the company size range measured on the full postings
   file (see build_job_stats.py)
 

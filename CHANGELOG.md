@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- New `build` extra (`pip install -e ".[build]"`): openpyxl and xlrd, needed only to rebuild `faker_jobs/data` from `DATAS/`; the `dev` extra includes it.
+- `transform_firms.py` and `transform_job_descriptions.py` move from the repository root to `scripts/`.
+
+### Removed
+- `fix_locations_encoding.py` and `geocode_locations.py`: they fixed the Kaggle cities, replaced by GeoNames in 0.6.0 (only their country names are still read).
+
 ---
 
 ## [0.6.0] - 2026-11-08

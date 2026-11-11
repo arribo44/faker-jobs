@@ -3,7 +3,7 @@
 Script pour transformer firms.csv en faker_firms.csv
 Extrait les champs : company, sector, industry, city, state, zip, website, ticker, ceo
 
-Usage : python3 transform_firms.py [fichier_sortie]
+Usage : python3 scripts/transform_firms.py [fichier_sortie]
 """
 
 import csv
@@ -11,7 +11,7 @@ import re
 import sys
 from pathlib import Path
 
-DATA_DIR = Path(__file__).resolve().parent / 'DATAS'
+DATA_DIR = Path(__file__).resolve().parent.parent / 'DATAS'
 
 # Chemins des fichiers
 input_file = DATA_DIR / 'firms.csv'
