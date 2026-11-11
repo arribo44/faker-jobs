@@ -304,7 +304,33 @@ class TestRomeOccupations(HiringCompanyTests, OccupationTests, unittest.TestCase
             self.assertEqual(company["sector"], sector)
             self.assertIn([posting["company_naf"], company["industry"]], [entry[:2] for entry in naf[sector]])
             self.assertRegex(posting["company_naf"], r"^\d\d\.\d\d[A-Z]$")
-        self.assertIn(["86.10Z", "Activités hospitalières", "Q"], naf["Santé"])
+        self.assertIn(["86.10Z", "Activités hospitalières", "Q"], [entry[:3] for entry in naf["Santé"]])
+
+    def test_naf_activities_weighted_by_employment(self):
+        weights = {entry[0]: entry[3] for entry in
+                   self.provider._occupations["conditions"]["naf_by_sector"]["Logistique et transport"]}
+        # Each road freight activity employs ~30 times more people than passenger water transport.
+        self.assertGreater(weights["49.41A"], 10 * weights["50.30Z"])
+        self.assertTrue(all(isinstance(weight, int) and weight >= 1 for weight in weights.values()))
+
+    def test_naf_activity_fits_the_company_industry(self):
+        conditions = self.provider._local_conditions()
+        for _ in range(30):
+            naf = self.provider._pick_naf("Logistique et transport", conditions, "Logistics and supply chain")
+            self.assertTrue(naf[0].startswith(("49.4", "52")), naf)
+        # An industry with no activity in the sector: any activity of the sector.
+        codes = {entry[0] for entry in conditions["naf_by_sector"]["Logistique et transport"]}
+        self.assertIn(self.provider._pick_naf("Logistique et transport", conditions, "Banking")[0], codes)
+        air_france = self.fake.job_company_profile(company="Air France")
+        self.assertIn("aériens", air_france["industry"], air_france)
+
+    def test_salary_follows_the_company_activity(self):
+        # The salary of a posting uses the NACE section of its company's NAF activity.
+        for _ in range(20):
+            posting = self.fake.job_occupation_posting(sector="Santé")
+            section = next(entry[2] for entry in self.provider._local_conditions()["naf_by_sector"]["Santé"]
+                           if entry[0] == posting["company_naf"])
+            self.assertIn(section, ("Q", "M"))
 
     def _posted_title_source(self, job_title, code):
         # "Conducteur routier régional (H/F)" comes from "Conducteur routier régional / Conductrice ...".
