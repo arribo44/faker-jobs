@@ -4,6 +4,8 @@ activity sector and size class (faker_jobs/data/companies.json.gz), and
 scripts/build_companies.py.
 """
 import collections
+import gzip
+import json
 import os
 import sys
 import unittest
@@ -48,7 +50,7 @@ class CompaniesDataTests(unittest.TestCase):
                         self.assertTrue(name and website)
                         self.assertTrue(low <= size and (size <= high or size_class == len(grouped) - 1))
                         self.assertTrue(founded is None or 1000 < founded < 2030)
-                        self.assertTrue(city < len(cities) if isinstance(city, int) else city)
+                        self.assertTrue(city is None or (city < len(cities) if isinstance(city, int) else city))
                         self.assertEqual(state is not None, country == "United States")
                         self.assertLess(industry, len(data["industries"]))
 
@@ -184,6 +186,69 @@ class BuildCompaniesTests(unittest.TestCase):
         self.assertEqual(fit, {"6221": {"Agri": [[2, 997]]}})
         nace = build_occupations.activity_fit(occupations, {"Agri": [["01.62"], ["03.21"]]}, isco_naf)
         self.assertEqual(nace["6221"]["Agri"], [[1, 997]])
+
+    def test_fold(self):
+        self.assertEqual(build_companies.fold("Düsseldorf"), "dusseldorf")
+        self.assertEqual(build_companies.fold("Levallois-Perret "), "levallois perret")
+
+    def _index(self):
+        cities = {"countries": {country: {"cities": []} for country in build_companies.COUNTRY_CODES}}
+        cities["countries"]["France"]["cities"] = [["Paris", 48.8534, 2.3488, 2138551, "Paris"],
+                                                   ["Neuilly-sur-Seine", 48.8846, 2.2697, 60361, "Neuilly-sur-Seine"]]
+        cities["countries"]["United States"]["cities"] = [["New York City", 40.7143, -74.006, 8804190],
+                                                          ["Bentonville", 36.3729, -94.2088, 54164]]
+        geonames = {"FR": [(48.8534, 2.3488, ["Paris", "Paris", "Lutece"], "11"),
+                           (48.8932, 2.2879, ["Levallois-Perret", "Levallois-Perret"], "11")],
+                    "US": [(40.7143, -74.006, ["New York City", "New York City", "New York"], "NY"),
+                           (36.3729, -94.2088, ["Bentonville", "Bentonville"], "AR")]}
+        return build_companies.city_index(cities, geonames)
+
+    def test_city_index(self):
+        index = self._index()
+        self.assertEqual(index["United States"]["names"]["new york"], 0)
+        self.assertFalse(build_companies.alternate_names("NYC"))  # codes left out
+        self.assertTrue(build_companies.alternate_names("Brunswick"))
+        self.assertEqual(index["United States"]["states"], ["New York", "Arkansas"])
+        # A district left out of cities.json.gz: the nearest city, also by the last word of its name.
+        self.assertEqual(index["France"]["names"]["levallois perret"], 1)
+        self.assertEqual(index["France"]["suffixes"]["perret"], 1)
+
+    def test_headquarters_city(self):
+        index = self._index()
+        regions = collections.defaultdict(set, {"France": {"paris", "ile de france"}})
+
+        def city(name, locality, country="France", found=()):
+            row = {"name": name, "locality": locality}
+            return build_companies.headquarters_city(row, country, index, regions, list(found))
+
+        self.assertEqual(city("acme", "paris, ile-de-france, france"), (0, None))
+        self.assertEqual(city("acme", "perret, ile-de-france, france"), (1, None))
+        self.assertEqual(city("acme", "ile-de-france, ile-de-france, france"), (None, None))
+        self.assertEqual(city("acme", "france, aquitaine, france"), (None, None))
+        self.assertEqual(city("acme", "vitré, bretagne, france"), ("Vitré", None))
+        # Wikidata headquarters in the country (a name also a LinkedIn region: Paris), else LinkedIn's.
+        self.assertEqual(city("acme", "france, aquitaine, france", found=[["Paris", 48.8567, 2.3522, "FR"]]),
+                         (0, None))
+        self.assertEqual(city("acme", "vitré, bretagne, france", found=[["Rome", 41.9, 12.5, "IT"]]),
+                         ("Vitré", None))
+        self.assertEqual(city("walmart", "withee, wisconsin, united states", "United States"), (1, "Arkansas"))
+        self.assertEqual(city("acme", "new york, new york, united states", "United States"), (0, "New York"))
+
+    @unittest.skipUnless(os.path.exists(build_companies.GEONAMES_PATH), "needs DATAS/geonames")
+    def test_headquarters_fixes_are_cities(self):
+        with gzip.open(build_companies.CITIES_PATH, "rt", encoding="utf-8") as f:
+            index = build_companies.city_index(json.load(f), build_companies.read_geonames())
+        for (country, _name), city in build_companies.HEADQUARTERS_FIXES.items():
+            self.assertIn(build_companies.fold(city), index[country]["names"], city)
+
+    def test_large_groups_have_a_city(self):
+        data = _load_companies()
+        for country, entry in data["countries"].items():
+            rows = [row for grouped in entry["by_class"].values() for row in grouped[7]]
+            self.assertGreater(sum(isinstance(row[3], int) for row in rows), 0.9 * len(rows), country)
+        walmart = data["by_name"]["United States"]["walmart"][2]
+        self.assertEqual((_load_cities()["united states"]["cities"][walmart[3]][0], walmart[4]),
+                         ("Bentonville", "Arkansas"))
 
     def test_job_shares(self):
         shares = build_companies.shares(collections.Counter({0: 100, 7: 1}))

@@ -22,7 +22,11 @@ France, Germany, Spain, Italy) and each of the 35 ROME activity sectors
 - `companies`: up to PER_CLASS real companies per size class of 11
   employees or more, with a name, website, founding year, headquarters city
   (an index into the country's cities of cities.json.gz when GeoNames knows
-  it, else its name), US state and a number of employees in the class. For
+  it, else its name, None when LinkedIn gives a region or a country), US
+  state and a number of employees in the class. The headquarters are those
+  of Wikidata when it has the company (by LinkedIn ID, P4264 → P159) in the
+  same country: LinkedIn often gives an office or a region (Walmart in
+  Withee, Asda in "West Yorkshire"). For
   10,001+ employees, the largest ones (by LinkedIn employee estimate), so
   that the best-known groups are there (IBM, Walmart, Apple...); else drawn
   at random (fixed seed: the build is reproducible). Rows without website
@@ -33,10 +37,16 @@ France, Germany, Spain, Italy) and each of the 35 ROME activity sectors
   can make some up where a class has fewer than PER_CLASS companies (a
   single large group would otherwise get every job of its class).
 
+City names are matched to GeoNames with its alternate names, without
+accents ("Dusseldorf", "Brunswick", "New York").
+
 Run build_cities.py, build_occupations.py (conditions.json) and
 fetch_business_sizes.py first, then:
 
-    python scripts/build_companies.py [path/to/companies_sorted.csv]
+    python scripts/build_companies.py [path/to/companies_sorted.csv] [--fetch-headquarters]
+
+--fetch-headquarters queries Wikidata for the companies missing from the
+cache, DATAS/wikidata/headquarters.json (Wikidata: CC0).
 """
 import csv
 import gzip
@@ -47,6 +57,10 @@ import os
 import random
 import re
 import sys
+import unicodedata
+import urllib.parse
+import urllib.request
+import zipfile
 from collections import Counter, defaultdict
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -57,9 +71,18 @@ OUTPUT_PATH = os.path.join(ROOT, "faker_jobs", "data", "companies.json.gz")
 # section of each activity sector (conditions.json, built by build_occupations.py).
 SIZES_PATH = os.path.join(ROOT, "DATAS", "business_sizes", "sizes.json")
 CONDITIONS_PATH = os.path.join(ROOT, "faker_jobs", "data", "conditions.json")
+GEONAMES_PATH = os.path.join(ROOT, "DATAS", "geonames", "cities15000.zip")
+HEADQUARTERS_PATH = os.path.join(ROOT, "DATAS", "wikidata", "headquarters.json")
+SPARQL_URL = "https://query.wikidata.org/sparql"
+USER_AGENT = "faker-jobs data build (https://github.com/arribo44/faker-jobs)"
+HEADQUARTERS_BATCH = 200
+# A Wikidata headquarters is the GeoNames city of its name, or the nearest
+# one, within this distance (a business district: La Défense -> Courbevoie).
+MATCH_KM = 10
 
 SOURCE = ("People Data Labs Free Company Dataset (7+ million companies, LinkedIn company pages), CC BY 4.0, "
-          "https://docs.peopledatalabs.com/docs/free-company-dataset")
+          "https://docs.peopledatalabs.com/docs/free-company-dataset; headquarters: Wikidata (CC0) and GeoNames "
+          "(CC BY 4.0)")
 SEED = 20261111
 PER_CLASS = 10
 MIN_SECTOR_COMPANIES = 200
@@ -68,6 +91,58 @@ MIN_SECTOR_COMPANIES = 200
 COUNTRIES = {"united states": "United States", "united kingdom": "United Kingdom", "france": "France",
              "germany": "Germany",
              "spain": "Spain", "italy": "Italy"}
+COUNTRY_CODES = {"United States": "US", "United Kingdom": "GB", "France": "FR", "Germany": "DE", "Spain": "ES",
+                 "Italy": "IT"}
+# Headquarters of large groups that neither LinkedIn nor Wikidata (by
+# LinkedIn ID) place in their city: (country, dataset name) -> city of
+# cities.json.gz. Hand-made.
+HEADQUARTERS_FIXES = {
+    ("United States", "walmart"): "Bentonville",
+    ("United Kingdom", "asda"): "Leeds",
+    ("United Kingdom", "rentokil initial"): "Crawley",
+    ("United Kingdom", "waitrose"): "Bracknell",
+    ("United Kingdom", "micro focus"): "Newbury",
+    ("United Kingdom", "rb"): "Slough",
+    ("United Kingdom", "telefónica uk"): "Slough",
+    ("United Kingdom", "interserve"): "Reading",
+    ("United Kingdom", "mott macdonald"): "Croydon",
+    ("United Kingdom", "rwe npower"): "Swindon",
+    ("United Kingdom", "leeds city council"): "Leeds",
+    ("United Kingdom", "hampshire county council"): "Winchester",
+    ("United Kingdom", "university of nottingham"): "Nottingham",
+    ("United Kingdom", "university of birmingham"): "Birmingham",
+    ("United Kingdom", "university of sheffield"): "Sheffield",
+    ("United Kingdom", "university of bath"): "Bath",
+    ("United Kingdom", "university of portsmouth"): "Portsmouth",
+    ("United Kingdom", "plymouth university"): "Plymouth",
+    ("France", "edf"): "Paris",
+    ("France", "grdf"): "Paris",
+    ("France", "sopra steria"): "Paris",
+    ("France", "suez"): "Courbevoie",
+    ("France", "geodis"): "Levallois-Perret",
+    ("France", "decathlon france"): "Villeneuve-d'Ascq",
+    ("Germany", "porsche"): "Stuttgart",
+    ("Germany", "man diesel & turbo"): "Augsburg",
+    ("Italy", "gucci"): "Florence",
+    ("Italy", "politecnico di torino"): "Turin",
+}
+# Localities that are not a city: UK county abbreviations, provinces.
+NOT_CITIES = {"none", "catalunya", "berks", "bucks", "hants", "herts", "oxon", "lancs", "yorks", "glos", "wilts",
+              "notts", "beds", "cambs", "northants", "leics", "worcs", "staffs", "warks", "middx"}
+NOT_CITY_PREFIXES = ("provincia di ", "province of ", "provincia de ", "county of ", "citta metropolitana di ")
+# GeoNames admin1 codes of the United States: the state of a Wikidata headquarters.
+US_STATES = {
+    "AL": "Alabama", "AK": "Alaska", "AZ": "Arizona", "AR": "Arkansas", "CA": "California", "CO": "Colorado",
+    "CT": "Connecticut", "DE": "Delaware", "DC": "District Of Columbia", "FL": "Florida", "GA": "Georgia",
+    "HI": "Hawaii", "ID": "Idaho", "IL": "Illinois", "IN": "Indiana", "IA": "Iowa", "KS": "Kansas",
+    "KY": "Kentucky", "LA": "Louisiana", "ME": "Maine", "MD": "Maryland", "MA": "Massachusetts", "MI": "Michigan",
+    "MN": "Minnesota", "MS": "Mississippi", "MO": "Missouri", "MT": "Montana", "NE": "Nebraska", "NV": "Nevada",
+    "NH": "New Hampshire", "NJ": "New Jersey", "NM": "New Mexico", "NY": "New York", "NC": "North Carolina",
+    "ND": "North Dakota", "OH": "Ohio", "OK": "Oklahoma", "OR": "Oregon", "PA": "Pennsylvania",
+    "RI": "Rhode Island", "SC": "South Carolina", "SD": "South Dakota", "TN": "Tennessee", "TX": "Texas",
+    "UT": "Utah", "VT": "Vermont", "VA": "Virginia", "WA": "Washington", "WV": "West Virginia",
+    "WI": "Wisconsin", "WY": "Wyoming",
+}
 
 # The dataset's size classes, their bounds and typical size (geometric mean
 # of the bounds; 10001+: a typical large group).
@@ -182,20 +257,174 @@ def place_name(text):
     return " ".join(display_word(word, True) for word in text.split())
 
 
-def city_index(cities):
-    """{country: {lower-case city name (English or local): index}}, the most populous city first."""
+def fold(text):
+    """`text` lower-case, without accents, hyphens as spaces: 'Düsseldorf' -> 'dusseldorf'."""
+    decomposed = unicodedata.normalize("NFKD", text.lower().replace("-", " "))
+    return " ".join("".join(c for c in decomposed if not unicodedata.combining(c)).split())
+
+
+def distance_km(a, b):
+    lat1, lon1, lat2, lon2 = map(math.radians, (*a, *b))
+    h = math.sin((lat2 - lat1) / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin((lon2 - lon1) / 2) ** 2
+    return 6371 * 2 * math.asin(math.sqrt(h))
+
+
+def alternate_names(name):
+    """Whether a GeoNames alternate name can stand for a city in LinkedIn
+    localities: no codes ('NYC', 'LON') or one- or two-letter names."""
+    return len(name) >= 3 and not name.isupper() and any(c.isalpha() for c in name)
+
+
+def read_geonames():
+    """{country code: [(latitude, longitude, [names], admin1 code), ...]}, most populous first."""
+    rows = defaultdict(list)
+    codes = set(COUNTRY_CODES.values())
+    with zipfile.ZipFile(GEONAMES_PATH) as archive, archive.open("cities15000.txt") as raw:
+        for line in raw:
+            fields = line.decode("utf-8").rstrip("\n").split("\t")
+            if fields[8] in codes:
+                names = [fields[1], fields[2], *filter(alternate_names, fields[3].split(","))]
+                rows[fields[8]].append((int(fields[14]), round(float(fields[4]), 4), round(float(fields[5]), 4),
+                                        names, fields[10]))
+    return {code: [row[1:] for row in sorted(found, key=lambda row: -row[0])] for code, found in rows.items()}
+
+
+def nearest(points, point, km):
+    """Index of the point of `points` nearest to `point`, if within `km`."""
+    best, found = km, None
+    for i, other in enumerate(points):
+        if abs(other[0] - point[0]) < 0.5 and (distance := distance_km(point, other)) <= best:
+            best, found = distance, i
+    return found
+
+
+def city_index(cities, geonames=None):
+    """{country: {"names": {folded city name: index}, "points": [(latitude,
+    longitude)], "states": [US state or None]}}, indexes into the country's
+    cities of cities.json.gz. Names: English and local names, short names
+    ("Frankfurt" for "Frankfurt am Main"), then GeoNames alternate names
+    (`geonames`, see read_geonames; a district's names point to its city);
+    the most populous city first."""
     index = {}
-    for country in COUNTRIES.values():
+    for country, code in COUNTRY_CODES.items():
+        rows = cities["countries"][country]["cities"]
         names = {}
-        for i, row in enumerate(cities["countries"][country]["cities"]):
+        for i, row in enumerate(rows):
             for name in {row[0], row[4] if len(row) > 4 else None} - {None}:
-                names.setdefault(name.lower(), i)
-        for i, row in enumerate(cities["countries"][country]["cities"]):
+                names.setdefault(fold(name), i)
+        for i, row in enumerate(rows):
             # "Frankfurt" for "Frankfurt am Main", "Halle" for "Halle (Saale)".
-            short = re.split(r" am | an der | \(|,", row[0])[0].lower()
-            names.setdefault(short, i)
-        index[country] = names
+            names.setdefault(fold(re.split(r" am | an der | \(|,", row[0])[0]), i)
+        # The last word of a compound name, when no other city ends with it:
+        # LinkedIn cuts "Levallois-Perret" to "perret".
+        compounds = [(fold(row[0]), i) for i, row in enumerate(rows)]
+        points = [(row[1], row[2]) for row in rows]
+        by_point = {point: i for i, point in enumerate(points)}
+        states = [None] * len(rows)
+        for latitude, longitude, alternates, admin1 in (geonames or {}).get(code, []):
+            i = by_point.get((latitude, longitude))
+            if i is None:
+                i = nearest(points, (latitude, longitude), 5)  # a district left out of cities.json.gz
+                if i is None:
+                    continue
+            elif country == "United States":
+                states[i] = US_STATES.get(admin1)
+            for name in alternates:
+                names.setdefault(fold(name), i)
+            compounds.append((fold(alternates[0]), i))
+        last_words = Counter(name.split()[-1] for name in {name for name, _ in compounds} if " " in name)
+        suffixes = {name.split()[-1]: i for name, i in compounds if " " in name and last_words[name.split()[-1]] == 1}
+        index[country] = {"names": names, "points": points, "states": states,
+                          "suffixes": {word: i for word, i in suffixes.items() if len(word) >= 5 and word not in names}}
     return index
+
+
+def linkedin_id(row):
+    """The company's LinkedIn ID ('linkedin.com/company/ibm' -> 'ibm'), None without."""
+    match = re.search(r"linkedin\.com/company/([^/?#]+)", row.get("linkedin url") or "")
+    return match.group(1).lower() if match else None
+
+
+def query_headquarters(ids):
+    """{LinkedIn ID: [[headquarters label, latitude, longitude, country code], ...]} from Wikidata."""
+    values = " ".join(json.dumps(i) for i in ids)
+    query = ("SELECT ?li ?hqLabel ?coord ?cc WHERE { VALUES ?li { " + values + " } "
+             "?item wdt:P4264 ?li ; wdt:P159 ?hq . ?hq wdt:P625 ?coord ; wdt:P17 ?c . ?c wdt:P297 ?cc . "
+             'SERVICE wikibase:label { bd:serviceParam wikibase:language "en". } }')
+    request = urllib.request.Request(SPARQL_URL, data=urllib.parse.urlencode({"query": query}).encode(),
+                                     headers={"User-Agent": USER_AGENT, "Accept": "text/csv"})
+    with urllib.request.urlopen(request, timeout=120) as response:
+        rows = list(csv.DictReader(response.read().decode("utf-8").splitlines()))
+    found = defaultdict(list)
+    for row in rows:
+        point = re.match(r"Point\(([-\d.eE]+) ([-\d.eE]+)\)", row["coord"])
+        if point is None:
+            continue
+        entry = [row["hqLabel"], round(float(point.group(2)), 4), round(float(point.group(1)), 4), row["cc"]]
+        if entry not in found[row["li"].lower()]:
+            found[row["li"].lower()].append(entry)
+    return found
+
+
+def headquarters(ids, fetch=False):
+    """{LinkedIn ID: Wikidata headquarters (see query_headquarters), [] if none},
+    from the cache, completed from Wikidata with `fetch`."""
+    cache = {}
+    if os.path.exists(HEADQUARTERS_PATH):
+        with open(HEADQUARTERS_PATH, encoding="utf-8") as f:
+            cache = json.load(f)["headquarters"]
+    missing = sorted(set(ids) - set(cache))
+    if fetch and missing:
+        for start in range(0, len(missing), HEADQUARTERS_BATCH):
+            batch = missing[start:start + HEADQUARTERS_BATCH]
+            found = query_headquarters(batch)
+            cache.update({i: found.get(i, []) for i in batch})
+            print(f"Wikidata: {min(start + HEADQUARTERS_BATCH, len(missing))}/{len(missing)} companies")
+        os.makedirs(os.path.dirname(HEADQUARTERS_PATH), exist_ok=True)
+        with open(HEADQUARTERS_PATH, "w", encoding="utf-8") as f:
+            json.dump({"source": "Wikidata (CC0): P4264 LinkedIn company ID -> P159 headquarters location",
+                       "headquarters": dict(sorted(cache.items()))}, f, ensure_ascii=False, indent=0)
+            f.write("\n")
+    return cache
+
+
+def not_a_city(name, country, regions):
+    """Whether a LinkedIn locality or Wikidata headquarters is a region or a country ("west sussex", "france")."""
+    folded = fold(name)
+    return (folded in regions[country] or folded in {fold(name) for name in COUNTRIES} or folded in NOT_CITIES
+            or folded.startswith(NOT_CITY_PREFIXES))
+
+
+def headquarters_city(row, country, cities, regions, found):
+    """(city: index into the country's cities, name or None, US state or None)
+    of a company: HEADQUARTERS_FIXES, else its Wikidata headquarters
+    (`found`) in the country, else its LinkedIn locality ("city, region,
+    country"); None for a region or a country given as city."""
+    entry = cities[country]
+    fixed = HEADQUARTERS_FIXES.get((country, clean_name(row["name"])))
+    if fixed is not None:
+        i = entry["names"][fold(fixed)]
+        return i, entry["states"][i]
+    for label, latitude, longitude, code in found:
+        if code != COUNTRY_CODES[country]:
+            continue
+        i = entry["names"].get(fold(label))
+        if i is None or distance_km(entry["points"][i], (latitude, longitude)) > MATCH_KM:
+            i = nearest(entry["points"], (latitude, longitude), MATCH_KM)
+        if i is not None and (country != "United States" or entry["states"][i]):
+            return i, entry["states"][i]
+        if i is None and country != "United States" and not not_a_city(label, country, regions):
+            return label, None
+    parts = [part.strip() for part in row["locality"].split(",")]  # city, region, country
+    state = place_name(parts[1]) if country == "United States" else None
+    i = entry["names"].get(fold(parts[0]))
+    if i is None:
+        i = entry["suffixes"].get(fold(parts[0]))
+    if i is not None:
+        return i, state
+    if not_a_city(parts[0], country, regions):
+        return None, state
+    return place_name(parts[0]), state
 
 
 def size_class(label):
@@ -215,13 +444,15 @@ def company_size(rng, size_class_index, estimate):
 
 
 def read(path, cities):
-    """(counts {country: {sector: Counter(class)}}, samples {(country, sector, class): rows}).
+    """(counts {country: {sector: Counter(class)}}, samples {(country, sector, class): rows},
+    regions {country: folded region names of the localities}).
 
     Samples are reservoirs of PER_CLASS rows, so a single pass over the file is enough."""
     rng = random.Random(SEED)
     counts = defaultdict(lambda: defaultdict(Counter))
     seen = Counter()
     samples = defaultdict(list)
+    regions = defaultdict(set)
     with open(path, encoding="utf-8", newline="") as f:
         for row in csv.DictReader(f):
             country = COUNTRIES.get(row["country"])
@@ -230,6 +461,8 @@ def read(path, cities):
             if country is None or sector is None or klass is None:
                 continue
             counts[country][sector][klass] += 1
+            if row["locality"].count(",") >= 2:
+                regions[country].add(fold(row["locality"].split(",")[1]))
             name = clean_name(row["name"])
             # Rows without website are often noise ("ecole maternelle" in renewables, in Germany).
             if klass == 0 or not valid_name(name) or not row["domain"] or row["locality"].count(",") < 2:
@@ -253,7 +486,7 @@ def read(path, cities):
     for key, rows in samples.items():
         if key[2] == largest:
             samples[key] = [row for _, _, row in rows]
-    return counts, samples
+    return counts, samples, regions
 
 
 def employee_estimate(row):
@@ -301,11 +534,9 @@ def sector_sections():
     return {code: conditions["section_by_sector"][name] for name, code in conditions["sector_codes"].items()}
 
 
-def company_record(row, klass, country, cities, industries, rng):
-    """[name, website, founding year, city (index or name), state, employees, industry index]."""
-    parts = [part.strip() for part in row["locality"].split(",")]  # city, region, country
-    city = cities[country].get(parts[0].lower(), place_name(parts[0]))
-    state = place_name(parts[1]) if country == "United States" else None
+def company_record(row, klass, country, cities, industries, rng, regions, found):
+    """[name, website, founding year, city (index, name or None), state, employees, industry index]."""
+    city, state = headquarters_city(row, country, cities, regions, found)
     year = row["year founded"]
     estimate = employee_estimate(row)
     if row["industry"] not in industries:
@@ -314,10 +545,11 @@ def company_record(row, klass, country, cities, industries, rng):
             city, state, company_size(rng, klass, estimate), industries.index(row["industry"])]
 
 
-def build(path):
+def build(path, fetch=False):
     with gzip.open(CITIES_PATH, "rt", encoding="utf-8") as f:
-        cities = city_index(json.load(f))
-    counts, samples = read(path, cities)
+        cities = city_index(json.load(f), read_geonames())
+    counts, samples, regions = read(path, cities)
+    found = headquarters([i for rows in samples.values() for row in rows if (i := linkedin_id(row))], fetch)
     with open(SIZES_PATH, encoding="utf-8") as f:
         official = json.load(f)
     sections = sector_sections()
@@ -340,7 +572,8 @@ def build(path):
             rows = []
             for klass in range(1, len(SIZE_CLASSES)):
                 picked = sorted(samples[(country, sector, klass)], key=lambda row: row["name"])
-                rows += [company_record(row, klass, country, cities, industries, rng) for row in picked]
+                rows += [company_record(row, klass, country, cities, industries, rng, regions,
+                                        found.get(linkedin_id(row)) or []) for row in picked]
             companies[sector] = rows
             class_counts[sector] = [counter[k] for k in range(len(SIZE_CLASSES))]
         every = [sum(values[i] for values in sizes["sections"].values()) for i in range(len(sizes["groups"]))]
@@ -358,7 +591,8 @@ def build(path):
         "meta": {
             "source": SOURCE,
             "size_classes": SIZE_BOUNDS,
-            "row": ["name", "website", "founded", "city (index into the country's cities.json.gz rows, or name)",
+            "row": ["name", "website", "founded",
+                    "city (index into the country's cities.json.gz rows, name, or None)",
                     "state (United States)", "employees", "industry (index into industries)"],
         },
         "industries": [name.capitalize() for name in industries_sorted],
@@ -367,8 +601,8 @@ def build(path):
 
 
 def main():
-    path = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_INPUT
-    data = build(path)
+    args = [arg for arg in sys.argv[1:] if not arg.startswith("--")]
+    data = build(args[0] if args else DEFAULT_INPUT, "--fetch-headquarters" in sys.argv[1:])
     text = json.dumps(data, ensure_ascii=False, separators=(",", ":")) + "\n"
     with open(OUTPUT_PATH, "wb") as raw, gzip.GzipFile(fileobj=raw, mode="wb", mtime=0) as f:
         f.write(text.encode("utf-8"))
