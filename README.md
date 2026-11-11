@@ -341,6 +341,12 @@ million companies from their LinkedIn pages, CC BY 4.0), built by
 - Then a **real company** of that sector and class: up to 10 per class,
   sector and country (~10,000 in all, 250 KB), with its name, website,
   founding year, headquarters city (and US state) and number of employees.
+  The headquarters are those of [Wikidata](https://www.wikidata.org/) when
+  it knows the company (by its LinkedIn ID) in the same country, as LinkedIn
+  often gives an office or a region (Walmart: Bentonville, not Withee);
+  LinkedIn's city otherwise, matched to GeoNames with its alternate names
+  ("Dusseldorf", "Brunswick"); `None` when LinkedIn only gives a region or a
+  country ("West Sussex"). A few large groups are placed by hand.
   Companies of 1-10 employees are left out (many are one-person businesses
   named after their owner): they are made up by the Faker locale, as the
   companies of a class with fewer than 10 companies in the dataset at
@@ -689,10 +695,14 @@ DATAS/business_sizes/us_state_naics_detailedsizes_2022.xlsx, us_naicssector_larg
                                              Census SUSB 2022 (census.gov, no API: --download)
 DATAS/business_sizes/BPE_2026_detailed_tables.xlsx   UK business population estimates 2026 (gov.uk)
 DATAS/business_sizes/sizes.json              employment by size group and NACE section, by fetch_business_sizes.py
+DATAS/wikidata/headquarters.json             Wikidata headquarters of the companies (by LinkedIn ID), cached by
+                                             build_companies.py --fetch-headquarters
 scripts/
   fetch_business_sizes.py [--download]   Eurostat API (sbs_sc_ovw) + the spreadsheets above -> sizes.json
-  build_companies.py [csv]      -> faker_jobs/data/companies.json.gz (~250 KB; after build_cities.py,
-                                   build_occupations.py and fetch_business_sizes.py)
+  build_companies.py [csv] [--fetch-headquarters]
+                                -> faker_jobs/data/companies.json.gz (~250 KB; after build_cities.py,
+                                   build_occupations.py and fetch_business_sizes.py; --fetch-headquarters
+                                   queries Wikidata for the companies missing from the cache)
 ```
 
 ```bash
@@ -702,7 +712,7 @@ python scripts/fetch_activities.py   # only for a new census (--download it, ~62
 python scripts/build_cities.py      # first: build_companies.py matches cities to its output
 python scripts/build_occupations.py
 python scripts/fetch_business_sizes.py   # only when newer statistics are out (--download the spreadsheets)
-python scripts/build_companies.py
+python scripts/build_companies.py --fetch-headquarters   # Wikidata only for new companies
 ```
 
 ---
@@ -749,4 +759,5 @@ Cities: [GeoNames](https://www.geonames.org/), [CC BY 4.0](https://creativecommo
 
 Hiring companies: [People Data Labs Free Company Dataset](https://docs.peopledatalabs.com/docs/free-company-dataset),
 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) (a sample of it,
-names capitalized and industries mapped to activity sectors by this project).
+names capitalized and industries mapped to activity sectors by this project);
+headquarters from [Wikidata](https://www.wikidata.org/) ([CC0](https://creativecommons.org/publicdomain/zero/1.0/)).

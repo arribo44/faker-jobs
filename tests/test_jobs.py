@@ -123,7 +123,7 @@ class TestJobsProvider(unittest.TestCase):
     def test_company(self):
         profile = self.fake.job_company_profile(company="ibm")
         self.assertEqual(profile["company"], "IBM")
-        self.assertEqual((profile["website"], profile["founded"], profile["city"]), ("ibm.com", 1911, "New York"))
+        self.assertEqual((profile["website"], profile["founded"], profile["city"]), ("ibm.com", 1911, "New York City"))
         self.assertEqual(profile["sector"], "IT and telecommunications")
         for name in ("Apple", "Walmart", "Microsoft"):
             self.assertIn(name, self.provider.job_companies)
