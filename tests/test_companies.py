@@ -16,6 +16,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
 
 import build_companies  # noqa: E402
+import build_occupations  # noqa: E402
+from naf_industries import INDUSTRY_NAF  # noqa: E402
 from rome_labels import SECTORS  # noqa: E402
 
 
@@ -120,6 +122,20 @@ class BuildCompaniesTests(unittest.TestCase):
         self.assertAlmostEqual(empty[7], 0.4 * 0.3 / 0.7, places=5)
         with self.assertRaises(ValueError):
             build_companies.calibrate(linkedin, [[2, 9], [10, 14], [15, 49], [50, None]], [1, 1, 1, 1], linkedin)
+
+    def test_every_industry_has_naf_activities(self):
+        self.assertEqual(set(INDUSTRY_NAF), set(build_companies.INDUSTRY_SECTORS))
+        naf_by_industry = _load_conditions()["fr_FR"]["naf_by_industry"]
+        self.assertEqual(naf_by_industry, dict(sorted(INDUSTRY_NAF.items())))
+
+    def test_naf_weights(self):
+        naf = {"49.41A": "", "49.41B": "", "50.30Z": "", "84.11Z": "", "52.10A": "", "52.10B": "", "52.21Z": ""}
+        employment = {"H494": 400, "H503": 3, "H52": 100, "H521": 60}
+        weights = build_occupations.naf_weights(naf, employment)
+        self.assertEqual((weights["49.41A"], weights["50.30Z"]), (200, 3))  # a group, shared by its sub-classes
+        self.assertEqual(weights["52.10A"], 30)
+        self.assertEqual(weights["52.21Z"], 40)  # no group figure: the rest of its division
+        self.assertIsNone(weights["84.11Z"])  # no figures at all
 
     def test_job_shares(self):
         shares = build_companies.shares(collections.Counter({0: 100, 7: 1}))

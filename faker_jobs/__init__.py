@@ -793,7 +793,7 @@ class JobsProvider(BaseProvider):
         name = self._resolve_activity_sector(sector) if sector is not None else self.job_activity_sector()
         if company is not None:
             return self._local_company(name, conditions, self.job_location(), company)
-        return self._hiring_company(name, conditions, self.job_location(), None)[0]
+        return self._hiring_company(name, conditions, self.job_location())[0]
 
     def job_company_size(self) -> int:
         """Return a random company size (number of employees): a size class
@@ -817,11 +817,25 @@ class JobsProvider(BaseProvider):
         country = conditions["country"] if location["country"] == local_country else location["country"]
         return country if country in _load_companies()["countries"] else None
 
+    def _pick_naf(self, sector: str, conditions: dict[str, Any], industry: str | None = None) -> list[Any] | None:
+        """A NAF activity [code, label, NACE section, weight] of the activity
+        sector (French locales; None elsewhere), picked by employment: those
+        that fit the company's LinkedIn `industry` when some do."""
+        if "naf_by_sector" not in conditions:
+            return None
+        candidates = conditions["naf_by_sector"][sector]
+        prefixes = conditions["naf_by_industry"].get(industry.lower()) if industry else None
+        if prefixes:
+            candidates = [naf for naf in candidates if naf[0].startswith(tuple(prefixes))] or candidates
+        found: list[Any] = self.generator.random.choices(candidates, weights=[naf[3] for naf in candidates])[0]
+        return found
+
     def _hiring_company(
-        self, sector: str, conditions: dict[str, Any], location: LocationRecord, naf: list[str] | None,
-    ) -> tuple[CompanyProfile, int, LocationRecord]:
+        self, sector: str, conditions: dict[str, Any], location: LocationRecord,
+    ) -> tuple[CompanyProfile, int, LocationRecord, list[Any] | None]:
         """A company of the activity sector `sector` hiring in `location`,
-        its number of employees, and the job location.
+        its number of employees, the job location and, in French locales,
+        its NAF activity.
 
         Its size class is picked by the share of jobs of each class in the
         sector and the country of the job (People Data Labs): a real company
@@ -830,10 +844,8 @@ class JobsProvider(BaseProvider):
         company made up by the Faker locale in the job's city.
         Companies of up to 500 employees hire in their headquarters city
         when it is one of the cities of `job_location`. In French locales,
-        `naf` (else a random NAF activity of the sector) is the industry."""
+        the NAF activity (see `_pick_naf`) is the industry."""
         data = _load_companies()
-        if naf is None and "naf_by_sector" in conditions:
-            naf = self.random_element(conditions["naf_by_sector"][sector])
         country = self._company_country(conditions, location)
         entry = data["countries"][country or self._home_country(conditions)]
         code = conditions["sector_codes"][sector]
@@ -842,11 +854,15 @@ class JobsProvider(BaseProvider):
         if rows and self.generator.random.random() * _COMPANIES_PER_CLASS >= entry["counts"][code][size_class]:
             rows = []  # a class of few companies: a made-up one in its place
         if country is None or not rows:
-            return self._local_company(sector, conditions, location, naf=naf), self._class_size(size_class), location
-        profile, size, headquarters = self._real_company(self.random_element(rows), sector, country, conditions, naf)
+            naf = self._pick_naf(sector, conditions)
+            company = self._local_company(sector, conditions, location, naf=naf)
+            return company, self._class_size(size_class), location, naf
+        row = self.random_element(rows)
+        naf = self._pick_naf(sector, conditions, data["industries"][row[6]])
+        profile, size, headquarters = self._real_company(row, sector, country, conditions, naf)
         if headquarters is not None and size_class <= _SINGLE_SITE_MAX_CLASS:
             location = headquarters
-        return profile, size, location
+        return profile, size, location, naf
 
     def _real_company(
         self, row: list[Any], sector: str, country: str, conditions: dict[str, Any], naf: list[str] | None,
@@ -855,9 +871,9 @@ class JobsProvider(BaseProvider):
         its number of employees and its headquarters city (None if not one
         of the cities of `job_location`)."""
         data = _load_companies()
-        if naf is None and "naf_by_sector" in conditions:
-            naf = self.random_element(conditions["naf_by_sector"][sector])
         name, website, founded, city, state, size, industry = row
+        if naf is None:
+            naf = self._pick_naf(sector, conditions, data["industries"][industry])
         headquarters = None
         if isinstance(city, int):
             local = country == conditions["country"]
@@ -1058,8 +1074,13 @@ class JobsProvider(BaseProvider):
     def _occupation_posting(self, occupation: OccupationRecord, country: str | None, skills: int) -> OccupationPosting:
         conditions = self._local_conditions()
         terms = self._local_terms(occupation, conditions, country)
-        company, company_size, location = self._hiring_company(
-            occupation["sector"], conditions, terms["location"], terms["naf"])
+        company, company_size, location, naf = self._hiring_company(occupation["sector"], conditions, terms["location"])
+        # The salary follows the NACE section of the company's NAF activity (French
+        # locales), else that of the occupation's sector.
+        section = naf[2] if naf is not None else conditions["section_by_sector"].get(occupation["sector"])
+        salary_min, salary_max = self._local_salary(
+            occupation["isco_group"], section, (terms["experience_min"], terms["experience_max"]),
+            conditions["contracts"][terms["work_type"]], conditions)
         job_title = occupation["job_title"]
         style = self._occupations["gender"]
         if style is not None and style["posting_suffix"]:
@@ -1079,16 +1100,16 @@ class JobsProvider(BaseProvider):
             "experience": terms["experience"],
             "experience_min": terms["experience_min"],
             "experience_max": terms["experience_max"],
-            "salary_range": terms["salary_range"],
-            "salary_min": terms["salary_min"],
-            "salary_max": terms["salary_max"],
-            "salary_currency": terms["salary_currency"],
+            "salary_range": _local_salary_text(conditions, salary_min, salary_max),
+            "salary_min": salary_min,
+            "salary_max": salary_max,
+            "salary_currency": conditions["currency"],
             "work_type": terms["work_type"],
             "benefits": terms["benefits"],
             "location": location,
             "company": company,
             "company_sector": occupation["sector"],
-            "company_naf": terms["naf"][0] if terms["naf"] is not None else None,
+            "company_naf": naf[0] if naf is not None else None,
             "company_size": company_size,
             "seniority": _seniority(terms["experience_min"]),
             "job_portal": terms["job_portal"],
@@ -1103,9 +1124,9 @@ class JobsProvider(BaseProvider):
     ) -> CompanyProfile:
         """A company made up by the Faker locale (or named `name`) in
         `sector`, in the city of the posting; in French locales with a NAF
-        rév. 2 activity of the sector (`naf`, else a random one) as industry."""
-        if naf is None and "naf_by_sector" in conditions:
-            naf = self.random_element(conditions["naf_by_sector"][sector])
+        rév. 2 activity of the sector (`naf`, else one picked by employment) as industry."""
+        if naf is None:
+            naf = self._pick_naf(sector, conditions)
         return {
             "company": name if name is not None else self.generator.company(),
             "sector": sector, "industry": naf[1] if naf else None, "city": location["city"], "state": None,
@@ -1179,21 +1200,13 @@ class JobsProvider(BaseProvider):
     ) -> dict[str, Any]:
         """Local posting conditions (see scripts/posting_conditions.py): the
         contract, the experience and diploma for the occupation's skill
-        level, a salary from the earnings of its ISCO group, local benefits
-        and job boards; in French locales, the NAF activity of the company."""
+        level, local benefits and job boards, a place. The salary comes after
+        the company (see `_occupation_posting`)."""
         level = conditions["skill_levels"][occupation["isco_group"]]
         contracts = conditions["contracts"]
         contract = self._local_contract(occupation, conditions)
         spec = contracts[contract]
         experience_min, experience_max = self._local_experience(level, spec["max_experience"], conditions)
-        naf = None
-        if "naf_by_sector" in conditions:
-            naf = self.random_element(conditions["naf_by_sector"][occupation["sector"]])
-            section = naf[2]
-        else:
-            section = conditions["section_by_sector"].get(occupation["sector"])
-        salary_min, salary_max = self._local_salary(
-            occupation["isco_group"], section, (experience_min, experience_max), spec, conditions)
         portals = conditions["job_portals"]
         if occupation["qualifications"]:
             qualification = self.random_element(occupation["qualifications"])
@@ -1204,16 +1217,11 @@ class JobsProvider(BaseProvider):
             "experience": _local_experience_text(conditions, experience_min, experience_max),
             "experience_min": experience_min,
             "experience_max": experience_max,
-            "salary_range": _local_salary_text(conditions, salary_min, salary_max),
-            "salary_min": salary_min,
-            "salary_max": salary_max,
-            "salary_currency": conditions["currency"],
             "work_type": contract,
             "benefits": self._local_benefits(occupation, conditions, contract),
             "location": self._local_location(conditions, country),
             "job_portal": self.random_element(
                 portals["all"] + (portals.get("executive", []) if occupation["executive"] else [])),
-            "naf": naf,
         }
 
     # -- postings ---------------------------------------------------------------

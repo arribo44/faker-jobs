@@ -353,7 +353,9 @@ million companies from their LinkedIn pages, CC BY 4.0), built by
   LinkedIn industry in English locales, `None` in German, Spanish and
   Italian ones; in French locales an activity of the sector from the French
   NAF rév. 2 classification (`company_naf`, e.g. '86.10Z', and its label as
-  `industry`).
+  `industry`): one that fits the LinkedIn industry of a real company (Air
+  France: air transport, not passenger water transport), picked by
+  employment (see below).
 
 LinkedIn industries are mapped by hand to the 35 activity sectors
 (`INDUSTRY_SECTORS` in `scripts/build_companies.py`); the dataset has some
@@ -421,8 +423,9 @@ companies, for `en_GB`).
 **Salaries follow the occupation.** The occupation's ISCO-08 major group
 (`isco_group`, from ESCO) gives its mean gross annual earnings in the
 country: [Eurostat SES 2022](https://ec.europa.eu/eurostat/web/microdata/structure-of-earnings-survey)
-by major group and NACE section of the company (France, Germany, Spain,
-Italy), [BLS OEWS](https://www.bls.gov/oes/) by SOC major group (United
+by major group and NACE section of the company (that of its NAF activity
+in French locales, else that of the occupation's sector; France, Germany,
+Spain, Italy), [BLS OEWS](https://www.bls.gov/oes/) by SOC major group (United
 States). That mean is then adjusted:
 - to the experience asked, by the ratio of the matching age band (under
   30, 30-49, 50 and over) to the group's mean;
@@ -462,7 +465,16 @@ Benefit rules, job boards, default diplomas and their fields of study are
 hand-made and **illustrative** (`scripts/posting_conditions.py`).
 
 The NAF activities of each sector are chosen by hand (`NAF_BY_SECTOR` in
-`scripts/build_occupations.py`) and picked at random within the sector: a
+`scripts/build_occupations.py`) and picked by **employment**: each
+sub-class weighs the persons employed in its NACE group in France
+(Eurostat structural business statistics), shared by the sub-classes of the
+group, so road freight comes up about 30 times more often than passenger
+water transport (the median weight of the sector for public
+administration and associations, which have no figures). For a real
+company, only the activities that fit its LinkedIn industry
+(`scripts/naf_industries.py`, hand-made: "logistics and supply chain" ->
+49.4 road freight, 52 warehousing and support) are picked, when the sector
+has some. The activity is still not chosen for the occupation itself: a
 wastewater plant manager may work for a waste treatment company.
 
 ROME sheets have no description (`None`).

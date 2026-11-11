@@ -15,6 +15,9 @@ and cache it in DATAS/business_sizes/sizes.json:
   the total minus the others; where only 0-9 is published, 2-9 is estimated
   with the country's share of 2-9 in 0-9 elsewhere; sections with two
   confidential classes are left out).
+  Also the persons employed of every NACE division and group (all sizes,
+  latest year: "employment_by_nace"), the weight of the NAF activities of
+  the French companies (build_occupations.py).
 - United States: Census Statistics of US Businesses 2022, employment by
   NAICS sector and enterprise size (employer firms; sizes up to 10,000+),
   from two spreadsheets saved in DATAS/business_sizes/ (no API):
@@ -134,7 +137,14 @@ def fetch_eurostat():
                         grouped[size] += value
                     found[section] = {"year": year, "employees": grouped}
                     break
-        result[country] = {"source": "Eurostat SBS (sbs_sc_ovw), persons employed (EMP_NR) by size class "
+        # Employment of every NACE division and group (all sizes, latest year), for
+        # the weight of the NAF activities of the French companies (build_occupations.py).
+        employment = {}
+        for (key_geo, nace, size, _year), value in sorted(values.items(), key=lambda item: item[0][3]):
+            if key_geo == geo and size == "TOTAL" and len(nace) in (3, 4):
+                employment[nace] = value
+        result[country] = {"employment_by_nace": dict(sorted(employment.items())),
+                           "source": "Eurostat SBS (sbs_sc_ovw), persons employed (EMP_NR) by size class "
                                      "of persons employed, without one-person businesses", "groups": EUROSTAT_GROUPS,
                            "sections": {section: entry["employees"] for section, entry in found.items()},
                            "years": {section: entry["year"] for section, entry in found.items()}}
