@@ -2,10 +2,8 @@
 """
 Build faker_jobs/data/cities.json.gz, the job locations: every city of
 15,000 inhabitants or more of GeoNames (cities15000, CC BY 4.0), picked in
-proportion to its population, for the 216 countries of the Kaggle location
-data (DATAS/faker_locations.csv, whose country names are kept: 'USA', 'UK'...).
-Countries without a GeoNames city of that size keep their Kaggle cities,
-picked uniformly.
+proportion to its population, in the 244 countries that have one, under
+their GeoNames English name ('United States', 'United Kingdom', 'France').
 
 Names: the English name of the city (GeoNames preferred English name, else
 its first English name, else its GeoNames name); for France, Germany, Spain
@@ -21,7 +19,6 @@ Input, in DATAS/geonames/ (https://download.geonames.org/export/dump/):
 cities15000.zip, countryInfo.txt, alternatenames/{FR,DE,ES,IT}.zip saved as
 alt_{FR,DE,ES,IT}.zip. Run with --download to fetch them.
 """
-import csv
 import gzip
 import io
 import json
@@ -34,7 +31,6 @@ import zipfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 GEONAMES_DIR = os.path.join(ROOT, "DATAS", "geonames")
-KAGGLE_LOCATIONS = os.path.join(ROOT, "DATAS", "faker_locations.csv")
 OUTPUT_PATH = os.path.join(ROOT, "faker_jobs", "data", "cities.json.gz")
 BASE_URL = "https://download.geonames.org/export/dump/"
 
@@ -42,18 +38,6 @@ BASE_URL = "https://download.geonames.org/export/dump/"
 LOCAL_LANGUAGES = {"FR": "fr", "DE": "de", "ES": "es", "IT": "it"}
 SKIPPED_FEATURES = {"PPLX", "PPLQ", "PPLH", "PPLW"}
 DISTRICT_KM = 3
-
-# Kaggle country names that differ from the GeoNames ones.
-COUNTRY_CODES = {
-    "Cote d'Ivoire": "CI", "Czech Republic": "CZ", "Democratic Republic Of Congo": "CD",
-    "Islamic Rep. of Iran": "IR", "Kyrgyz Republic": "KG", "Lao PDR": "LA", "Netherlands": "NL",
-    "Rep. of Korea": "KR", "Republic Of Congo": "CG", "Sint Maarten (Dutch part)": "SX",
-    "Slovak Republic": "SK", "St. Kitts and Nevis": "KN", "St. Lucia": "LC",
-    "St. Martin (French part)": "MF", "St. Vincent and the Grenadines": "VC",
-    "Syrian Arab Republic": "SY", "The Bahamas": "BS", "Timor-Leste": "TL", "UAE": "AE",
-    "UK": "GB", "USA": "US", "Virgin Islands (U.S.)": "VI", "West Bank and Gaza": "PS",
-}
-
 
 def download():
     os.makedirs(GEONAMES_DIR, exist_ok=True)
@@ -149,8 +133,6 @@ def drop_districts(rows):
 
 
 def build():
-    with open(KAGGLE_LOCATIONS, encoding="utf-8", newline="") as f:
-        kaggle = list(csv.DictReader(f))
     codes = country_codes()
     cities = read_cities()
     names = {}
@@ -165,41 +147,33 @@ def build():
             row.append(found.get(LOCAL_LANGUAGES[code], name))
         by_code.setdefault(code, []).append(row)
 
-    countries, fallback = {}, []
-    for country in sorted({row["Country"] for row in kaggle}):
-        code = COUNTRY_CODES.get(country) or codes.get(country)
-        if code is None:
-            sys.exit(f"No ISO code for Kaggle country {country!r}: add it to COUNTRY_CODES")
-        rows = drop_districts(sorted(by_code.get(code, []), key=lambda row: (-row[3], row[0])))
-        if not rows:
-            # No city of 15,000 inhabitants: the Kaggle cities, with no population (uniform pick).
-            fallback.append(country)
-            rows = [[row["location"], float(row["latitude"]), float(row["longitude"]), None]
-                    for row in kaggle if row["Country"] == country]
-        countries[country] = {"code": code, "cities": rows}
+    countries = {}
+    for country, code in sorted(codes.items()):
+        if code in by_code:
+            countries[country] = {"code": code, "cities": drop_districts(
+                sorted(by_code[code], key=lambda row: (-row[3], row[0])))}
     data = {
         "meta": {
-            "source": "GeoNames cities15000 (www.geonames.org, CC BY 4.0); "
-                      "Kaggle Job Description Dataset cities where GeoNames has none",
+            "source": "GeoNames cities15000 (www.geonames.org, CC BY 4.0)",
             "row": ["city (English)", "latitude", "longitude", "population", "local name (FR, DE, ES, IT)"],
             "local_languages": LOCAL_LANGUAGES,
         },
         "countries": countries,
     }
-    return data, fallback
+    return data
 
 
 def main():
     if "--download" in sys.argv:
         download()
-    data, fallback = build()
+    data = build()
     # Fixed timestamp: an unchanged build gives the same bytes.
     text = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
     with open(OUTPUT_PATH, "wb") as raw, gzip.GzipFile(fileobj=raw, mode="wb", compresslevel=9, mtime=0) as f:
         f.write(text.encode("utf-8"))
     total = sum(len(country["cities"]) for country in data["countries"].values())
     print(f"Wrote {OUTPUT_PATH}: {total} cities in {len(data['countries'])} countries "
-          f"({os.path.getsize(OUTPUT_PATH) // 1024} KB); Kaggle cities kept for {len(fallback)}: {', '.join(fallback)}")
+          f"({os.path.getsize(OUTPUT_PATH) // 1024} KB)")
 
 
 if __name__ == "__main__":

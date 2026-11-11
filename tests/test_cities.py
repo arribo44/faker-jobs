@@ -22,13 +22,13 @@ import build_cities  # noqa: E402
 class CitiesDataTests(unittest.TestCase):
     def test_every_country_has_cities(self):
         cities = _load_cities()
-        self.assertEqual(len(cities), 216)
+        self.assertEqual(len(cities), 244)
         for entry in cities.values():
             self.assertTrue(entry["cities"], entry["country"])
             for row in entry["cities"]:
                 self.assertTrue(-90 <= row[1] <= 90 and -180 <= row[2] <= 180, row)
         self.assertGreater(len(cities["france"]["cities"]), 400)
-        self.assertGreater(len(cities["usa"]["cities"]), 2000)
+        self.assertGreater(len(cities["united states"]["cities"]), 2000)
 
     def test_local_names_only_for_four_countries(self):
         for key, entry in _load_cities().items():
@@ -62,7 +62,7 @@ class LocationTests(unittest.TestCase):
                      "DATAS/geonames source files not available")
 class BuildCitiesTests(unittest.TestCase):
     def test_packaged_file_is_up_to_date(self):
-        data, _ = build_cities.build()
+        data = build_cities.build()
         with gzip.open(_CITIES_PATH, "rt", encoding="utf-8") as f:
             self.assertEqual(json.load(f), json.loads(json.dumps(data)),
                              msg="faker_jobs/data/cities.json.gz is stale: re-run scripts/build_cities.py")

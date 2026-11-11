@@ -48,7 +48,7 @@ def demo(locale: str) -> None:
     occupation_posting = jobs.job_occupation_posting()
     naf = occupation_posting["company_naf"]
     print(f"  posting: {occupation_posting['job_title']} at {occupation_posting['company']['company']} "
-          f"({occupation_posting['company_sector'] or 'no company in the sector: name made up by the locale'}"
+          f"({occupation_posting['company_sector']}, {occupation_posting['company_size']} employees"
           f"{f', NAF {naf} ' + str(occupation_posting['company']['industry']) if naf else ''}), "
           f"demand {occupation_posting['occupation']['demand']}")
     print(f"  {occupation_posting['work_type']}, {occupation_posting['experience']}, "

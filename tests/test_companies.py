@@ -22,7 +22,8 @@ from rome_labels import SECTORS  # noqa: E402
 class CompaniesDataTests(unittest.TestCase):
     def test_six_countries_and_35_sectors(self):
         data = _load_companies()
-        self.assertEqual(set(data["countries"]), {"USA", "UK", "France", "Germany", "Spain", "Italy"})
+        self.assertEqual(set(data["countries"]),
+                         {"United States", "United Kingdom", "France", "Germany", "Spain", "Italy"})
         codes = set(_load_conditions()["fr_FR"]["sector_codes"].values())
         self.assertEqual(len(codes), 35)
         for country, entry in data["countries"].items():
@@ -46,7 +47,7 @@ class CompaniesDataTests(unittest.TestCase):
                         self.assertTrue(low <= size and (size <= high or size_class == len(grouped) - 1))
                         self.assertTrue(founded is None or 1000 < founded < 2030)
                         self.assertTrue(city < len(cities) if isinstance(city, int) else city)
-                        self.assertEqual(state is not None, country == "USA")
+                        self.assertEqual(state is not None, country == "United States")
                         self.assertLess(industry, len(data["industries"]))
 
     def test_sector_codes_in_every_locale(self):
@@ -85,6 +86,9 @@ class BuildCompaniesTests(unittest.TestCase):
         self.assertEqual(build_companies.clean_name("châteauform'​  group"), "châteauform' group")
         self.assertFalse(build_companies.valid_name("info@acme.com"))
         self.assertFalse(build_companies.valid_name("123"))
+        self.assertFalse(build_companies.valid_name("** private **"))
+        self.assertFalse(build_companies.valid_name("(usta) united states tennis association"))
+        self.assertFalse(build_companies.valid_name("self-employed"))
         self.assertTrue(build_companies.valid_name("3m"))
 
     def test_company_size_in_class(self):

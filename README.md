@@ -10,8 +10,8 @@ occupations** mapped to them in English, German, Spanish and Italian, with **~14
 conditions (contracts, diplomas, salaries from official earnings, benefits,
 job boards) are those of France, Germany, Spain, Italy and the United States.
 
-Job locations are the **~29,500 cities** of 15,000 inhabitants or more of
-[GeoNames](https://www.geonames.org/) in 216 countries, picked in proportion
+Job locations are the **~29,700 cities** of 15,000 inhabitants or more of
+[GeoNames](https://www.geonames.org/) in 244 countries, picked in proportion
 to their population, with their local names in France, Germany, Spain and
 Italy. Hiring companies are **~10,000 real companies** of the United States,
 the United Kingdom, France, Germany, Spain and Italy from the [People Data Labs
@@ -127,35 +127,40 @@ fake.job_portal()                       # "Indeed", "LinkedIn", "ZipRecruiter"..
 ### 🏢 Companies & locations
 
 ```python
-fake.job_company()                      # "Siemens AG"
-fake.job_company(sector="Energy")       # restricted to a sector (see the `job_sectors` property)
-fake.job_company_profile()
+fake.job_company()                      # "Pmg, Inc."
+fake.job_company(sector="Energy")       # of an activity sector (see `job_activity_sectors`)
+fake.job_company_profile(company="IBM") # a company of `job_companies` (case-insensitive)
 # {
-#     'company': '3M', 'sector': 'Conglomerate', 'industry': 'Chemicals',
-#     'city': 'St. Paul', 'state': 'Minnesota', 'zip': '55144',
-#     'website': 'www.3m.com', 'ticker': 'MMM', 'ceo': 'Michael F. Roman',
+#     'company': 'IBM', 'sector': 'IT and telecommunications',
+#     'industry': 'Information technology and services',   # LinkedIn industry (English locales)
+#     'city': 'New York', 'state': 'New York', 'zip': None,
+#     'website': 'ibm.com', 'ticker': None, 'ceo': None, 'founded': 1911,
 # }
-fake.job_company_profile(company="3M")  # a specific company
+fake.job_company_profile(company="Acme")  # unknown name: a company of that name made up by the locale
 fake.job_company_size()                 # 180 (employees, by size class: see below)
 
-fake.job_location()                     # the locale's country by default (the USA here)
-# {'city': 'Houston', 'country': 'USA', 'latitude': 29.7633, 'longitude': -95.3633}
+fake.job_location()                     # the locale's country by default (the United States here)
+# {'city': 'Houston', 'country': 'United States', 'latitude': 29.7633, 'longitude': -95.3633}
 fake.job_location(country="France")     # {'city': 'Paris', 'country': 'France', ...}
 fake.job_location(country="Germany")    # {'city': 'Munich', ...}  (English names outside the locale's country)
 ```
 
-Cities are the 29,500 cities of 15,000 inhabitants or more of GeoNames,
+Cities are the 29,700 cities of 15,000 inhabitants or more of GeoNames,
 picked in proportion to their population (Houston comes up more often than
-Boise; 2,849 cities in the USA, 462 in France, 945 in Germany). Districts
-counted in their city are left out ("Paris 15 Vaugirard"), but GeoNames
-lists some boroughs as cities of their own (Brooklyn). `job_countries`
-lists the 216 countries.
+Boise; 2,849 cities in the United States, 462 in France, 945 in Germany).
+Districts counted in their city are left out ("Paris 15 Vaugirard"), but
+GeoNames lists some boroughs as cities of their own (Brooklyn).
+`job_countries` lists the 244 countries, under their GeoNames English name
+('United States', 'United Kingdom', 'The Netherlands'); `country=` also
+takes their ISO code ('US', 'FR') and 'USA', 'UK', 'UAE'.
 
-In English locales `job_company()`, `job_company_profile()`,
-`job_companies` and `job_sectors` use the 888 companies of the Kaggle [Job
-Description Dataset](https://www.kaggle.com/datasets/ravindrasinghrana/job-description-dataset),
-all large groups; job postings use the People Data Labs companies (see
-[Occupations](#-occupations-rome--esco)). `job_company_size()` picks a size
+Companies are real companies of the locale's country from the People Data
+Labs company dataset, or companies made up by the Faker locale, picked as
+the hiring companies of the postings (see
+[Occupations](#-occupations-rome--esco)); `job_companies` lists the real
+ones of the country (2,257 in the United States: IBM, Apple, Walmart,
+Microsoft...), `job_sectors` is the list of the 35 activity sectors (as
+`job_activity_sectors`). `job_company_size()` picks a size
 class by the share of jobs in the companies of each class in the locale's
 country (People Data Labs: about 1 job in 3 in companies of up to 500
 employees in France, 1 in 2 in Spain and Italy), then a number of employees
@@ -201,10 +206,10 @@ fake.job_company_profile(sector="Santé")   # as the hiring companies of the pos
 |---|---|---|
 | `job_title()`, `job_role()`, `job_role_record()`... | ESCO occupations, in English | ROME (fr) or ESCO (de, es, it) occupations, in the language |
 | conditions (`job_qualification()`, `job_salary_range()`, `job_work_type()`...) | US | the country's |
-| `job_location()` | the USA by default | the locale's country by default, with local names (Deutschland, München, Sevilla, Roma...) |
-| `job_company()`, `job_company_profile()`, `job_sectors` | Kaggle companies and their sectors | People Data Labs companies of the country (or made up by the locale), in an activity sector |
+| `job_location()` | the United States by default (the United Kingdom for `en_GB`) | the locale's country by default, with local names (Deutschland, München, Sevilla, Roma...) |
+| `job_company()`, `job_company_profile()`, `job_companies` | companies of the United States (United Kingdom for `en_GB`), LinkedIn industry | companies of the country, NAF activity in French |
 
-`job_companies` lists the Kaggle companies in every locale. Countries other than the locale's keep their English
+Countries other than the locale's keep their English
 name (`country="Belgium"`); the local name of the locale's country is
 accepted too (`country="Deutschland"`).
 
@@ -321,7 +326,7 @@ million companies from their LinkedIn pages, CC BY 4.0), built by
   jobs in the companies of each class, in the sector and country (number
   of companies × typical size): 45-50% of the postings are in companies of
   up to 250 employees in Germany, Spain and Italy, 30-35% in France and the
-  USA. LinkedIn lists few very small businesses, so 1-10 employees are
+  United States. LinkedIn lists few very small businesses, so 1-10 employees are
   rarer than in national statistics (3-15% of the postings).
 - Then a **real company** of that sector and class: up to 10 per class,
   sector and country (~10,000 in all, 250 KB), with its name, website,
@@ -400,7 +405,8 @@ Lavoro, ZipRecruiter...) and a city of the country:
 
 The US conditions also serve the other locales that use the English data
 (`en_GB`, `nl_NL`, `ja_JP`...): USD salaries, US job boards and a place in
-the USA by default.
+the United States by default (in the United Kingdom, with British
+companies, for `en_GB`).
 
 **Salaries follow the occupation.** The occupation's ISCO-08 major group
 (`isco_group`, from ESCO) gives its mean gross annual earnings in the
@@ -449,9 +455,7 @@ The NAF activities of each sector are chosen by hand (`NAF_BY_SECTOR` in
 `scripts/build_occupations.py`) and picked at random within the sector: a
 wastewater plant manager may work for a waste treatment company.
 
-ROME sheets have no description (`None`). In English locales the
-activity sectors of the occupations are not `job_sectors` (the sectors of
-the Kaggle companies).
+ROME sheets have no description (`None`).
 
 An ESCO occupation takes the sectors that cover at least 25% of the ROME job
 titles mapped to it. Sectors follow ROME, which lists secondary sectors too:
@@ -608,23 +612,6 @@ The source files in `DATAS/` are not published in this repository: the
 package only needs the generated files of `faker_jobs/data/`. They are
 only needed to rebuild them.
 
-The companies of the generic English methods come from the Kaggle dataset:
-
-```
-DATAS/                          curated source files (not published)
-  faker_locations.csv           Kaggle cities: only their country names are used (build_cities.py)
-  faker_firms.csv               companies and profiles (scripts/transform_firms.py)
-  posting_ranges.csv            min/max of numeric fields, measured on the full postings
-                                file by scripts/build_job_stats.py (only the company size is kept)
-  job_descriptions2.csv         full postings file, 1.7 GB (scripts/transform_job_descriptions.py)
-scripts/
-  transform_firms.py            DATAS/firms.csv -> faker_firms.csv
-  transform_job_descriptions.py DATAS/save/archive.zip -> job_descriptions2.csv
-  build_job_stats.py            job_descriptions2.csv -> the statistics files
-  build_data.py                 DATAS/*.csv -> faker_jobs/data/jobs_data.json
-faker_jobs/data/jobs_data.json  packaged companies (~190 KB)
-```
-
 The cities come from GeoNames:
 
 ```
@@ -670,14 +657,9 @@ scripts/
 ```bash
 for l in en de es it; do python scripts/fetch_esco.py $l; done   # only if the crosswalk changed
 pip install -e ".[build]"         # openpyxl and xlrd, to read the xlsx/xls sources
-python scripts/build_occupations.py # after build_data.py
-```
-
-After changing anything in `DATAS/`:
-
-```bash
-python scripts/build_job_stats.py   # only if job_descriptions2.csv changed (~1 min)
-python scripts/build_data.py
+python scripts/build_cities.py      # first: build_companies.py matches cities to its output
+python scripts/build_occupations.py
+python scripts/build_companies.py
 ```
 
 ---
@@ -691,7 +673,7 @@ ruff check faker_jobs tests scripts
 mypy faker_jobs tests/test_typing.py
 ```
 
-`tests/test_build_data.py` and `tests/test_build_occupations.py` also check
+`tests/test_cities.py` and `tests/test_build_occupations.py` also check
 that the packaged JSON files are in sync with `DATAS/` (skipped when
 `DATAS/` is not available).
 
