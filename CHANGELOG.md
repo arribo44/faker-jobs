@@ -9,7 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Hiring companies from the People Data Labs Free Company Dataset (7 million companies from LinkedIn pages, CC BY 4.0): `faker_jobs/data/companies.json.gz` (~250 KB) holds about 10,000 real companies of the United States, the United Kingdom, France, Germany, Spain and Italy (up to 10 per country, activity sector and size class, from 11 employees: name, website, founding year, headquarters city, US state, number of employees, LinkedIn industry) and the share of jobs of each size class (1-10 ... 10,001+ employees) by country and sector. Built by `scripts/build_companies.py` from `DATAS/7millionscompanies/companies_sorted.csv`; LinkedIn industries are mapped by hand to the 35 activity sectors.
+- `CompanyProfile.founded`: the company's founding year (None for made-up and Kaggle companies).
+
 ### Changed
+- The hiring company of `job_occupation_posting()` and `job_posting()`, in every locale: a size class is picked by the share of jobs of each class in the occupation's sector and the job's country, then a real company of that class and sector, or one made up by the Faker locale for 1-10 employees, at random in classes of fewer than 10 companies (no large group gets every job of its class), and outside the six countries. Postings now range from small businesses to large groups (30-50% of them in companies of up to 250 employees) instead of 12,600 to 135,000 employees; `company_size` is the company's own size, the same in every posting. Companies of up to 500 employees hire in their headquarters city. Every posting has a company of its sector: English postings no longer get a bare made-up name with `company_sector` None (about 1 in 5), and the Kaggle companies, all large groups with their headquarters around the world, are no longer used in postings.
+- `job_company_profile()` in German, Spanish, French and Italian locales returns these companies (a made-up one with `company=`); `job_company_size()` picks a size class by the share of jobs in the locale's country.
+- `en_GB`: jobs are located in the United Kingdom by default, with British companies (conditions stay those of the United States).
+- `conditions.json` gives the ROME code of each activity sector (`sector_codes`); the occupation files no longer list the Kaggle companies of each sector.
 - New `build` extra (`pip install -e ".[build]"`): openpyxl and xlrd, needed only to rebuild `faker_jobs/data` from `DATAS/`; the `dev` extra includes it.
 - `transform_firms.py` and `transform_job_descriptions.py` move from the repository root to `scripts/`.
 

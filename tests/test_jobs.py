@@ -137,7 +137,10 @@ class TestJobsProvider(unittest.TestCase):
         self.assertIn(None, values)
 
     def test_company_size(self):
-        self.assertTrue(12646 <= self.fake.job_company_size() <= 134834)
+        sizes = [self.fake.job_company_size() for _ in range(300)]
+        self.assertGreaterEqual(min(sizes), 1)
+        self.assertTrue(any(size <= 50 for size in sizes))
+        self.assertTrue(any(size > 10000 for size in sizes))
 
     # -- postings -------------------------------------------------------------------
 
@@ -209,7 +212,8 @@ class TestOtherLocalesUseUsConditions(unittest.TestCase):
             self.assertIn(fake.job_title(), provider.job_titles)
             posting = fake.job_posting()
             self.assertEqual(posting["salary_currency"], "USD", msg=locale)
-            self.assertEqual(posting["location"]["country"], "USA", msg=locale)
+            # en_GB: jobs and companies in the United Kingdom (US conditions).
+            self.assertEqual(posting["location"]["country"], "UK" if locale == "en_GB" else "USA", msg=locale)
 
 
 if __name__ == "__main__":

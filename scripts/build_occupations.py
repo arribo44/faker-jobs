@@ -26,8 +26,6 @@ Inputs (DATAS/ is not published):
   contract mix (see contract_weights())
 - DATAS/naf/naf2008_liste_n5.xls (INSEE, NAF rév. 2 sub-classes): the
   activity codes of the French companies (see NAF_BY_SECTOR)
-- faker_jobs/data/jobs_data.json: companies, matched to the ROME sectors
-  (re-run this script after build_data.py)
 
 The occupation files are gzipped JSON (~4x smaller installed), written
 with a fixed timestamp so that an unchanged build gives the same bytes.
@@ -57,8 +55,6 @@ from rome_labels import DOMAINS, SECTORS, SOFT_SKILLS  # noqa: E402
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROME_PATH = os.path.join(ROOT, "DATAS", "metiers", "rome-4-0-métiers-×-secteurs-d-activité.xlsx")
 OUTPUT_DIR = os.path.join(ROOT, "faker_jobs", "data")
-# Companies of the Kaggle data (built by build_data.py), matched to ROME sectors.
-JOBS_DATA_PATH = os.path.join(OUTPUT_DIR, "jobs_data.json")
 LOCALES = ("de_DE", "en_US", "es_ES", "fr_FR", "it_IT")
 
 BMO_PATH = os.path.join(ROOT, "DATAS", "bmo", "Base-open-data-BMO-2026.xlsx")
@@ -568,7 +564,9 @@ def make_conditions(locale, office_domains, salary, sector_names, naf, lfs, naf_
                   "experience": EXPERIENCE, "skill_levels": SKILL_LEVELS,
                   "benefits_per_posting": BENEFITS_PER_POSTING, "office_domains": sorted(office_domains),
                   "salary": salary, "section_by_sector": section_by_sector(sector_names, naf),
-                  "fields_of_study": {sector_names[code]: field for code, field in FIELDS_OF_STUDY[locale].items()}}
+                  "fields_of_study": {sector_names[code]: field for code, field in FIELDS_OF_STUDY[locale].items()},
+                  # ROME code of each activity sector: the key of companies.json.gz.
+                  "sector_codes": {name: code for code, name in sorted(sector_names.items(), key=lambda x: int(x[0]))}}
     if naf_sectors is not None:
         conditions["naf_by_sector"] = naf_sectors
     return conditions
@@ -699,63 +697,6 @@ def build_esco(locale, jobs, weights, seasonal, naf, salary, salary_source, lfs)
     return {**package(meta, sector_labels.values(), occupations), "conditions": conditions}
 
 
-# ROME activity sector of the companies (faker_jobs/data/jobs_data.json), from
-# their Kaggle sector label: the first rule whose regex matches the label
-# wins, so specific rules come before broad ones. Used by
-# job_occupation_posting() to pick a company that fits the occupation.
-COMPANY_SECTOR_RULES = [
-    (r"Payroll|Staffing|Online Job Search|Professional Services|Business Services|^Services$", "103"),
-    (r"Real Estate", "92"),
-    (r"Financ|Bank|Insurance|Asset Management", "91"),
-    (r"Advertising", "94"),
-    (r"Publishing", "97"),
-    (r"Restaurant|Food Services|Hospitality|Hotel", "102"),
-    (r"Travel|Cruise|Aviation", "101"),
-    (r"Gambling", "93"),
-    (r"Agricult", "79"),
-    (r"Waste", "80"),
-    (r"Airline|Airport|Transport|Logistic|Shipping|Postal|Rail|Rental Cars|Ridesharing", "113"),
-    (r"Rental & Leasing|Equipment Rental", "88"),
-    (r"Automotive|Motorcycle|Recreational Vehicles", "95"),
-    (r"Education", "112"),
-    (r"Health|Medical|Hospital", "85"),
-    (r"Semiconductor|Electronics|Electrical|Lighting|Communication Equipment", "104"),
-    (r"Software|Technolog|IT |Internet|Data and Analytics|Telecom|Communication Services", "96"),
-    (r"Pharma|Biotech|Chemical|Fertilizer|Agrochemical|Paints|Industrial Gases|Flavor|Beauty|Hygiene"
-     r"|Homecare|Lubricant|Lab Equipment", "106"),
-    (r"Food|Beverage|Tobacco", "83"),
-    (r"Media|Entertainment", "87"),
-    (r"Apparel|Fashion", "90"),
-    (r"Timber|Paper|Packaging", "89"),
-    (r"Steel|Metal|Aluminum", "100"),
-    (r"Oil|Gas|Energy|Utilities", "108"),
-    (r"Construct|Building|Cement|Infrastructure|Flooring", "99"),
-    (r"Engineering|Testing and Certification", "98"),
-    (r"Retail|E-commerce|Wholesale|Consumer|Appliances", "88"),
-    (r"Mining|Conglomerate|Diversified|Industr|Manufacturing|Aerospace|Machinery|Tools|Motion|HVAC|Elevator"
-     r"|Materials", "84"),
-]
-
-
-def company_sector_code(label):
-    """ROME sector code of a Kaggle company sector label (see COMPANY_SECTOR_RULES)."""
-    for pattern, code in COMPANY_SECTOR_RULES:
-        if re.search(pattern, label):
-            return code
-    raise ValueError(f"No ROME sector for the company sector {label!r}: add a rule to COMPANY_SECTOR_RULES")
-
-
-def companies_by_sector(sector_names):
-    """{sector name: company names} for the packaged companies, sector names from {code: name}."""
-    with open(JOBS_DATA_PATH, encoding="utf-8") as f:
-        companies = json.load(f)["companies"]
-    grouped = collections.defaultdict(list)
-    for company in companies:
-        if company["sector"]:
-            grouped[sector_names[company_sector_code(company["sector"])]].append(company["company"])
-    return {sector: sorted(names) for sector, names in sorted(grouped.items())}
-
-
 def lfs_country(locale, lfs):
     """The Labour Force Survey figures of the locale's country, None for the United States."""
     country = EUROSTAT_COUNTRIES.get(locale)
@@ -790,11 +731,10 @@ def build_occupations():
         lfs = json.load(f)
     built = {"fr_FR": build_fr(sectors, jobs, weights, seasonal, naf, isco,
                                salary_table("fr_FR", eurostat, bls), lfs)}
-    for locale, language in ESCO_LOCALES.items():
+    for locale in ESCO_LOCALES:
         source = SALARY_SOURCES["bls"].format(year=bls["year"]) if locale == "en_US" else SALARY_SOURCES["eurostat"]
         built[locale] = build_esco(locale, jobs, weights, seasonal, naf, salary_table(locale, eurostat, bls),
                                    source, lfs)
-        built[locale]["companies_by_sector"] = companies_by_sector(SECTORS[language])
     return dict(sorted(built.items()))
 
 

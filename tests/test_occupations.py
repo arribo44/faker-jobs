@@ -13,6 +13,7 @@ from faker_jobs import (
     OccupationPosting,
     OccupationRecord,
     _gender_form,
+    _load_companies,
     _occupation_locale,
 )
 
@@ -224,44 +225,62 @@ class OccupationTests:
             self.fake.job_occupation_posting(skills=-1)
 
 
-class KaggleCompanyTests:
-    """Postings of the ESCO locales: Kaggle companies of the occupation's sector."""
+class HiringCompanyTests:
+    """The hiring company of a posting: People Data Labs companies of the
+    occupation's sector, by size class, or companies made up by the locale."""
+
+    def _companies(self, posting):
+        """The packaged company rows of the posting's country and sector (None outside the six countries)."""
+        conditions = self.provider._local_conditions()
+        country = self.provider._company_country(conditions, posting["location"])
+        if country is None:
+            return None
+        code = conditions["sector_codes"][posting["occupation"]["sector"]]
+        return [row for rows in _load_companies()["countries"][country]["by_class"][code] for row in rows]
 
     def test_posting_company_fits_the_occupation(self):
-        fitted = 0
-        for _ in range(50):
+        real = 0
+        for _ in range(60):
             posting = self.fake.job_occupation_posting()
-            if posting["company_sector"] is None:
-                self.assertIsNone(posting["company"]["sector"])
-                self.assertTrue(posting["company"]["company"])
-            else:
-                fitted += 1
-                self.assertEqual(posting["company_sector"], posting["occupation"]["sector"])
-                self.assertIn(posting["company"]["company"],
-                              self.provider._occupations["companies_by_sector"][posting["company_sector"]])
-        self.assertGreater(fitted, 25)
+            company, sector = posting["company"], posting["occupation"]["sector"]
+            self.assertEqual(posting["company_sector"], sector)
+            self.assertEqual(company["sector"], sector)
+            self.assertIsInstance(posting["company_size"], int)
+            self.assertGreaterEqual(posting["company_size"], 1)
+            self.assertIsNone(company["ticker"])
+            if company["website"]:  # a real company of the sector, with its own size
+                real += 1
+                row = next(row for row in self._companies(posting) if row[0] == company["company"])
+                self.assertEqual(posting["company_size"], row[5])
+                self.assertEqual(company["founded"], row[2])
+                self.assertIsNone(company["ceo"])
+                if posting["company_size"] <= 500 and isinstance(row[3], int):
+                    self.assertEqual(company["city"], posting["location"]["city"])
+            else:  # made up by the locale, in the job's city
+                self.assertTrue(company["company"] and company["ceo"])
+                self.assertEqual(company["city"], posting["location"]["city"])
+        self.assertGreater(real, 30)
+
+    def test_company_sizes_vary(self):
+        sizes = [self.fake.job_occupation_posting()["company_size"] for _ in range(200)]
+        self.assertTrue(any(size <= 250 for size in sizes))
+        self.assertTrue(any(size > 5000 for size in sizes))
 
     def test_posting_prefers_the_requested_sector(self):
-        sectors = self.provider._occupations["companies_by_sector"]
-        sector = max(sectors, key=lambda name: len(sectors[name]))
+        sector = self.provider.job_activity_sectors[0]
         for _ in range(20):
             posting = self.fake.job_occupation_posting(sector=sector)
             self.assertEqual(posting["occupation"]["sector"], sector)
             self.assertEqual(posting["company_sector"], sector)
 
-    def test_posting_without_fitting_company_makes_one_up(self):
-        sectors = self.provider._occupations["companies_by_sector"]
-        lonely = next(occupation for occupation in self.provider._occupations["occupations"]
-                      if not sectors.get(occupation["sectors"][0]))
-        posting = self.fake.job_occupation_posting(code=lonely["code"])
-        self.assertIsNone(posting["company_sector"])
-        self.assertIsNone(posting["company"]["ticker"])
-
-    def test_no_naf_code(self):
-        self.assertIsNone(self.fake.job_occupation_posting()["company_naf"])
+    def test_company_abroad_is_made_up(self):
+        posting = self.fake.job_occupation_posting(country="Belgium")
+        self.assertEqual(posting["location"]["country"], "Belgium")
+        self.assertIsNone(posting["company"]["website"])
+        self.assertEqual(posting["company"]["city"], posting["location"]["city"])
 
 
-class TestRomeOccupations(OccupationTests, unittest.TestCase):
+class TestRomeOccupations(HiringCompanyTests, OccupationTests, unittest.TestCase):
     locale = "fr_FR"
 
     def test_rome_sheet(self):
@@ -284,8 +303,6 @@ class TestRomeOccupations(OccupationTests, unittest.TestCase):
             self.assertEqual(company["sector"], sector)
             self.assertIn([posting["company_naf"], company["industry"]], [entry[:2] for entry in naf[sector]])
             self.assertRegex(posting["company_naf"], r"^\d\d\.\d\d[A-Z]$")
-            self.assertEqual(company["city"], posting["location"]["city"])
-            self.assertTrue(company["company"] and company["ceo"])
         self.assertIn(["86.10Z", "Activités hospitalières", "Q"], naf["Santé"])
 
     def _posted_title_source(self, job_title, code):
@@ -518,7 +535,7 @@ class TestGenderForm(unittest.TestCase):
             self.assertEqual(_gender_form(title, "F", "esco"), title)
 
 
-class TestEscoOccupations(KaggleCompanyTests, OccupationTests, unittest.TestCase):
+class TestEscoOccupations(HiringCompanyTests, OccupationTests, unittest.TestCase):
     locale = "en_US"
 
     def test_esco_occupations_have_english_descriptions(self):
@@ -532,25 +549,17 @@ class TestEscoOccupations(KaggleCompanyTests, OccupationTests, unittest.TestCase
         Faker.seed(1)
         self.assertEqual(self.fake.job_occupation_title(), title)
 
+    def test_no_naf_code(self):
+        self.assertIsNone(self.fake.job_occupation_posting()["company_naf"])
+
     def test_english_posting_has_us_conditions(self):
         posting = self.fake.job_occupation_posting()
         self.assertEqual(posting["salary_currency"], "USD")
         self.assertEqual(posting["occupation"]["qualifications"], [])
 
 
-class LocalCompanyTests:
-    """Postings of the German, Spanish and Italian locales: companies made up by the locale."""
-
-    def test_posting_company_is_made_up_in_the_sector(self):
-        kaggle = set(self.provider.job_companies)
-        for _ in range(30):
-            posting = self.fake.job_occupation_posting()
-            company = posting["company"]
-            self.assertEqual(posting["company_sector"], posting["occupation"]["sector"])
-            self.assertEqual(company["sector"], posting["occupation"]["sector"])
-            self.assertEqual(company["city"], posting["location"]["city"])
-            self.assertIsNone(company["ticker"])
-            self.assertNotIn(company["company"], kaggle)
+class LocalCompanyTests(HiringCompanyTests):
+    """Postings of the German, Spanish and Italian locales: no NAF code."""
 
     def test_no_naf_code(self):
         self.assertIsNone(self.fake.job_occupation_posting()["company_naf"])

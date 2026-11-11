@@ -87,15 +87,14 @@ class LocalizedTests:
         self.assertEqual(self.fake.job_location()["country"], self.country)
         self.assertEqual(self.fake.job_location(country="Belgium")["country"], "Belgium")
 
-    def test_companies_made_up_in_activity_sectors(self):
+    def test_companies_in_activity_sectors(self):
         self.assertEqual(self.provider.job_sectors, self.provider.job_activity_sectors)
-        kaggle = set(self.provider.job_companies)
         sector = self.provider.job_activity_sectors[0]
-        profile = self.fake.job_company_profile(sector=sector)
-        self.assertEqual(profile["sector"], sector)
-        self.assertNotIn(profile["company"], kaggle)
-        self.assertIsNone(profile["ticker"])
-        self.assertTrue(profile["ceo"])
+        for _ in range(10):
+            profile = self.fake.job_company_profile(sector=sector)
+            self.assertEqual(profile["sector"], sector)
+            self.assertIsNone(profile["ticker"])
+            self.assertTrue(profile["website"] or profile["ceo"])  # real, or made up with a CEO
         self.assertTrue(self.fake.job_company())
         self.assertEqual(self.fake.job_company_profile(company="Acme")["company"], "Acme")
         with self.assertRaisesRegex(ValueError, "Unknown activity sector"):
@@ -105,7 +104,6 @@ class LocalizedTests:
         posting = self.fake.job_posting()
         self.assertEqual(posting["salary_currency"], self.conditions["currency"])
         self.assertEqual(posting["location"]["country"], self.country)
-        self.assertNotIn(posting["company"]["company"], set(self.provider.job_companies))
 
 
 class TestFrenchLocalized(LocalizedTests, unittest.TestCase):
