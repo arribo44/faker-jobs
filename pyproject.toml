@@ -27,7 +27,9 @@ classifiers = [
 
 [project.optional-dependencies]
 test = ["pytest"]
-dev = ["pytest", "ruff", "build", "mypy", "openpyxl", "xlrd"]
+# Rebuilding faker_jobs/data from DATAS/ (scripts/build_occupations.py reads xlsx and xls files).
+build = ["openpyxl", "xlrd"]
+dev = ["faker-jobs[build]", "pytest", "ruff", "build", "mypy"]
 
 [project.urls]
 Homepage = "https://github.com/arribo44/faker-jobs"

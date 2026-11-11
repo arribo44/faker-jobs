@@ -13,7 +13,7 @@ size range of posting_ranges.csv; the others feed the reports):
   (experience, salary range bounds, company size, posting date).
 
 The raw file is DATAS/job_descriptions2.csv (~1.6M postings, see
-transform_job_descriptions.py), only needed to regenerate these statistics:
+scripts/transform_job_descriptions.py), only needed to regenerate these statistics:
 
     python scripts/build_job_stats.py [path/to/job_descriptions2.csv]
 """

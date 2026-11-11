@@ -290,7 +290,8 @@ def build(report):
         "et indépendamment les uns des autres : chaque valeur pèse à peu près autant que les autres.",
         f"<strong>La Chine pèse trois fois plus que les autres pays</strong> ({fmt_pct(china)} contre "
         f"{fmt_pct(median_country, 2)} pour un pays médian) : Hong Kong et Macao y ont été rattachés "
-        "(<code>COUNTRY_FIXES</code> de <code>transform_job_descriptions.py</code>), soit trois villes au lieu d'une.",
+        "(<code>COUNTRY_FIXES</code> de <code>scripts/transform_job_descriptions.py</code>), "
+        "soit trois villes au lieu d'une.",
         f"<strong>{NUMBERS_FR.get(len(half_portals), len(half_portals))} portails sur {len(full['job_portal'])} "
         f"sont deux fois moins présents</strong> que les autres : {', '.join(half_portals)}.",
         f"<strong>Les rôles ne sont pas égaux, mais par paliers</strong> : chaque rôle compte un multiple exact "
