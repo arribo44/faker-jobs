@@ -250,8 +250,9 @@ class HiringCompanyTests:
             self.assertIsNone(company["ticker"])
             if company["website"]:  # a real company of the sector, with its own size
                 real += 1
-                row = next(row for row in self._companies(posting) if row[0] == company["company"])
-                self.assertEqual(posting["company_size"], row[5])
+                # Some names come twice in a sector (two LinkedIn pages): the row of that size.
+                row = next(row for row in self._companies(posting)
+                           if row[0] == company["company"] and row[5] == posting["company_size"])
                 self.assertEqual(company["founded"], row[2])
                 self.assertIsNone(company["ceo"])
                 if posting["company_size"] <= 500 and isinstance(row[3], int):
