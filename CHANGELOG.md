@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.7.0] - 2026-11-11
+
 ### Added
 - Hiring companies from the People Data Labs Free Company Dataset (7 million companies from LinkedIn pages, CC BY 4.0): `faker_jobs/data/companies.json.gz` (~250 KB) holds about 10,000 real companies of the United States, the United Kingdom, France, Germany, Spain and Italy (up to 10 per country, activity sector and size class, from 11 employees: name, website, founding year, headquarters city, US state, number of employees, LinkedIn industry) and the share of jobs of each size class (1-10 ... 10,001+ employees) by country and sector. For 10,001+ employees, the largest groups of each sector (IBM, Apple, Walmart, Microsoft...). Built by `scripts/build_companies.py` from `DATAS/7millionscompanies/companies_sorted.csv`; LinkedIn industries are mapped by hand to the 35 activity sectors.
 - `CompanyProfile.founded`: the company's founding year (None for made-up companies).
