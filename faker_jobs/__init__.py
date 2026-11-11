@@ -17,17 +17,15 @@ sectors, skills, knowledge and soft skills. The posting conditions
 are those of France, Germany, Spain, Italy or, for every other locale, the
 United States.
 
-Job locations are the ~29,500 cities of 15,000 inhabitants or more of
-GeoNames in 216 countries, picked in proportion to their population, with
+Job locations are the ~29,700 cities of 15,000 inhabitants or more of
+GeoNames in 244 countries, picked in proportion to their population, with
 their local names in France, Germany, Spain and Italy. Hiring companies come
 from the People Data Labs company dataset (LinkedIn pages, CC BY 4.0): about
 10,000 real companies of the United States, the United Kingdom, France,
 Germany, Spain and Italy, by activity sector and size class, picked by the
 share of jobs of each size class; the smallest ones (1 to 10 employees) are
-made up by the Faker locale. The generic company methods of English locales
-(`job_company_profile`...) keep the 888 companies of the "Job Description
-Dataset" (Kaggle). Contact names and phone numbers always come from the
-Faker locale.
+made up by the Faker locale. Contact names and phone numbers always come
+from the Faker locale.
 """
 import difflib
 import gzip
@@ -44,10 +42,9 @@ from faker.providers import BaseProvider
 __version__ = "0.6.0"
 
 _DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
-_DATA_PATH = os.path.join(_DATA_DIR, "jobs_data.json")
-_data_cache: dict[str, Any] | None = None
 _CITIES_PATH = os.path.join(_DATA_DIR, "cities.json.gz")
 _cities_cache: dict[str, Any] | None = None
+_country_aliases: dict[str, str] = {}
 
 # Locales with their own occupation data, and the one used for every other locale.
 OCCUPATION_LOCALES = ("de_DE", "en_US", "es_ES", "fr_FR", "it_IT")
@@ -61,7 +58,7 @@ _COMPANIES_PATH = os.path.join(_DATA_DIR, "companies.json.gz")
 _companies_cache: dict[str, Any] | None = None
 # Locales whose country has companies but no posting conditions of its own:
 # jobs and companies are in that country, with the conditions of the United States.
-_HOME_COUNTRIES = {"en_GB": "UK"}
+_HOME_COUNTRIES = {"en_GB": "United Kingdom"}
 # Companies up to this size class (201-500 employees) hire in their headquarters city.
 _SINGLE_SITE_MAX_CLASS = 3
 # Companies sampled per sector and size class: in a class of fewer companies,
@@ -103,8 +100,8 @@ class CompanyProfile(TypedDict):
     """A hiring company, as returned by `JobsProvider.job_company_profile()`.
 
     Fields missing from the source data are None: no state outside the US,
-    no ticker or CEO for People Data Labs companies (a made-up CEO for
-    made-up companies), no founding year for Kaggle companies."""
+    no zip or ticker, no CEO for People Data Labs companies (a made-up CEO
+    for made-up companies), no founding year for made-up companies."""
 
     company: str
     sector: str | None
@@ -260,15 +257,6 @@ class JobPosting(TypedDict):
     contact: str
 
 
-def _load_data() -> dict[str, Any]:
-    global _data_cache
-    if _data_cache is None:
-        with open(_DATA_PATH, encoding="utf-8") as f:
-            raw = json.load(f)
-        _data_cache = _build_index(raw)
-    return _data_cache
-
-
 def _load_cities() -> dict[str, Any]:
     """{lowercase country: {"country": name, "cities": rows, "cum_weights":
     cumulative populations, or None for a uniform pick}}; a row is [English
@@ -287,22 +275,18 @@ def _load_cities() -> dict[str, Any]:
             }
             for country, entry in raw["countries"].items()
         }
+        # ISO codes ('US', 'FR') and the short names of version 0.6 ('USA', 'UK', 'UAE').
+        _country_aliases.update({entry["code"].lower(): country.lower() for country, entry in raw["countries"].items()})
+        _country_aliases.update({"usa": "united states", "uk": "united kingdom", "uae": "united arab emirates"})
     return _cities_cache
 
 
-def _build_index(raw: dict[str, Any]) -> dict[str, Any]:
-    """Lookups on the Kaggle companies."""
-    by_sector: dict[str, list[dict[str, Any]]] = {}
-    for company in raw["companies"]:
-        if company["sector"]:
-            by_sector.setdefault(company["sector"], []).append(company)
-
-    return {
-        **raw,
-        "company_by_name": {company["company"].lower(): company for company in raw["companies"]},
-        "companies_by_sector": by_sector,
-        "sector_by_name": {sector.lower(): sector for sector in by_sector},
-    }
+def _country_entry(country: str) -> dict[str, Any] | None:
+    """The cities of a country, by name, ISO code or alias (case-insensitive)."""
+    cities = _load_cities()
+    key = str(country).strip().lower()
+    found: dict[str, Any] | None = cities.get(key) or cities.get(_country_aliases.get(key, ""))
+    return found
 
 
 def _load_conditions() -> dict[str, Any]:
@@ -345,7 +329,16 @@ def _load_companies() -> dict[str, Any]:
                 "counts": entry["counts"],
                 "by_class": by_class,
             }
-        _companies_cache = {"classes": classes, "industries": raw["industries"], "countries": countries}
+        # {country: {lower-case name: (sector code, size class, row)}}, for job_company_profile(company=...).
+        by_name: dict[str, dict[str, tuple[str, int, list[Any]]]] = {}
+        for country, entry in countries.items():
+            lookup = by_name.setdefault(country, {})
+            for code, grouped in entry["by_class"].items():
+                for size_class, rows in enumerate(grouped):
+                    for row in rows:
+                        lookup.setdefault(row[0].lower(), (code, size_class, row))
+        _companies_cache = {"classes": classes, "industries": raw["industries"], "countries": countries,
+                            "by_name": by_name}
     return _companies_cache
 
 
@@ -519,10 +512,6 @@ class JobsProvider(BaseProvider):
     occupations_locale: str | None = None
 
     @property
-    def _data(self) -> dict[str, Any]:
-        return _load_data()
-
-    @property
     def _occupations(self) -> dict[str, Any]:
         locale = self.occupations_locale
         if locale is None:
@@ -537,12 +526,6 @@ class JobsProvider(BaseProvider):
         using the English data (en_US, en_GB, nl_NL...)."""
         conditions: dict[str, Any] = self._occupations["conditions"]
         return conditions
-
-    def _local_companies(self) -> bool:
-        """True where the generic company methods use the activity sectors
-        (German, Spanish, French and Italian data); False where they use the
-        Kaggle companies (English data)."""
-        return bool(self._occupations["meta"]["language"] != "en")
 
     # -- job titles / roles -----------------------------------------------------
 
@@ -699,8 +682,8 @@ class JobsProvider(BaseProvider):
 
     @property
     def job_countries(self) -> list[str]:
-        """list: every country a job can be located in (216), sorted, with
-        the English names of `job_location(country=...)` ('France', 'USA'...)."""
+        """list: every country a job can be located in (244), sorted, with
+        the English names of `job_location(country=...)` ('France', 'United States'...)."""
         return sorted(entry["country"] for entry in _load_cities().values())
 
     def job_location(self, country: str | None = None) -> LocationRecord:
@@ -724,6 +707,9 @@ class JobsProvider(BaseProvider):
             country = self._home_country(conditions)
         elif str(country).strip().lower() == local_country.lower():
             country = conditions["country"]
+        else:
+            entry = _country_entry(country)
+            country = entry["country"] if entry is not None else country  # 'US', 'USA' -> 'United States'
         local = country == conditions["country"]
         return self._city(country, local_country if local else None)
 
@@ -737,7 +723,7 @@ class JobsProvider(BaseProvider):
     def _city(self, country: str, local_country: str | None = None) -> LocationRecord:
         """A city of `country`, picked by population; with `local_country`,
         the local names of the city and the country."""
-        entry = _load_cities().get(str(country).strip().lower())
+        entry = _country_entry(country)
         if entry is None:
             similar = _suggest_similar(country, self.job_countries)
             msg = f"Unknown country: {country!r}"
@@ -765,86 +751,49 @@ class JobsProvider(BaseProvider):
 
     @property
     def job_sectors(self) -> list[str]:
-        """list: every company sector, sorted: those of the Kaggle companies
-        (e.g. 'Financial Services') in English locales, the activity sectors
-        (see `job_activity_sectors`) where companies are made up."""
-        if self._local_companies():
-            return self.job_activity_sectors
-        return sorted(self._data["companies_by_sector"])
+        """list: the sectors of the companies: the activity sectors of the
+        occupations (see `job_activity_sectors`)."""
+        return self.job_activity_sectors
 
     @property
     def job_companies(self) -> list[str]:
-        """list: every company name of the Kaggle data (e.g. '3M'), sorted.
-        German, Spanish, French and Italian locales make their company names
-        up (see `job_company`)."""
-        return sorted([c["company"] for c in self._data["companies"]])
-
-    def _pick_company(self, company: str | None = None, sector: str | None = None) -> dict[str, Any]:
-        if company is not None:
-            found = self._data["company_by_name"].get(str(company).strip().lower())
-            if found is None:
-                similar = _suggest_similar(company, self._data["company_by_name"].keys())
-                msg = f"Unknown company: {company!r}"
-                if similar:
-                    msg += f". Did you mean: {', '.join(similar)}?"
-                raise ValueError(msg)
-            return found
-        if sector is None:
-            return self.random_element(self._data["companies"])
-        name = self._data["sector_by_name"].get(str(sector).strip().lower())
-        if name is None:
-            similar = _suggest_similar(sector, self._data["companies_by_sector"].keys())
-            sectors = sorted(self._data["companies_by_sector"].keys())
-            msg = f"Unknown sector: {sector!r}"
-            if similar:
-                msg += f". Did you mean: {', '.join(similar)}?"
-            else:
-                msg += f". Available sectors: {', '.join(sectors[:5])}..."
-            raise ValueError(msg)
-        return self.random_element(self._data["companies_by_sector"][name])
+        """list: the names of the real companies of the locale's country
+        (People Data Labs, e.g. 'IBM'), sorted. The company of a posting or
+        profile may also be made up by the Faker locale (see
+        `job_occupation_posting`)."""
+        country = self._home_country(self._local_conditions())
+        return sorted(row[0] for _, _, row in _load_companies()["by_name"][country].values())
 
     def job_company(self, sector: str | None = None) -> str:
-        """Return a random hiring company name, optionally restricted to a
-        sector (see `job_sectors`), as `job_company_profile`.
+        """Return a random hiring company name, optionally of an activity
+        sector (see `job_activity_sectors`), as `job_company_profile`.
 
         Not named `company` so as not to shadow Faker's own `company()`."""
         return self.job_company_profile(sector=sector)["company"]
 
     def job_company_profile(self, company: str | None = None, sector: str | None = None) -> CompanyProfile:
-        """Return the profile of a hiring company.
+        """Return the profile of a hiring company of the locale's country.
 
-        English locales: a Kaggle company (the given one, or a random one,
-        optionally of a sector): sector, industry, headquarters
-        city/state/zip, website, ticker and CEO.
-
-        German, Spanish, French and Italian locales: a company of the
-        country in an activity sector (`sector`, else a random one), as the
-        hiring companies of `job_occupation_posting`; in French locales, a
-        NAF activity of the sector as `industry`. With `company`, a company
-        of that name made up by the Faker locale, with a city of the country
-        and a CEO."""
-        if self._local_companies():
-            conditions = self._local_conditions()
-            name = self._resolve_activity_sector(sector) if sector is not None else self.job_activity_sector()
-            if company is not None:
-                return self._local_company(name, conditions, self.job_location(), company)
-            return self._hiring_company(name, conditions, self.job_location(), None)[0]
-        return self._kaggle_company_profile(company, sector)
-
-    def _kaggle_company_profile(self, company: str | None = None, sector: str | None = None) -> CompanyProfile:
-        found = self._pick_company(company=company, sector=sector)
-        return {
-            "company": found["company"],
-            "sector": found["sector"],
-            "industry": found["industry"],
-            "city": found["city"],
-            "state": found["state"],
-            "zip": found["zip"],
-            "website": found["website"],
-            "ticker": found["ticker"],
-            "ceo": found["ceo"],
-            "founded": None,
-        }
+        Without `company`: a company of an activity sector (`sector`, else a
+        random one), picked as the hiring companies of
+        `job_occupation_posting` (by size class, real or made up), in a city
+        of the country. With `company`: that company of `job_companies`
+        ('ibm' -> IBM, case-insensitive), else a company of that name made
+        up by the Faker locale, with a city of the country and a CEO, in
+        `sector` (else a random one). In French locales, a NAF activity of
+        the sector as `industry`."""
+        conditions = self._local_conditions()
+        if company is not None:
+            country = self._home_country(conditions)
+            found = _load_companies()["by_name"][country].get(str(company).strip().lower())
+            if found is not None:
+                code, size_class, row = found
+                name = {code: name for name, code in conditions["sector_codes"].items()}[code]
+                return self._real_company(row, name, country, conditions, None)[0]
+        name = self._resolve_activity_sector(sector) if sector is not None else self.job_activity_sector()
+        if company is not None:
+            return self._local_company(name, conditions, self.job_location(), company)
+        return self._hiring_company(name, conditions, self.job_location(), None)[0]
 
     def job_company_size(self) -> int:
         """Return a random company size (number of employees): a size class
@@ -894,15 +843,28 @@ class JobsProvider(BaseProvider):
             rows = []  # a class of few companies: a made-up one in its place
         if country is None or not rows:
             return self._local_company(sector, conditions, location, naf=naf), self._class_size(size_class), location
-        name, website, founded, city, state, size, industry = self.random_element(rows)
+        profile, size, headquarters = self._real_company(self.random_element(rows), sector, country, conditions, naf)
+        if headquarters is not None and size_class <= _SINGLE_SITE_MAX_CLASS:
+            location = headquarters
+        return profile, size, location
+
+    def _real_company(
+        self, row: list[Any], sector: str, country: str, conditions: dict[str, Any], naf: list[str] | None,
+    ) -> tuple[CompanyProfile, int, LocationRecord | None]:
+        """The profile of a People Data Labs company (a row of companies.json.gz),
+        its number of employees and its headquarters city (None if not one
+        of the cities of `job_location`)."""
+        data = _load_companies()
+        if naf is None and "naf_by_sector" in conditions:
+            naf = self.random_element(conditions["naf_by_sector"][sector])
+        name, website, founded, city, state, size, industry = row
+        headquarters = None
         if isinstance(city, int):
             local = country == conditions["country"]
             local_country = (conditions.get("place_names") or {}).get("country", conditions["country"])
             cities = _load_cities()[country.lower()]
             headquarters = self._city_record(cities, cities["cities"][city], local_country if local else None)
             city = headquarters["city"]
-            if size_class <= _SINGLE_SITE_MAX_CLASS:
-                location = headquarters
         if naf is not None:
             industry_name = naf[1]
         elif self._occupations["meta"]["language"] == "en":
@@ -912,7 +874,7 @@ class JobsProvider(BaseProvider):
         return {
             "company": name, "sector": sector, "industry": industry_name, "city": city, "state": state,
             "zip": None, "website": website, "ticker": None, "ceo": None, "founded": founded,
-        }, size, location
+        }, size, headquarters
 
     # -- occupations (ROME 4.0 / ESCO, locale-aware) -----------------------------
 
@@ -921,7 +883,7 @@ class JobsProvider(BaseProvider):
         """list: every activity sector of the occupations (35, e.g.
         'Healthcare', or 'Santé' in French locales), sorted.
 
-        Not the same list as `job_sectors`, the sectors of the companies."""
+        `job_sectors` is the same list."""
         return list(self._occupations["sectors"])
 
     @property

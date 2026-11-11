@@ -232,7 +232,7 @@ CONDITIONS = {
         },
     },
     "en_US": {
-        "country": "USA",
+        "country": "United States",
         "currency": "USD",
         "contracts": {
             "Full-time": {"weight": 62, "kind": "permanent"},

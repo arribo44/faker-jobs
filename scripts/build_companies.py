@@ -5,24 +5,26 @@ Company Dataset" (7+ million companies, from LinkedIn company pages; CC BY 4.0):
 
     DATAS/7millionscompanies/companies_sorted.csv   (~1 GB, not published)
 
-For the six countries of the locales (USA, UK, France, Germany, Spain,
-Italy) and each of the 35 ROME activity sectors (LinkedIn industry → sector,
-see INDUSTRY_SECTORS):
+For the six countries of the locales (United States, United Kingdom,
+France, Germany, Spain, Italy) and each of the 35 ROME activity sectors
+(LinkedIn industry → sector, see INDUSTRY_SECTORS):
 
 - `weights`: the share of jobs in each company size class, i.e. the number
   of companies of the class times its typical size (TYPICAL_SIZES). Sectors
   with fewer than MIN_SECTOR_COMPANIES companies take the country's shares.
 - `companies`: up to PER_CLASS real companies per size class of 11
-  employees or more, drawn at random (fixed seed: the build is
-  reproducible), with a name, website, founding year, headquarters city
+  employees or more, with a name, website, founding year, headquarters city
   (an index into the country's cities of cities.json.gz when GeoNames knows
-  it, else its name), US state and a number of employees in the class.
-  Rows without website or city are left out: many are noise.
+  it, else its name), US state and a number of employees in the class. For
+  10,001+ employees, the largest ones (by LinkedIn employee estimate), so
+  that the best-known groups are there (IBM, Walmart, Apple...); else drawn
+  at random (fixed seed: the build is reproducible). Rows without website
+  or city are left out: many are noise. Companies of 1-10 employees are left
+  out too (many are one-person businesses named after their owner): the
+  provider makes them up.
 - `counts`: the number of companies of each size class, so that the provider
   can make some up where a class has fewer than PER_CLASS companies (a
   single large group would otherwise get every job of its class).
-  Companies of 1-10 employees are left out (many are one-person businesses
-  named after their owner): the provider makes them up.
 
 Run build_cities.py first (cities are matched to its output), then:
 
@@ -30,6 +32,7 @@ Run build_cities.py first (cities are matched to its output), then:
 """
 import csv
 import gzip
+import heapq
 import json
 import math
 import os
@@ -50,7 +53,8 @@ PER_CLASS = 10
 MIN_SECTOR_COMPANIES = 200
 
 # Dataset country → country name of cities.json.gz.
-COUNTRIES = {"united states": "USA", "united kingdom": "UK", "france": "France", "germany": "Germany",
+COUNTRIES = {"united states": "United States", "united kingdom": "United Kingdom", "france": "France",
+             "germany": "Germany",
              "spain": "Spain", "italy": "Italy"}
 
 # The dataset's size classes, their bounds and typical size (geometric mean
@@ -128,6 +132,10 @@ def display_word(word, first, last=True):
         return LEGAL_FORMS[lower]
     if lower in SMALL_WORDS and not first:
         return lower
+    if lower.isalnum() and len(lower) <= 3 and any(c.isdigit() for c in lower):
+        return lower.upper()  # "3m", "4c"
+    if "&" in lower and len(lower) <= 5:
+        return lower.upper()  # "at&t", "h&m"
     if lower.isalpha() and len(lower) <= 4 and not VOWELS & set(lower):
         return lower.upper()  # an acronym: "kpmg", "bnp"
     # Capitalize, also after a hyphen or a one-letter elision ("l'oréal").
@@ -148,8 +156,14 @@ def clean_name(name):
     return " ".join(INVISIBLE.sub("", name).split())
 
 
+# LinkedIn placeholders, not company names.
+PLACEHOLDER_NAMES = re.compile(r"\b(private|confidential|stealth|self[- ]employed|freelancer?|n/a|none|unknown|"
+                               r"undisclosed|various|retired|student)\b", re.IGNORECASE)
+
+
 def valid_name(name):
-    return bool(VALID_NAME.match(name)) and any(c.isalpha() for c in name) and "http" not in name
+    return (bool(VALID_NAME.match(name)) and name[0].isalnum() and any(c.isalpha() for c in name)
+            and "http" not in name and not PLACEHOLDER_NAMES.search(name))
 
 
 def place_name(text):
@@ -210,13 +224,31 @@ def read(path, cities):
                 continue
             key = (country, sector, klass)
             seen[key] += 1
-            if len(samples[key]) < PER_CLASS:
+            if klass == len(SIZE_CLASSES) - 1:
+                # The largest groups: a min-heap of (estimate, rank, row).
+                entry = (employee_estimate(row), -seen[key], row)
+                if len(samples[key]) < PER_CLASS:
+                    heapq.heappush(samples[key], entry)
+                elif entry[:2] > samples[key][0][:2]:
+                    heapq.heapreplace(samples[key], entry)
+            elif len(samples[key]) < PER_CLASS:
                 samples[key].append(row)
             else:
                 j = rng.randrange(seen[key])
                 if j < PER_CLASS:
                     samples[key][j] = row
+    largest = len(SIZE_CLASSES) - 1
+    for key, rows in samples.items():
+        if key[2] == largest:
+            samples[key] = [row for _, _, row in rows]
     return counts, samples
+
+
+def employee_estimate(row):
+    try:
+        return int(row["current employee estimate"] or 0)
+    except ValueError:
+        return 0
 
 
 def shares(counter):
@@ -229,12 +261,9 @@ def company_record(row, klass, country, cities, industries, rng):
     """[name, website, founding year, city (index or name), state, employees, industry index]."""
     parts = [part.strip() for part in row["locality"].split(",")]  # city, region, country
     city = cities[country].get(parts[0].lower(), place_name(parts[0]))
-    state = place_name(parts[1]) if country == "USA" else None
+    state = place_name(parts[1]) if country == "United States" else None
     year = row["year founded"]
-    try:
-        estimate = int(row["current employee estimate"] or 0)
-    except ValueError:
-        estimate = 0
+    estimate = employee_estimate(row)
     if row["industry"] not in industries:
         industries.append(row["industry"])
     return [display_name(clean_name(row["name"])), row["domain"], int(float(year)) if year else None,
@@ -275,7 +304,7 @@ def build(path):
             "source": SOURCE,
             "size_classes": SIZE_BOUNDS,
             "row": ["name", "website", "founded", "city (index into the country's cities.json.gz rows, or name)",
-                    "state (USA)", "employees", "industry (index into industries)"],
+                    "state (United States)", "employees", "industry (index into industries)"],
         },
         "industries": [name.capitalize() for name in industries_sorted],
         "countries": countries,

@@ -1,15 +1,15 @@
 """
 Unit tests for the JobsProvider: registration, the generic methods in an
-English locale (ESCO occupations, US conditions, Kaggle cities and
-companies) and job_posting().
+English locale (ESCO occupations, US conditions, GeoNames cities, People
+Data Labs companies) and job_posting().
 """
 import datetime
-import json
+import os
 import unittest
 
 from faker import Faker
 
-from faker_jobs import _DATA_PATH, JobsProvider, _load_cities
+from faker_jobs import _DATA_DIR, JobsProvider, _load_cities
 
 
 class TestJobsProvider(unittest.TestCase):
@@ -36,9 +36,8 @@ class TestJobsProvider(unittest.TestCase):
         for name in ("job_title", "job_role", "job_role_record", "job_posting", "job_benefits", "job_location"):
             self.assertTrue(callable(getattr(self.fake, name)), msg=name)
 
-    def test_no_kaggle_job_data_is_shipped(self):
-        with open(_DATA_PATH, encoding="utf-8") as f:
-            self.assertEqual(set(json.load(f)), {"meta", "companies", "ranges"})
+    def test_no_kaggle_data_is_shipped(self):
+        self.assertFalse(os.path.exists(os.path.join(_DATA_DIR, "jobs_data.json")))
         self.assertFalse(hasattr(JobsProvider, "use_kaggle_data"))
 
     # -- titles / roles -----------------------------------------------------------
@@ -103,38 +102,42 @@ class TestJobsProvider(unittest.TestCase):
             with self.assertRaises(ValueError, msg=count):
                 self.fake.job_benefits(count=count)
 
-    # -- locations / companies (Kaggle) ------------------------------------------------
+    # -- locations / companies ------------------------------------------------------
 
     def test_location(self):
         for _ in range(20):
-            self.assertEqual(self.fake.job_location()["country"], "USA")
+            self.assertEqual(self.fake.job_location()["country"], "United States")
         location = self.fake.job_location(country="france")
         self.assertEqual(location["country"], "France")
         self.assertIn(location["country"], self.provider.job_countries)
         self.assertTrue(-90 <= location["latitude"] <= 90 and -180 <= location["longitude"] <= 180)
         self.assertIn(location["city"], [row[0] for row in _load_cities()["france"]["cities"]])
-        self.assertEqual(len(self.provider.job_countries), 216)
+        self.assertEqual(len(self.provider.job_countries), 244)
+        # ISO codes and the short names of version 0.6 are accepted.
+        for alias in ("USA", "us", "UK", "GB"):
+            self.assertIn(self.fake.job_location(country=alias)["country"], ("United States", "United Kingdom"))
         self.assertEqual(self.provider.job_countries, sorted(set(self.provider.job_countries)))
         with self.assertRaisesRegex(ValueError, "Unknown country"):
             self.fake.job_location(country="Atlantis")
 
     def test_company(self):
-        profile = self.fake.job_company_profile(company="3m")
-        self.assertEqual(profile["company"], "3M")
-        self.assertEqual(profile["ticker"], "MMM")
+        profile = self.fake.job_company_profile(company="ibm")
+        self.assertEqual(profile["company"], "IBM")
+        self.assertEqual((profile["website"], profile["founded"], profile["city"]), ("ibm.com", 1911, "New York"))
+        self.assertEqual(profile["sector"], "IT and telecommunications")
+        for name in ("Apple", "Walmart", "Microsoft"):
+            self.assertIn(name, self.provider.job_companies)
         for _ in range(20):
             self.assertEqual(self.fake.job_company_profile(sector="energy")["sector"], "Energy")
-        self.assertIn("Energy", self.provider.job_sectors)
-        self.assertIn(self.fake.job_company(), self.provider.job_companies)
+        self.assertEqual(self.provider.job_sectors, self.provider.job_activity_sectors)
+        self.assertTrue(self.fake.job_company())
         with self.assertRaises(ValueError):
             self.fake.job_company(sector="Piracy")
-        with self.assertRaises(ValueError):
-            self.fake.job_company_profile(company="Acme Unknown Corp")
-
-    def test_missing_company_fields_are_none(self):
-        values = [value for company in self.provider._data["companies"] for value in company.values()]
-        self.assertNotIn("", values)
-        self.assertIn(None, values)
+        # An unknown name: a company of that name, made up by the locale.
+        made_up = self.fake.job_company_profile(company="Acme Unknown Corp")
+        self.assertEqual(made_up["company"], "Acme Unknown Corp")
+        self.assertTrue(made_up["ceo"])
+        self.assertIsNone(made_up["website"])
 
     def test_company_size(self):
         sizes = [self.fake.job_company_size() for _ in range(300)]
@@ -162,7 +165,7 @@ class TestJobsProvider(unittest.TestCase):
         for activity in posting["responsibilities"].split("; "):
             self.assertIn(activity, occupation["skills"])
         self.assertEqual(posting["salary_currency"], "USD")
-        self.assertEqual(posting["location"]["country"], "USA")
+        self.assertEqual(posting["location"]["country"], "United States")
         self.assertIsInstance(posting["job_posting_date"], datetime.date)
 
     def test_job_posting_options(self):
@@ -213,7 +216,8 @@ class TestOtherLocalesUseUsConditions(unittest.TestCase):
             posting = fake.job_posting()
             self.assertEqual(posting["salary_currency"], "USD", msg=locale)
             # en_GB: jobs and companies in the United Kingdom (US conditions).
-            self.assertEqual(posting["location"]["country"], "UK" if locale == "en_GB" else "USA", msg=locale)
+            country = "United Kingdom" if locale == "en_GB" else "United States"
+            self.assertEqual(posting["location"]["country"], country, msg=locale)
 
 
 if __name__ == "__main__":

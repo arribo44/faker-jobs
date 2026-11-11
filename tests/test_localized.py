@@ -180,7 +180,6 @@ class TestForcedOccupationLocale(unittest.TestCase):
             occupations_locale = "fr_FR"
 
         fake, provider = make("en_US", FrenchJobs)
-        self.assertTrue(provider._local_companies())
         self.assertTrue(fake.job_salary_range().endswith("€ brut/an"))
         self.assertEqual(fake.job_location()["country"], "France")
 
