@@ -336,8 +336,9 @@ million companies from their LinkedIn pages, CC BY 4.0), built by
   Germany, 1 in 4 in Italy; 44% (United States) to 69% (Italy) in companies of up to 250
   employees (a third or less before the official shares). Building works
   hire in small companies, energy in large groups. Sectors without official
-  figures (agriculture and public administration in Europe, mining and
-  water in France) keep the LinkedIn shares.
+  figures (agriculture and public administration in Europe) keep the
+  LinkedIn shares; French mining, water supply and waste, confidential,
+  take the split of the European Union.
 - Then a **real company** of that sector and class: up to 10 per class,
   sector and country (~10,000 in all, 250 KB), with its name, website,
   founding year, headquarters city (and US state) and number of employees.

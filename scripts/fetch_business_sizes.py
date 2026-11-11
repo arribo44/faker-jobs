@@ -13,8 +13,10 @@ and cache it in DATAS/business_sizes/sizes.json:
   businesses left out: they do not hire), 10-49, 50-249, 250+ persons
   employed; latest year with the figures (a single confidential class is
   the total minus the others; where only 0-9 is published, 2-9 is estimated
-  with the country's share of 2-9 in 0-9 elsewhere; sections with two
-  confidential classes are left out).
+  with the country's share of 2-9 in 0-9 elsewhere). A section with two
+  confidential classes or more (France: mining, water supply and waste)
+  takes the split of the European Union (EU27_2020), brought to the
+  persons employed of the section in the country.
   Also the persons employed of every NACE division and group (all sizes,
   latest year: "employment_by_nace"), the weight of the NAF activities of
   the French companies (build_occupations.py).
@@ -49,6 +51,7 @@ USER_AGENT = "faker-jobs data build (https://github.com/arribo44/faker-jobs)"
 EUROSTAT_URL = ("https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/sbs_sc_ovw"
                 "?format=JSON&lang=EN&indic_sbs=EMP_NR")
 EUROSTAT_COUNTRIES = {"FR": "France", "DE": "Germany", "ES": "Spain", "IT": "Italy"}
+EU_GEO = "EU27_2020"
 # Eurostat size classes, and the group of EUROSTAT_GROUPS of each.
 # 2-9: without the one-person businesses (0_1), which do not hire.
 EUROSTAT_CLASSES = {"2-9": 0, "10-19": 1, "20-49": 1, "50-249": 2, "GE250": 3}
@@ -94,9 +97,9 @@ def download():
             f.write(response.read())
 
 
-def fetch_eurostat():
-    """{country: {"year": year, "sections": {section: [employees of each EUROSTAT_GROUPS]}}}."""
-    url = EUROSTAT_URL + "".join(f"&geo={geo}" for geo in EUROSTAT_COUNTRIES)
+def read_eurostat():
+    """{(geo, NACE code, size class, year): persons employed}, from the Eurostat API."""
+    url = EUROSTAT_URL + "".join(f"&geo={geo}" for geo in [*EUROSTAT_COUNTRIES, EU_GEO])
     with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": USER_AGENT}), timeout=300) as r:
         raw = json.load(r)
     ids, sizes = raw["id"], raw["size"]
@@ -108,37 +111,75 @@ def fetch_eurostat():
             coords[dim] = codes[dim][flat % size]
             flat //= size
         values[(coords["geo"], coords["nace_r2"], coords["size_emp"], coords["time"])] = value
+    return values
+
+
+def size_groups(values, geo, sections, years):
+    """{section: {"year": year, "employees": [persons employed of each EUROSTAT_GROUPS]}}
+    for the sections of `geo` with figures, latest year first."""
+    # Where only 0-9 is published (French industry), 2-9 is estimated with the
+    # country's share of 2-9 in 0-9 in the other sections.
+    both = [(values[(geo, s, "2-9", y)], values[(geo, s, "0-9", y)]) for s in sections for y in years
+            if (geo, s, "2-9", y) in values and (geo, s, "0-9", y) in values]
+    micro_ratio = sum(pair[0] for pair in both) / sum(pair[1] for pair in both)
+    found = {}
+    for section in sections:
+        for year in years:
+            row = [values.get((geo, section, size, year)) for size in EUROSTAT_CLASSES]
+            total = values.get((geo, section, "TOTAL", year))
+            micro = values.get((geo, section, "0-9", year))
+            if row[0] is None and micro is not None:
+                row[0] = round(micro * micro_ratio)
+            if total is not None and micro is not None:
+                total -= micro - row[0]  # without the one-person businesses
+            missing = [i for i, value in enumerate(row) if value is None]
+            if len(missing) == 1 and total is not None:
+                row[missing[0]] = max(total - sum(value for value in row if value is not None), 0)
+                missing = []
+            if not missing:
+                grouped = [0] * len(EUROSTAT_GROUPS)
+                for size, value in zip(EUROSTAT_CLASSES.values(), row, strict=True):
+                    grouped[size] += value
+                found[section] = {"year": year, "employees": grouped}
+                break
+    return found
+
+
+def section_employment(values, geo, section, years):
+    """(persons employed of `section` in `geo`, year): the section's total, else
+    the sum of its divisions (all sizes); None without figures."""
+    for year in years:
+        if (geo, section, "TOTAL", year) in values:
+            return values[(geo, section, "TOTAL", year)], year
+        divisions = [value for (g, nace, size, y), value in values.items()
+                     if g == geo and y == year and size == "TOTAL" and len(nace) == 3 and nace[0] == section]
+        if divisions:
+            return sum(divisions), year
+    return None
+
+
+def fetch_eurostat():
+    """{country: {"sections": {section: [employees of each EUROSTAT_GROUPS]}, "years": ...,
+    "employment_by_nace": ...}}."""
+    values = read_eurostat()
     sections = sorted({key[1] for key in values if len(key[1]) == 1})
     years = sorted({key[3] for key in values}, reverse=True)
+    europe = size_groups(values, EU_GEO, sections, years)
     result = {}
     for geo, country in EUROSTAT_COUNTRIES.items():
-        # Where only 0-9 is published (French industry), 2-9 is estimated with the
-        # country's share of 2-9 in 0-9 in the other sections.
-        both = [(values[(geo, s, "2-9", y)], values[(geo, s, "0-9", y)]) for s in sections for y in years
-                if (geo, s, "2-9", y) in values and (geo, s, "0-9", y) in values]
-        micro_ratio = sum(pair[0] for pair in both) / sum(pair[1] for pair in both)
-        found = {}
-        for section in sections:
-            for year in years:
-                row = [values.get((geo, section, size, year)) for size in EUROSTAT_CLASSES]
-                total = values.get((geo, section, "TOTAL", year))
-                micro = values.get((geo, section, "0-9", year))
-                if row[0] is None and micro is not None:
-                    row[0] = round(micro * micro_ratio)
-                if total is not None and micro is not None:
-                    total -= micro - row[0]  # without the one-person businesses
-                missing = [i for i, value in enumerate(row) if value is None]
-                if len(missing) == 1 and total is not None:
-                    row[missing[0]] = max(total - sum(value for value in row if value is not None), 0)
-                    missing = []
-                if not missing:
-                    grouped = [0] * len(EUROSTAT_GROUPS)
-                    for size, value in zip(EUROSTAT_CLASSES.values(), row, strict=True):
-                        grouped[size] += value
-                    found[section] = {"year": year, "employees": grouped}
-                    break
-        # Employment of every NACE division and group (all sizes, latest year), for
-        # the weight of the NAF activities of the French companies (build_occupations.py).
+        found = size_groups(values, geo, sections, years)
+        for section in sorted(set(europe) - set(found)):
+            # The EU split, brought to the country's persons employed in the section
+            # (without the one-person businesses, at the EU rate).
+            employed = section_employment(values, geo, section, years)
+            eu_total = section_employment(values, EU_GEO, section, [europe[section]["year"]])
+            if employed is None or eu_total is None:
+                continue
+            scale = employed[0] / eu_total[0]
+            found[section] = {"year": f"{employed[1]} (EU27_2020 split of {europe[section]['year']})",
+                              "employees": [round(value * scale) for value in europe[section]["employees"]]}
+        # Employment of every NACE division and group (all sizes, latest year), the
+        # weight of the NAF / NACE activities of the companies (build_occupations.py).
         employment = {}
         for (key_geo, nace, size, _year), value in sorted(values.items(), key=lambda item: item[0][3]):
             if key_geo == geo and size == "TOTAL" and len(nace) in (3, 4):
@@ -146,8 +187,8 @@ def fetch_eurostat():
         result[country] = {"employment_by_nace": dict(sorted(employment.items())),
                            "source": "Eurostat SBS (sbs_sc_ovw), persons employed (EMP_NR) by size class "
                                      "of persons employed, without one-person businesses", "groups": EUROSTAT_GROUPS,
-                           "sections": {section: entry["employees"] for section, entry in found.items()},
-                           "years": {section: entry["year"] for section, entry in found.items()}}
+                           "sections": {section: entry["employees"] for section, entry in sorted(found.items())},
+                           "years": {section: entry["year"] for section, entry in sorted(found.items())}}
     return result
 
 
