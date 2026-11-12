@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.9.0] - 2026-11-12
+
 ### Changed
 - French mining (B) and water supply, sewerage and waste (E), whose employment by enterprise size is confidential, take the size split of the European Union (Eurostat SBS, EU27_2020), brought to the French employment of the section, instead of the LinkedIn shares: the "Environnement" sector hires in companies of up to 200 employees in 45% of the postings instead of 13%.
 - Headquarters of the real companies: Wikidata's (CC0, by LinkedIn company ID: P4264 → P159) when it is in the company's country, as LinkedIn often gives an office or a region (IBM: New York City, Dassault Aviation: Paris instead of "France"); a few large groups placed by hand (Walmart: Bentonville instead of Withee, Asda: Leeds instead of "West Yorkshire", Porsche: Stuttgart). LinkedIn cities are matched to GeoNames with its alternate names and without accents ("Dusseldorf", "Brunswick", "New York", "Perret" for Levallois-Perret): 8,900 of the 10,500 companies have a city of `job_location()` instead of 7,900. A region or a country given as city ("West Sussex", "Berks", "France") gives `city` None instead of its name (~290 companies, mostly British). Cached in `DATAS/wikidata/headquarters.json` (`build_companies.py --fetch-headquarters`).
