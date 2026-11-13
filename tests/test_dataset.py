@@ -142,6 +142,17 @@ class ExportCommandTests(unittest.TestCase):
         self.assertEqual(len(rows), 80)
         self.assertEqual({row["locale"] for row in rows}, {"es_ES"})
 
+    def test_demo(self):
+        with redirect_stdout(io.StringIO()) as output:
+            main([])
+        self.assertEqual(output.getvalue().count("Demo ("), 1)
+        self.assertIn("Demo (en_US)", output.getvalue())
+        with redirect_stdout(io.StringIO()) as output:
+            main(["--locale", "fr_FR", "--locale", "pl_PL"])
+        self.assertIn("Demo (fr_FR)", output.getvalue())
+        self.assertIn("Demo (pl_PL)", output.getvalue())
+        self.assertNotIn("Demo (en_US)", output.getvalue())
+
     def test_export_errors(self):
         with tempfile.TemporaryDirectory() as directory, redirect_stdout(io.StringIO()):
             with self.assertRaises(SystemExit):

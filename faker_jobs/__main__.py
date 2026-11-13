@@ -1,8 +1,11 @@
 """
 Main module for faker_jobs: `python -m faker_jobs` prints a demo of the
-provider; `python -m faker_jobs export` writes a dataset of employers and
-their postings (see faker_jobs/dataset.py):
+provider in English (en_US), or in the locales given with --locale;
+`python -m faker_jobs export` writes a dataset of employers and their
+postings (see faker_jobs/dataset.py):
 
+    python -m faker_jobs
+    python -m faker_jobs --locale fr_FR --locale de_DE
     python -m faker_jobs export out/ --locale fr_FR --postings 10000 --companies 800 --seed 42
     python -m faker_jobs export out/ --locale fr_FR:0.6 --locale de_DE:0.4 --format jsonl
 """
@@ -115,8 +118,18 @@ def main(argv: list[str] | None = None) -> None:
     if argv[:1] == ["export"]:
         export(argv[1:])
         return
-    for locale in ["en_US", "fr_FR", "de_DE"]:
-        demo(locale)
+    parser = argparse.ArgumentParser(
+        prog="python -m faker_jobs",
+        description="Print a demo of the provider; 'python -m faker_jobs export --help' writes datasets.",
+    )
+    parser.add_argument("--locale", action="append", default=[],
+                        help="Faker locale of the demo; repeat it for several (default en_US)")
+    args = parser.parse_args(argv)
+    for locale in args.locale or ["en_US"]:
+        try:
+            demo(locale)
+        except AttributeError:
+            parser.error(f"unknown Faker locale {locale!r}")
 
 
 if __name__ == "__main__":
