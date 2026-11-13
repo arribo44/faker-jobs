@@ -18,6 +18,8 @@ import fetch_esco  # noqa: E402
 SOURCES = (build_occupations.ROME_PATH, build_occupations.BMO_PATH, build_occupations.FAP_ROME_PATH,
            build_occupations.NAF_PATH, build_occupations.fetch_salaries.EUROSTAT_PATH,
            build_occupations.fetch_salaries.BLS_PATH, build_occupations.fetch_salaries.LFS_PATH,
+           build_occupations.fetch_salaries.OECD_PATH, build_occupations.fetch_salaries.ILOSTAT_PATH,
+           build_occupations.fetch_salaries.WORLD_BANK_PATH, build_occupations.COUNTRY_INFO_PATH,
            fetch_esco.MAPPING_PATH,
            *map(fetch_esco.cache_path, fetch_esco.LANGUAGES))
 
@@ -41,6 +43,9 @@ class TestBuildOccupations(unittest.TestCase):
         with open(build_occupations.CONDITIONS_PATH, encoding="utf-8") as f:
             self.assertEqual(json.load(f), json.loads(json.dumps(self.conditions)),
                              msg="conditions.json is stale: re-run scripts/build_occupations.py")
+        with open(build_occupations.COUNTRIES_PATH, encoding="utf-8") as f:
+            self.assertEqual(json.load(f), json.loads(json.dumps(build_occupations.build_countries(self.conditions))),
+                             msg="countries.json is stale: re-run scripts/build_occupations.py")
 
     def test_floats_are_rounded(self):
         self.assertEqual(build_occupations.round_floats({"a": [0.48871358277284155, 2, "x"]}),

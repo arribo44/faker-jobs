@@ -85,7 +85,8 @@ class LocalizedTests:
 
     def test_location_in_the_country(self):
         self.assertEqual(self.fake.job_location()["country"], self.country)
-        self.assertEqual(self.fake.job_location(country="Belgium")["country"], "Belgium")
+        # A country without conditions in the language keeps its English name.
+        self.assertEqual(self.fake.job_location(country="Portugal")["country"], "Portugal")
 
     def test_companies_in_activity_sectors(self):
         self.assertEqual(self.provider.job_sectors, self.provider.job_activity_sectors)

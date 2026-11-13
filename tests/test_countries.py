@@ -218,10 +218,14 @@ class OtherLocalesTests(unittest.TestCase):
         self.assertEqual(fake.job_location()["country"], "France")
 
     def test_language_without_country_conditions(self):
-        # es_AR has no conditions of its own yet: those of Spain.
+        # es_AR: neutral Spanish conditions with the economy of Argentina.
         fake, provider = make("es_AR")
-        self.assertEqual(provider._local_conditions()["country"], "Spain")
-        self.assertEqual(fake.job_posting()["salary_currency"], "EUR")
+        self.assertEqual(provider._local_conditions()["country"], "Argentina")
+        posting = fake.job_posting()
+        self.assertEqual(posting["salary_currency"], "ARS")
+        self.assertTrue(posting["salary_range"].endswith(" ARS brutos al año"), posting["salary_range"])
+        # es_CA is Faker's Spanish of Catalonia: Spain.
+        self.assertEqual(make("es_CA")[1]._local_conditions()["country"], "Spain")
 
 
 if __name__ == "__main__":

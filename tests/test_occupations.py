@@ -409,7 +409,10 @@ class TestRomeOccupations(HiringCompanyTests, OccupationTests, unittest.TestCase
             self.assertEqual(posting["experience"] == "Débutant accepté", posting["experience_min"] == 0)
             portals.add(posting["job_portal"])
         self.assertGreater(len(portals), 5)
-        self.assertEqual(self.fake.job_occupation_posting(country="Belgium")["location"]["country"], "Belgium")
+        # In Belgium, the Belgian conditions (fr_BE).
+        belgian = self.fake.job_occupation_posting(country="Belgium")
+        self.assertEqual(belgian["location"]["country"], "Belgique")
+        self.assertIn(belgian["work_type"], {"CDI", "CDD", "Intérim", "Job étudiant", "Stage", "Indépendant"})
 
 
 class LocalConditionsTests:
@@ -536,8 +539,8 @@ class TestNoSeasonalContract(unittest.TestCase):
 
 
 class TestUsConditionsElsewhere(unittest.TestCase):
-    def test_other_locales_get_the_us_conditions(self):
-        for locale in ("en_IN", "nl_NL"):
+    def test_locales_without_a_country_get_the_us_conditions(self):
+        for locale in ("en", "ar_AA"):
             provider = JobsProvider(Faker(locale))
             self.assertEqual(provider._local_conditions()["country"], "United States", msg=locale)
             posting = provider.job_occupation_posting()
