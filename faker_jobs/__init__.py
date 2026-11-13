@@ -39,9 +39,12 @@ import json
 import math
 import os
 from collections.abc import Mapping
-from typing import Any, TypedDict
+from typing import TYPE_CHECKING, Any, TypedDict
 
 from faker.providers import BaseProvider
+
+if TYPE_CHECKING:
+    from faker_jobs.dataset import JobDataset
 
 __version__ = "0.11.0"
 
@@ -1312,11 +1315,21 @@ class JobsProvider(BaseProvider):
         occupation = self.job_occupation_record(code=code, sector=sector, weighted=weighted)
         return self._occupation_posting(occupation, country, skills)
 
-    def _occupation_posting(self, occupation: OccupationRecord, country: str | None, skills: int) -> OccupationPosting:
+    def _occupation_posting(
+        self, occupation: OccupationRecord, country: str | None, skills: int,
+        employer: tuple[CompanyProfile, int, LocationRecord | None, list[Any] | None] | None = None,
+    ) -> OccupationPosting:
+        """A posting of `occupation`; by a given `employer` (profile, number of
+        employees, the city of all its jobs or None for any city of the country,
+        activity) instead of a hiring company picked for it (job_dataset)."""
         conditions = self._posting_conditions(country)
         terms = self._local_terms(occupation, conditions, country)
-        company, company_size, location, naf = self._hiring_company(
-            occupation["sector"], conditions, terms["location"], occupation["isco_code"])
+        if employer is None:
+            company, company_size, location, naf = self._hiring_company(
+                occupation["sector"], conditions, terms["location"], occupation["isco_code"])
+        else:
+            company, company_size, site, naf = employer
+            location = site if site is not None else terms["location"]
         # The salary follows the NACE section of the company's activity (NAF /
         # NACE), else that of the occupation's sector (English locales).
         section = naf[2] if naf is not None else conditions["section_by_sector"].get(occupation["sector"])
@@ -1559,6 +1572,32 @@ class JobsProvider(BaseProvider):
         if posting is None:
             posting = self.job_occupation_posting()
         return render_posting(posting, self._occupations["meta"]["language"], self.generator.random, markdown)
+
+    def job_dataset(
+        self,
+        postings: int = 1000,
+        companies: int | None = None,
+        start_date: _datetime.date | str = "-2y",
+        end_date: _datetime.date | str = "today",
+        repost_rate: float = 0.08,
+    ) -> "JobDataset":
+        """Return a dataset of `postings` job postings published by a pool of
+        `companies` employers (default: one per 10 postings; more when a
+        sector has none of them) between
+        `start_date` and `end_date` (anything `job_posting_date` takes), in
+        the locale's country: `JobDataset.companies` and `.postings`, flat
+        rows linked by `company_id`, with `to_csv()`, `to_jsonl()` and
+        `to_dataframes()`.
+
+        Employers keep their name, city, size and activity in all their
+        postings; the postings have a lifecycle (closing date, status
+        'open' / 'filled' / 'expired' on `end_date`) and a share
+        `repost_rate` of them are published again on another job board
+        (`repost_of`). See faker_jobs/dataset.py; `make_dataset()` mixes
+        several locales."""
+        from faker_jobs.dataset import build_dataset
+
+        return build_dataset(self, postings, companies, start_date, end_date, repost_rate)
 
     @staticmethod
     def _occupation_job_posting(posting: OccupationPosting) -> JobPosting:

@@ -1,10 +1,18 @@
 """
-Main module for faker_jobs
-Allows running the package as a module: python -m faker_jobs
+Main module for faker_jobs: `python -m faker_jobs` prints a demo of the
+provider; `python -m faker_jobs export` writes a dataset of employers and
+their postings (see faker_jobs/dataset.py):
+
+    python -m faker_jobs export out/ --locale fr_FR --postings 10000 --companies 800 --seed 42
+    python -m faker_jobs export out/ --locale fr_FR:0.6 --locale de_DE:0.4 --format jsonl
 """
+import argparse
+import sys
+
 from faker import Faker
 
 from faker_jobs import JobsProvider
+from faker_jobs.dataset import make_dataset
 
 
 def demo(locale: str) -> None:
@@ -66,7 +74,47 @@ def demo(locale: str) -> None:
     print(jobs.job_posting_text(occupation_posting))
 
 
-def main() -> None:
+def parse_locales(values: list[str]) -> dict[str, float]:
+    """{locale: share} of the --locale options ('fr_FR' or 'fr_FR:0.6')."""
+    locales = {}
+    for value in values:
+        locale, _, share = value.partition(":")
+        try:
+            locales[locale] = float(share) if share else 1.0
+        except ValueError:
+            raise argparse.ArgumentTypeError(f"bad --locale {value!r}: expected LOCALE or LOCALE:SHARE") from None
+    return locales
+
+
+def export(argv: list[str]) -> None:
+    parser = argparse.ArgumentParser(prog="python -m faker_jobs export",
+                                     description="Write a dataset of employers and their job postings.")
+    parser.add_argument("directory", help="output directory (companies.csv and postings.csv, or .jsonl)")
+    parser.add_argument("--locale", action="append", default=[],
+                        help="Faker locale, or LOCALE:SHARE of the postings; repeat it to mix (default en_US)")
+    parser.add_argument("--postings", type=int, default=1000, help="number of postings (default 1000)")
+    parser.add_argument("--companies", type=int, default=None, help="number of employers (default postings / 10)")
+    parser.add_argument("--start-date", default="-2y", help="first publication date (ISO date or '-2y')")
+    parser.add_argument("--end-date", default="today", help="last publication date, and the date of the status")
+    parser.add_argument("--repost-rate", type=float, default=0.08, help="share of republished postings")
+    parser.add_argument("--format", choices=("csv", "jsonl"), default="csv")
+    parser.add_argument("--seed", type=int, default=None, help="random seed (reproducible output)")
+    args = parser.parse_args(argv)
+    try:
+        locales = parse_locales(args.locale or ["en_US"])
+        dataset = make_dataset(locales, args.postings, args.companies, args.start_date, args.end_date,
+                               args.repost_rate, args.seed)
+    except (ValueError, AttributeError, argparse.ArgumentTypeError) as error:
+        parser.error(str(error))  # AttributeError: an unknown Faker locale
+    paths = dataset.to_csv(args.directory) if args.format == "csv" else dataset.to_jsonl(args.directory)
+    print(f"{len(dataset.companies)} companies, {len(dataset.postings)} postings -> {', '.join(paths)}")
+
+
+def main(argv: list[str] | None = None) -> None:
+    argv = sys.argv[1:] if argv is None else argv
+    if argv[:1] == ["export"]:
+        export(argv[1:])
+        return
     for locale in ["en_US", "fr_FR", "de_DE"]:
         demo(locale)
 

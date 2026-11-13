@@ -729,11 +729,79 @@ reproducible with `Faker.seed()`); every fact comes from the posting.
 Render a posting with a provider of the locale that made it: the text is in
 the provider's language.
 
+### 📊 Datasets: employers and their postings
+
+`job_dataset()` builds a whole dataset: a pool of employers and the
+postings they publish over a period, as two flat tables linked by
+`company_id`, ready for a CSV, JSON Lines or pandas export.
+
+```python
+fake = Faker("fr_FR")
+fake.add_provider(JobsProvider)
+
+data = fake.job_dataset(postings=10_000, companies=800, start_date="2025-01-01", end_date="2026-10-31")
+data.companies[0]
+# {'company_id': 'C00001', 'locale': 'fr_FR', 'name': 'Stehlin & Associés Avocats',
+#  'sector': 'Activités juridiques et comptables', 'industry': 'Activités juridiques',
+#  'activity_code': '69.10Z', 'employees': 101, 'city': 'Paris', 'country': 'France',
+#  'website': 'stehlin-legal.com', 'founded': 1989, 'real': True}
+data.postings[0]
+# {'job_id': 4737973820883535, 'company_id': 'C00069', 'locale': 'fr_FR',
+#  'job_title': 'Courtier en banque (H/F)', 'occupation_code': 'C1208', 'isco_code': '3324', ...,
+#  'work_type': 'CDD', 'salary_min': 28500, 'salary_max': 35500, 'salary_currency': 'EUR',
+#  'city': 'Périgueux', 'country': 'France', 'job_portal': 'Le Bon Coin Emploi',
+#  'posted_date': '2026-10-06', 'closed_date': '2026-10-18', 'status': 'expired', 'repost_of': None,
+#  'skills': 'Ecouter les besoins des clients; ...', 'benefits': 'Horaires flexibles; ...', ...}
+
+data.to_csv("out/")             # out/companies.csv, out/postings.csv
+data.to_jsonl("out/")           # out/companies.jsonl, out/postings.jsonl
+companies, postings = data.to_dataframes()   # needs pandas
+```
+
+- **Employers** (`companies`, default: one per 10 postings) are hiring
+  companies of the locale's country, as in the postings: real or made up,
+  by size class from the official shares of jobs, spread between the
+  sectors by the demand of their occupations. Each keeps its name, city,
+  size and activity in all its postings; those of up to 500 employees hire
+  in their city. The pool grows when a sector has none of them.
+- **Postings**: an occupation by demand, then an employer of its sector,
+  favouring those whose activity employs the occupation. An employer
+  publishes several postings (a few dozen for the busiest of a pool of 150
+  for 1,500 postings).
+- **Lifecycle**: a publication date in the period (seasonal contracts from
+  March to September), a closing date about a month later (log-normal) and
+  a status on `end_date`: `open` (still on line, no closing date), `filled`
+  (70% of the others) or `expired`.
+- **Republications**: 8% of the postings (`repost_rate`) are published again
+  on another job board a few days later, with a new `job_id` and
+  `repost_of` the first one's, as on job boards: a test case for
+  deduplication.
+
+`make_dataset()` mixes locales, each in its country and language, with
+company ids prefixed by the locale; `seed` makes it reproducible:
+
+```python
+from faker_jobs.dataset import make_dataset
+
+data = make_dataset({"fr_FR": 0.6, "de_DE": 0.3, "pl_PL": 0.1}, postings=10_000, seed=42)
+```
+
+From the command line:
+
+```bash
+python -m faker_jobs export out/ --locale fr_FR --postings 10000 --companies 800 --seed 42
+python -m faker_jobs export out/ --locale fr_FR:0.6 --locale de_DE:0.4 --format jsonl \
+    --start-date 2025-01-01 --end-date 2026-10-31
+```
+
+10,000 postings take a few seconds.
+
 ### 🔤 Type hints
 
 The package ships type information (`py.typed`) and `TypedDict`s describing
 the returned dicts: `RoleRecord`, `LocationRecord`, `CompanyProfile`,
-`JobPosting`, `OccupationRecord`, `OccupationPosting`. Methods added to a `Faker` instance by `add_provider()` are not
+`JobPosting`, `OccupationRecord`, `OccupationPosting`, and the rows of the
+datasets, `CompanyRow` and `PostingRow` (`faker_jobs.dataset`). Methods added to a `Faker` instance by `add_provider()` are not
 visible to type checkers, so either annotate the result or call the
 provider directly:
 
@@ -753,7 +821,8 @@ jobs.job_posting()["salary_min"]        # int
 ## 🎯 Demo
 
 ```bash
-python -m faker_jobs
+python -m faker_jobs                  # a demo of the methods
+python -m faker_jobs export --help    # write a dataset (see Datasets)
 ```
 
 ---
