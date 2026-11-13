@@ -59,7 +59,10 @@ class CountryConditionsTests(unittest.TestCase):
                 self.assertEqual(provider._occupations["meta"]["language"], base[:2])
                 # The rest comes from the occupation locale of the language.
                 base_conditions = _load_conditions()[base]
-                self.assertEqual(conditions["fields_of_study"], base_conditions["fields_of_study"])
+                # (Brazil: the same fields in Brazilian spelling.)
+                self.assertEqual(set(conditions["fields_of_study"]), set(base_conditions["fields_of_study"]))
+                if locale != "pt_BR":
+                    self.assertEqual(conditions["fields_of_study"], base_conditions["fields_of_study"])
                 self.assertEqual(conditions["sector_codes"], base_conditions["sector_codes"])
                 portals = set(conditions["job_portals"]["all"])
                 for _ in range(15):

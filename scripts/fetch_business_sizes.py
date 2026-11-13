@@ -35,13 +35,14 @@ and cache it in DATAS/business_sizes/sizes.json:
   and employee size band (businesses with employees), from
   BPE_2026_detailed_tables.xlsx, saved in DATAS/business_sizes/ (--download).
 
-- Canada, New Zealand: OECD Structural and Demographic Business Statistics
-  (SDBS, DSD_SDBSBSC_ISIC4@DF_SDBS_ISIC4), employees (Canada) or persons
-  employed (New Zealand) by ISIC Rev. 4 section (as NACE's) and size class
-  1-9, 10-49, 50-249, 250+ (New Zealand: 1-9, 10+ only), latest year with
-  figures. The OECD has no such
-  split for Mexico, Chile, Colombia and Australia: their companies keep the
-  LinkedIn shares.
+- Canada, Brazil, New Zealand: OECD Structural and Demographic Business
+  Statistics (SDBS, DSD_SDBSBSC_ISIC4@DF_SDBS_ISIC4), employees (Canada,
+  Brazil) or persons employed (New Zealand) by ISIC Rev. 4 section (as
+  NACE's) and size class 1-9, 10-49, 50-249, 250+ (New Zealand: 1-9, 10+
+  only), latest year with figures (sections of zeros left out). The OECD has
+  no such split for Mexico and Australia, and only totals for Chile and
+  Colombia: their companies keep the LinkedIn shares. `--oecd-only` refreshes
+  the OECD countries and keeps the others as cached.
 
 NAICS sectors and the UK section groups are mapped to NACE sections. Every
 country gets {section: [employees of each size group]} with its own size
@@ -262,6 +263,7 @@ OECD_SDBS_URL = ("https://sdmx.oecd.org/public/rest/data/OECD.SDD.TPS,DSD_SDBSBS
 OECD_COUNTRIES = {
     "CAN": ("Canada", "EMPE", {"S1T9": [1, 9], "S10T49": [10, 49], "S50T249": [50, 249], "S_GE250": [250, None]}),
     "NZL": ("New Zealand", "EMPN", {"S1T9": [1, 9], "S_GE10": [10, None]}),
+    "BRA": ("Brazil", "EMPE", {"S1T9": [1, 9], "S10T49": [10, 49], "S50T249": [50, 249], "S_GE250": [250, None]}),
 }
 
 
@@ -290,7 +292,7 @@ def read_oecd():
             years = sorted({key[3] for key in values if key[:2] == (country, activity)}, reverse=True)
             for year in years:
                 row = [values.get((country, activity, size, year)) for size in classes]
-                if None not in row:
+                if None not in row and sum(row) > 0:  # a section of zeros (Brazil): an earlier year, else none
                     for letter in letters:
                         sections[letter] = [round(value) for value in row]
                     break
@@ -303,7 +305,11 @@ def read_oecd():
 def main():
     if "--download" in sys.argv:
         download()
-    data = {**fetch_eurostat(), "United States": read_us(), "United Kingdom": read_uk(), **read_oecd()}
+    if "--oecd-only" in sys.argv:  # refresh the OECD countries, keep the others as cached
+        with open(OUTPUT_PATH, encoding="utf-8") as f:
+            data = {**json.load(f), **read_oecd()}
+    else:
+        data = {**fetch_eurostat(), "United States": read_us(), "United Kingdom": read_uk(), **read_oecd()}
     for country, entry in list(data.items()):
         if len(entry["sections"]) < MIN_SECTIONS:
             if country not in OPTIONAL_COUNTRIES:

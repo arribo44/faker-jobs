@@ -33,7 +33,8 @@ Everything follows the locale. The **language** gives the occupations:
 **Polish** (ESCO) in those locales (`de_DE`, `de_AT`, `es_MX`, `it_CH`,
 `pt_BR`, `nl_BE`, `pl_PL`...), **English** (ESCO) in every other one
 (`en_US`, `en_GB`, `ja_JP`, `sv_SE`...). Brazilian postings use the
-European Portuguese of ESCO.
+Portuguese of ESCO in Brazilian spelling and vocabulary ('recepcionista',
+'eletrônico', 'equipe', 'ônibus': `faker_jobs/pt_br.py`, word-based).
 
 The **country** gives the posting conditions: currency, contracts, salaries
 from official earnings, minimum wage, diplomas, benefits, job boards, the
@@ -425,7 +426,7 @@ million companies from their LinkedIn pages, CC BY 4.0), built by
   Luxembourg, Ireland and Switzerland (persons employed by NACE
   section and size group 2-9, 10-49, 50-249, 250+), the Census Statistics
   of US Businesses 2022, the UK business population estimates 2026 and the
-  OECD business statistics for Canada and New Zealand (1-9 and 10+ only). Each
+  OECD business statistics for Canada, Brazil and New Zealand (1-9 and 10+ only). Each
   official size group gets its share, split between the LinkedIn classes it
   holds as LinkedIn splits them (number of companies × typical size), as
   LinkedIn lists few small companies. About 1 posting in 10 is in a company

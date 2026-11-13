@@ -141,9 +141,34 @@ class TestPortugueseLocalized(LocalizedTests, unittest.TestCase):
     locale, country = "pt_PT", "Portugal"
 
 
+class TestBrazilianSpelling(unittest.TestCase):
+    def test_brazilian_portuguese(self):
+        from faker_jobs.pt_br import to_brazilian
+
+        self.assertEqual(to_brazilian("Rececionista de hotel"), "Recepcionista de hotel")
+        self.assertEqual(to_brazilian("Controlo eletrónico da equipa"), "Controle eletrônico da equipe")
+        self.assertEqual(to_brazilian("COMO CANDIDATAR-SE"), "COMO SE CANDIDATAR")
+        self.assertEqual(to_brazilian("também, Antónia, género"), "também, Antônia, gênero")
+        brazil, portugal = JobsProvider(Faker("pt_BR")), JobsProvider(Faker("pt_PT"))
+        brazilian, european = set(brazil.job_titles), set(portugal.job_titles)
+        self.assertIn("Recepcionista", " ".join(brazilian))
+        self.assertNotIn("Rececionista", " ".join(brazilian))
+        self.assertIn("Rececionista", " ".join(european))
+        self.assertEqual(brazil.job_activity_sectors, portugal.job_activity_sectors)
+        Faker.seed(3)
+        fake = Faker("pt_BR")
+        fake.add_provider(JobsProvider)
+        text = fake.job_posting_text()
+        self.assertNotIn("equipa", text)
+        self.assertNotIn("está a recrutar", text)
+        dutch = JobsProvider(Faker("nl_NL"))
+        self.assertIn("directieassistent", dutch.job_roles)
+        self.assertIn("executive assistant", dutch.job_titles)
+
+
 class TestDutchLocalized(LocalizedTests, unittest.TestCase):
     locale, country = "nl_NL", "Nederland"
-    english_overlap = 120   # Dutch ESCO keeps many English titles (manager, consultant...)
+    english_overlap = 80   # English words in Dutch use (data scientist, sommelier, producer, ombudsman...)
 
 
 class TestPolishLocalized(LocalizedTests, unittest.TestCase):

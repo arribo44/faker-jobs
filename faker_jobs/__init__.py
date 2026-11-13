@@ -545,13 +545,30 @@ def _generic_conditions(base: dict[str, Any], language: str, country: str) -> di
     return _generic_conditions_cache[key]
 
 
-def _load_occupations(locale: str) -> dict[str, Any]:
-    if locale not in _occupation_cache:
+# Locales whose occupations are those of another one in their own spelling: {locale: (data, converter)}.
+_OCCUPATION_VARIANTS = {"pt_BR": "pt_PT"}
+
+
+def _load_occupations(locale: str, variant: str | None = None) -> dict[str, Any]:
+    """The occupations of an occupation locale; with `variant` ('pt_BR'), in
+    its spelling (Brazilian Portuguese from the European labels)."""
+    key = variant or locale
+    if key not in _occupation_cache:
         with gzip.open(os.path.join(_DATA_DIR, f"occupations_{locale}.json.gz"), "rt", encoding="utf-8") as f:
             raw = json.load(f)
+        if variant == "pt_BR":
+            from faker_jobs.pt_br import to_brazilian
+
+            # Sector names stay: they are the keys of the conditions.
+            sectors = set(raw["sectors"])
+            raw["strings"] = [text if text in sectors else to_brazilian(text) for text in raw["strings"]]
+            for record in raw["occupations"]:
+                record["title"] = to_brazilian(record["title"])
+                record["titles"] = list(dict.fromkeys(to_brazilian(title) for title in record["titles"]))
+                record["description"] = to_brazilian(record["description"])
         raw["conditions"] = _load_conditions()[locale]
-        _occupation_cache[locale] = _build_occupation_index(raw)
-    return _occupation_cache[locale]
+        _occupation_cache[key] = _build_occupation_index(raw)
+    return _occupation_cache[key]
 
 
 def _group_by_title(occupations: list[dict[str, Any]]) -> dict[str, tuple[str, list[dict[str, Any]]]]:
@@ -721,7 +738,10 @@ class JobsProvider(BaseProvider):
     def _occupations(self) -> dict[str, Any]:
         locale = self.occupations_locale
         if locale is None:
-            locale = _occupation_locale(_generator_locale(self.generator))
+            own = (_generator_locale(self.generator) or "").replace("-", "_")
+            locale = _occupation_locale(own)
+            if _OCCUPATION_VARIANTS.get(own) == locale:  # pt_BR: the Portuguese occupations, Brazilian spelling
+                return _load_occupations(locale, own)
         elif locale not in OCCUPATION_LOCALES:
             raise ValueError(f"occupations_locale must be one of {OCCUPATION_LOCALES}, got {locale!r}")
         return _load_occupations(locale)
@@ -1714,7 +1734,12 @@ class JobsProvider(BaseProvider):
 
         if posting is None:
             posting = self.job_occupation_posting()
-        return render_posting(posting, self._occupations["meta"]["language"], self.generator.random, markdown)
+        text = render_posting(posting, self._occupations["meta"]["language"], self.generator.random, markdown)
+        if self.occupations_locale is None and (_generator_locale(self.generator) or "").replace("-", "_") == "pt_BR":
+            from faker_jobs.pt_br import to_brazilian
+
+            text = "\n".join(to_brazilian(line) for line in text.split("\n"))
+        return text
 
     def job_dataset(
         self,
