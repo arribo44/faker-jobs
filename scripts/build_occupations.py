@@ -58,6 +58,7 @@ import sys
 import unicodedata
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(1, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # faker_jobs (pt_br)
 import fetch_activities  # noqa: E402
 import fetch_business_sizes  # noqa: E402
 import fetch_esco  # noqa: E402
@@ -691,6 +692,11 @@ def country_conditions(locale, local, base, eurostat, bls, lfs, oecd, world=None
                   "salary_source": source}
     if scale != 1:
         conditions["salary_scale"] = scale
+    if locale == "pt_BR":  # the diplomas' fields of study in Brazilian spelling, as its occupations
+        from faker_jobs.pt_br import to_brazilian
+
+        fields = base["fields_of_study"]
+        conditions["fields_of_study"] = {sector: to_brazilian(field) for sector, field in fields.items()}
     return conditions
 
 
@@ -873,10 +879,11 @@ def build_esco(locale, jobs, weights, seasonal, naf, salary, salary_source, lfs,
         # have no equivalent in other countries: no qualifications.
         main_job = linked[0]
         essential = record["essential_skills"]
+        label = LABEL_FIXES.get(language, {}).get(record["label"], record["label"])
         occupations.append({
             "code": uri.rsplit("/", 1)[-1],
-            "title": record["label"],
-            "titles": sorted({record["label"], *record["alt_labels"]}),
+            "title": label,
+            "titles": sorted({label, record["label"], *record["alt_labels"]}),
             "domain": domain_labels[domain_code],
             "sectors": [sector_labels[code] for code in sector_codes],
             "description": record["description"] or None,
@@ -980,6 +987,22 @@ EARNINGS_TO_GDP = (0.2, 6)
 # Micro-states whose GDP per capita (cross-border workers, finance) says little
 # of their wages, and territories without figures of their own that use the
 # currency of their country: the economy of that country.
+# Preferred ESCO labels left in English in a language where a usual word of
+# that language exists: it becomes the occupation's name, the English label
+# stays one of its titles (most English labels of the Dutch ESCO are the usual
+# Dutch words: data scientist, sommelier, producer, ombudsman).
+LABEL_FIXES = {
+    "nl": {
+        "executive assistant": "directieassistent", "nanny": "kindermeisje", "chef": "chef-kok",
+        "stage manager": "podiummanager", "casting director": "castingdirecteur",
+        "production designer": "productieontwerper", "mastering engineer": "masteringtechnicus",
+        "drilling engineer": "boormeester", "derrickhand": "medewerker boortoren",
+        "data quality specialist": "specialist datakwaliteit", "ict security consultant": "it-beveiligingsexpert",
+        "search engine optimisation expert": "SEO-specialist", "ict integration tester": "systeem-integratietester",
+        "embedded systems software developer": "embedded softwareontwikkelaar",
+        "aircraft dispatcher": "dispatcher vliegtuigen",
+    },
+}
 ECONOMY_PROXIES = {
     "Liechtenstein": "Switzerland", "Monaco": "France", "San Marino": "Italy", "Andorra": "Spain", "Vatican": "Italy",
     "French Guiana": "France", "Guadeloupe": "France", "Martinique": "France", "Mayotte": "France",

@@ -20,7 +20,7 @@ industry → sector, see INDUSTRY_SECTORS):
   each group as LinkedIn splits them: the number of companies of the class
   times its typical size (TYPICAL_SIZES). Sectors without official figures
   (agriculture and public administration in Europe...) and countries
-  without them (Mexico, Chile, Colombia, Australia, Brazil) keep the
+  without them (Mexico, Chile, Colombia, Australia) keep the
   LinkedIn shares; sectors with fewer than MIN_SECTOR_COMPANIES
   companies take the country's LinkedIn split.
 - `companies`: up to PER_CLASS real companies per size class of 11
