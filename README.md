@@ -821,7 +821,8 @@ jobs.job_posting()["salary_min"]        # int
 ## 🎯 Demo
 
 ```bash
-python -m faker_jobs                  # a demo of the methods
+python -m faker_jobs                  # a demo of the methods, in English
+python -m faker_jobs --locale fr_FR   # in other locales (repeat --locale)
 python -m faker_jobs export --help    # write a dataset (see Datasets)
 ```
 
