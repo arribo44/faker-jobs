@@ -250,7 +250,7 @@ class TestJobsProvider(unittest.TestCase):
 class TestOtherLocalesUseTheirCountry(unittest.TestCase):
     def test_locales_without_conditions(self):
         # English occupations, neutral conditions, the economy of the locale's country.
-        for locale, country, currency in (("en_IN", "India", "INR"), ("sv_SE", "Sweden", "SEK"),
+        for locale, country, currency in (("en_IN", "India", "INR"), ("fi_FI", "Finland", "EUR"),
                                           ("ja_JP", "Japan", "JPY")):
             fake = Faker(locale)
             fake.add_provider(JobsProvider)

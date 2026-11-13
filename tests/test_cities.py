@@ -40,7 +40,7 @@ class CitiesDataTests(unittest.TestCase):
                 self.assertTrue(names)
             if key in ("france", "germany", "spain", "italy", "belgium", "switzerland", "austria",
                        "luxembourg", "canada", "mexico", "chile", "colombia", "portugal", "the netherlands",
-                       "poland", "brazil"):
+                       "poland", "brazil", "sweden", "czechia", "romania", "greece", "saudi arabia"):
                 self.assertTrue(local, key)
             else:
                 self.assertFalse(local, key)

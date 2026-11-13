@@ -79,7 +79,7 @@ LFS_YEAR = "2025"
 EUROSTAT_URL = "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/{dataset}?format=JSON&lang=EN"
 BLS_URL = "https://api.bls.gov/publicAPI/v1/timeseries/data/"
 USER_AGENT = "faker-jobs data build (https://github.com/arribo44/faker-jobs)"
-COUNTRIES = ("FR", "DE", "ES", "IT", "BE", "AT", "LU", "IE", "CH", "PT", "NL", "PL")
+COUNTRIES = ("FR", "DE", "ES", "IT", "BE", "AT", "LU", "IE", "CH", "PT", "NL", "PL", "SE", "CZ", "RO", "EL")
 # Every country of the Structure of Earnings Survey 2022 (Eurostat codes: EL
 # for Greece): the earnings of the countries without conditions of their own
 # (countries.json); the Labour Force Survey is only fetched for COUNTRIES.
@@ -150,17 +150,17 @@ def eurostat(dataset, keep, countries=COUNTRIES, **fixed):
     return result
 
 
-def fetch_lfs():
+def fetch_lfs(countries=COUNTRIES):
     """{country: {table: {ISCO major group ("OC1"... and "TOTAL"): thousands}}}."""
     common = {"unit": "THS_PER", "sex": "T", "age": "Y15-64", "freq": "A", "time": LFS_YEAR}
     tables = {
-        "employees": eurostat("lfsa_eegais", ("isco08",), **common),
-        "temporary": eurostat("lfsa_etgais", ("isco08",), **common),
-        "part_time": eurostat("lfsa_epgais", ("isco08",), worktime="PT", **common),
-        "employed": eurostat("lfsa_epgais", ("isco08",), worktime="TOTAL", **common),
-        "self_employed": eurostat("lfsa_esgais", ("isco08",), wstatus="SELF", **common),
+        "employees": eurostat("lfsa_eegais", ("isco08",), countries, **common),
+        "temporary": eurostat("lfsa_etgais", ("isco08",), countries, **common),
+        "part_time": eurostat("lfsa_epgais", ("isco08",), countries, worktime="PT", **common),
+        "employed": eurostat("lfsa_epgais", ("isco08",), countries, worktime="TOTAL", **common),
+        "self_employed": eurostat("lfsa_esgais", ("isco08",), countries, wstatus="SELF", **common),
     }
-    result = {geo: {name: table[geo] for name, table in tables.items()} for geo in COUNTRIES}
+    result = {geo: {name: table[geo] for name, table in tables.items()} for geo in countries}
     for geo, entry in result.items():
         missing = [name for name, values in entry.items() if "TOTAL" not in values]
         if missing:
@@ -302,7 +302,18 @@ def save(path, data):
     print(f"wrote {path}", file=sys.stderr)
 
 
-FETCHERS = {"telework": (TELEWORK_PATH, fetch_telework)}
+def add_lfs():
+    """The LFS cache with the countries of COUNTRIES missing from it (the others as cached)."""
+    with open(LFS_PATH, encoding="utf-8") as f:
+        cached = json.load(f)
+    missing = tuple(geo for geo in COUNTRIES if geo not in cached["values"])
+    if missing:
+        fresh = fetch_lfs(missing)
+        cached["values"].update(fresh["values"])
+    return cached
+
+
+FETCHERS = {"telework": (TELEWORK_PATH, fetch_telework), "lfs-new": (LFS_PATH, add_lfs)}
 
 
 def main():

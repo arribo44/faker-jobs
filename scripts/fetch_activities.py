@@ -49,7 +49,7 @@ SOURCE = ("employees by profession and activity of the employer: 2022 census (IN
           "employees), professions → ISCO-08 by the INSEE PCS 2020 × ISCO matrix, Licence Ouverte / Etalab 2.0")
 LABELS_SOURCE = "NACE Rev. 2 labels: EU Vocabularies (Publications Office of the EU, Decision 2011/833/EU)"
 SPARQL_URL = "https://publications.europa.eu/webapi/rdf/sparql"
-LANGUAGES = ("de", "es", "it", "pt", "nl", "pl")
+LANGUAGES = ("de", "es", "it", "pt", "nl", "pl", "sv", "cs", "ro", "el")
 SALARIED = "10"
 
 
@@ -127,6 +127,17 @@ def fetch_labels(language):
 
 
 def main():
+    if "--labels-only" in sys.argv[1:]:  # the NACE labels of the languages missing from the cache
+        with open(LABELS_PATH, encoding="utf-8") as f:
+            cached = json.load(f)
+        for language in LANGUAGES:
+            if language not in cached["labels"]:
+                cached["labels"][language] = fetch_labels(language)
+        with open(LABELS_PATH, "w", encoding="utf-8") as f:
+            json.dump(cached, f, ensure_ascii=False, indent=1)
+            f.write("\n")
+        print(f"NACE labels ({', '.join(cached['labels'])}) → {LABELS_PATH}")
+        return
     if "--download" in sys.argv[1:]:
         download()
     data = isco_naf(read_census(), read_matrix())

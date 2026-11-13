@@ -1,6 +1,6 @@
 """
 Tests for the generic methods (job_title, job_role_record, job_salary_range,
-job_company_profile...) in the German, Spanish, French and Italian locales:
+job_company_profile...) in the locales of every language of the occupations:
 the occupations in the language, local conditions and made-up companies.
 """
 import unittest
@@ -139,6 +139,27 @@ class TestSpanishLocalized(LocalizedTests, unittest.TestCase):
 
 class TestPortugueseLocalized(LocalizedTests, unittest.TestCase):
     locale, country = "pt_PT", "Portugal"
+
+
+class TestSwedishLocalized(LocalizedTests, unittest.TestCase):
+    locale, country, currency_sign = "sv_SE", "Sverige", "kr"
+    english_overlap = 80   # English words in Swedish use (designer, controller...)
+
+
+class TestCzechLocalized(LocalizedTests, unittest.TestCase):
+    locale, country, currency_sign = "cs_CZ", "Česko", "Kč"
+
+
+class TestRomanianLocalized(LocalizedTests, unittest.TestCase):
+    locale, country, currency_sign = "ro_RO", "România", "lei"
+
+
+class TestGreekLocalized(LocalizedTests, unittest.TestCase):
+    locale, country = "el_GR", "Ελλάδα"
+
+
+class TestArabicLocalized(LocalizedTests, unittest.TestCase):
+    locale, country, currency_sign = "ar_SA", "السعودية", "ريال"
 
 
 class TestBrazilianSpelling(unittest.TestCase):

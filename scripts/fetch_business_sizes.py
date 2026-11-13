@@ -64,7 +64,8 @@ EUROSTAT_URL = ("https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/
                 "?format=JSON&lang=EN&indic_sbs=EMP_NR")
 EUROSTAT_COUNTRIES = {"FR": "France", "DE": "Germany", "ES": "Spain", "IT": "Italy", "BE": "Belgium",
                       "AT": "Austria", "LU": "Luxembourg", "IE": "Ireland", "CH": "Switzerland", "PT": "Portugal",
-                      "NL": "The Netherlands", "PL": "Poland"}
+                      "NL": "The Netherlands", "PL": "Poland", "SE": "Sweden", "CZ": "Czechia", "RO": "Romania",
+                      "EL": "Greece"}
 OPTIONAL_COUNTRIES = {"Belgium", "Austria", "Luxembourg", "Ireland", "Switzerland", "Canada", "New Zealand"}
 MIN_SECTIONS = 13
 EU_GEO = "EU27_2020"
@@ -308,6 +309,10 @@ def main():
     if "--oecd-only" in sys.argv:  # refresh the OECD countries, keep the others as cached
         with open(OUTPUT_PATH, encoding="utf-8") as f:
             data = {**json.load(f), **read_oecd()}
+    elif "--new-only" in sys.argv:  # add the Eurostat countries missing from the cache, keep the others
+        with open(OUTPUT_PATH, encoding="utf-8") as f:
+            data = json.load(f)
+        data.update({country: entry for country, entry in fetch_eurostat().items() if country not in data})
     else:
         data = {**fetch_eurostat(), "United States": read_us(), "United Kingdom": read_uk(), **read_oecd()}
     for country, entry in list(data.items()):

@@ -5,20 +5,24 @@
 Jobs come from **occupation directories**, covering every trade, not only
 office jobs: the **1,923 job sheets** of the French [ROME 4.0](https://www.francetravail.org/opendata/repertoire-operationnel-des-meti.html)
 directory (France Travail) in French, and the **2,045 [ESCO](https://esco.ec.europa.eu/)
-occupations** mapped to them in English, German, Spanish, Italian, Portuguese, Dutch and Polish, with
+occupations** mapped to them in English, German, Spanish, Italian, Portuguese, Dutch, Polish, Swedish,
+Czech, Romanian, Greek and Arabic, with
 **~14,000 job titles** in each language,
 **35 activity sectors**, skills, knowledge and soft skills. Posting
 conditions (contracts, diplomas, salaries from official earnings, benefits,
-job boards) are those of **17 countries**: France, Germany, Spain, Italy,
-the United States, and Belgium, Switzerland, Canada, Austria, Luxembourg,
-Mexico, Chile, Colombia, the United Kingdom, Ireland, Australia and New
-Zealand for their Faker locales (`fr_BE`, `de_CH`, `es_MX`, `en_GB`...).
+job boards) are those of **26 countries**: France, Germany, Spain, Italy,
+the United States, Portugal, the Netherlands, Poland, Sweden, Czechia,
+Romania, Greece, Saudi Arabia, and Belgium, Switzerland, Canada, Austria,
+Luxembourg, Mexico, Chile, Colombia, Brazil, the United Kingdom, Ireland,
+Australia and New Zealand for their Faker locales (`fr_BE`, `de_CH`,
+`es_MX`, `en_GB`...), with neutral ones in the language for every other
+country.
 
 Job locations are the **~29,700 cities** of 15,000 inhabitants or more of
 [GeoNames](https://www.geonames.org/) in 244 countries, picked in proportion
 to their population, with their local names in the countries of the
 locales ('München', 'Anvers', 'Genf'). Hiring companies are **real
-companies** of these 17 countries from the [People Data Labs
+companies** of these countries from the [People Data Labs
 company dataset](https://docs.peopledatalabs.com/docs/free-company-dataset)
 (LinkedIn pages), by activity sector and size class, from small businesses
 to large groups.
@@ -29,10 +33,12 @@ to large groups.
 
 Everything follows the locale. The **language** gives the occupations:
 **French** (ROME 4.0) in French locales (`fr_FR`, `fr_BE`, `fr_CA`...),
-**German**, **Spanish**, **Italian**, **Portuguese**, **Dutch** or
-**Polish** (ESCO) in those locales (`de_DE`, `de_AT`, `es_MX`, `it_CH`,
-`pt_BR`, `nl_BE`, `pl_PL`...), **English** (ESCO) in every other one
-(`en_US`, `en_GB`, `ja_JP`, `sv_SE`...). Brazilian postings use the
+**German**, **Spanish**, **Italian**, **Portuguese**, **Dutch**,
+**Polish**, **Swedish**, **Czech**, **Romanian**, **Greek** or **Arabic**
+(ESCO) in those locales (`de_DE`, `de_AT`, `es_MX`, `it_CH`, `pt_BR`,
+`nl_BE`, `pl_PL`, `sv_SE`, `cs_CZ`, `ro_RO`, `el_GR`, `el_CY`, `ar_SA`,
+`ar_EG`, `ar_AE`...), **English** (ESCO) in every other one (`en_US`,
+`en_GB`, `ja_JP`, `fi_FI`...). Brazilian postings use the
 Portuguese of ESCO in Brazilian spelling and vocabulary ('recepcionista',
 'eletrônico', 'equipe', 'ônibus': `faker_jobs/pt_br.py`, word-based).
 
@@ -61,6 +67,11 @@ gender mark of the titles, the place of the job and its companies:
 | `nl_NL` | Netherlands | Eurostat SES | beveiliger (m/v/x), Uitzendwerk, VMBO, € 25.000 - € 30.500 bruto per jaar, Leerdam, 13e maand |
 | `nl_BE` | Belgium | Eurostat SES | beveiliger (m/v/x), Interim, € 30.000 - € 35.000 bruto per jaar, Kortenberg, VDAB, Ecocheques |
 | `pl_PL` | Poland | Eurostat SES | pracownik ochrony osób i mienia (k/m), Umowa zlecenie, 38 500 - 48 000 zł brutto rocznie, Wieluń |
+| `sv_SE` | Sweden | Eurostat SES | sångare, Tillsvidareanställning, Kandidatexamen i konst och media, 364 000 - 458 000 kr per år, Stockholm, Platsbanken, Förmånscykel |
+| `cs_CZ` | Czechia | Eurostat SES | zpěvák (m/ž), Agenturní zaměstnání, 521 000 - 632 000 Kč ročně (hrubá mzda), Uherské Hradiště, Zaměstnanecké slevy |
+| `ro_RO` | Romania | Eurostat SES | cântăreț (m/f), Sezonier, 87.500 - 109.500 lei brut pe an, Ploiești, OLX Locuri de muncă |
+| `el_GR` | Greece | Eurostat SES | τραγουδιστής (Α/Γ), Εποχική εργασία, 19.000 € - 24.000 € μικτά ετησίως, Ρόδος, ΔΥΠΑ |
+| `ar_SA` | Saudi Arabia | ILOSTAT | مطرب / مطربة, دوام كامل, 74,000 - 87,000 ريال سعودي سنويًا, الرياض, تأمين على الحياة |
 | `en_US` | United States | BLS OEWS | Full-time, 401(k) matching, $58,000 - $71,000 a year |
 | `en_GB` | United Kingdom | US × OECD | corporate security guard, Part-time, GCSEs, £10,000 - £12,000 per annum, Workplace pension |
 | `en_IE` | Ireland | Eurostat SES | Fixed-term contract, Leaving Certificate, €30,000 - €38,000 per annum, Dublin, IrishJobs.ie |
@@ -305,7 +316,8 @@ fake.job_company_profile(sector="Santé")   # as the hiring companies of the pos
 Other countries are named in the language of the locale (Wikidata
 labels: "Allemagne", "Germania", "Niemcy"; English in English locales),
 their cities by their English name outside the countries of the language
-("Munich" in a French posting); `country=` takes the English name, the ISO
+("Munich" in a French posting; also the smaller towns of Greece and Saudi
+Arabia, which GeoNames names only in Latin script); `country=` takes the English name, the ISO
 code or the name in the language (`country="Deutschland"`,
 `country="Allemagne"`).
 
@@ -945,9 +957,10 @@ The cities come from GeoNames:
 
 ```
 DATAS/geonames/cities15000.zip, countryInfo.txt   GeoNames dump (download.geonames.org/export/dump/)
-DATAS/geonames/alt_<code>.zip                     alternatenames/<code>.zip of FR, DE, ES, IT, PT, NL, PL, BE,
-                                                  CH, AT, LU, CA, MX, CL, CO, BR: local and English names
-DATAS/wikidata/country_names.json                 country names in fr, de, es, it, pt, nl, pl (Wikidata labels)
+DATAS/geonames/alt_<code>.zip                     alternatenames/<code>.zip of FR, DE, ES, IT, PT, NL, PL, SE, CZ,
+                                                  RO, GR, SA, BE, CH, AT, LU, CA, MX, CL, CO, BR: local and English names
+DATAS/wikidata/country_names.json                 country names in fr, de, es, it, pt, nl, pl, sv, cs, ro, el, ar
+                                                  (Wikidata labels)
 scripts/
   build_cities.py [--download] [--fetch-country-names]
                                 -> faker_jobs/data/cities.json.gz (~500 KB)
@@ -985,7 +998,7 @@ scripts/
   fetch_activities.py [--download]   census + matrix -> isco_naf.json; EU Vocabularies SPARQL -> labels.json
   posting_conditions.py         local contracts, benefits, job boards, diplomas by locale and country
   rome_labels.py                ROME sectors, domains and soft skills in English, German, Spanish, Italian
-  build_occupations.py          -> faker_jobs/data/occupations_{de_DE,en_US,es_ES,fr_FR,it_IT,nl_NL,pl_PL,pt_PT}.json.gz
+  build_occupations.py          -> faker_jobs/data/occupations_{ar_SA,cs_CZ,de_DE,el_GR,en_US,es_ES,fr_FR,it_IT,nl_NL,pl_PL,pt_PT,ro_RO,sv_SE}.json.gz
                                    and faker_jobs/data/conditions.json (posting conditions of the 20
                                    locales, plain JSON; a country locale only holds what differs
                                    from its language's: `base`)

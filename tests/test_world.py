@@ -69,7 +69,8 @@ class EveryLocaleTests(unittest.TestCase):
         # (locale, country, its name in the postings)
         for locale, country, shown in (("ja_JP", "Japan", "Japan"), ("pt_BR", "Brazil", "Brasil"),
                                        ("hi_IN", "India", "India"), ("zh_CN", "China", "China"),
-                                       ("ar_EG", "Egypt", "Egypt"), ("fr_DZ", "Algeria", "Algérie"),
+                                       ("ar_EG", "Egypt", "مصر"), ("fr_DZ", "Algeria", "Algérie"),
+                                       ("el_CY", "Cyprus", "Κύπρος"), ("fi_FI", "Finland", "Finland"),
                                        ("de_LI", "Liechtenstein", "Liechtenstein"), ("zh_TW", "Taiwan", "Taiwan")):
             if locale not in AVAILABLE_LOCALES:
                 continue  # fr_DZ: recent Faker versions only

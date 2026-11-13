@@ -36,11 +36,12 @@ class TestOccupationLocale(unittest.TestCase):
             self.assertEqual(_occupation_locale(locale), "fr_FR", msg=locale)
 
     def test_esco_languages(self):
-        for locale, expected in (("de_DE", "de_DE"), ("de_AT", "de_DE"), ("es_MX", "es_ES"), ("it-CH", "it_IT")):
+        for locale, expected in (("de_DE", "de_DE"), ("de_AT", "de_DE"), ("es_MX", "es_ES"), ("it-CH", "it_IT"),
+                                 ("sv_SE", "sv_SE"), ("el_CY", "el_GR"), ("ar_EG", "ar_SA"), ("cs_CZ", "cs_CZ")):
             self.assertEqual(_occupation_locale(locale), expected, msg=locale)
 
     def test_other_locales_use_english(self):
-        for locale in ("en_US", "en_GB", "ja_JP", "sv_SE", None):
+        for locale in ("en_US", "en_GB", "ja_JP", "fi_FI", None):
             self.assertEqual(_occupation_locale(locale), "en_US", msg=locale)
 
     def test_faker_locale_selects_the_data(self):
@@ -544,7 +545,9 @@ class TestNoSeasonalContract(unittest.TestCase):
 
 class TestUsConditionsElsewhere(unittest.TestCase):
     def test_locales_without_a_country_get_the_us_conditions(self):
-        for locale in ("en", "ar_AA"):
+        # (ar_AA, Arabic without a country: the Saudi conditions of the Arabic occupations.)
+        self.assertEqual(JobsProvider(Faker("ar_AA"))._local_conditions()["country"], "Saudi Arabia")
+        for locale in ("en",):
             provider = JobsProvider(Faker(locale))
             self.assertEqual(provider._local_conditions()["country"], "United States", msg=locale)
             posting = provider.job_occupation_posting()

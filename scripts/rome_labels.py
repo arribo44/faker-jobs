@@ -421,3 +421,175 @@ SOFT_SKILLS["pl"] = {
     "Inspirer, donner du sens": "Umiejętność inspirowania",
     "Organiser son travail selon les priorités et les objectifs": "Zarządzanie czasem i priorytetami",
 }
+
+SECTORS["sv"] = {
+    "100": "Metallindustri", "101": "Turism", "102": "Hotell och restaurang", "103": "Administration och HR",
+    "104": "Elektronikindustri", "105": "Forskning", "106": "Kemisk industri", "107": "Träindustri", "108": "Energi",
+    "109": "Socialt arbete", "110": "Juridik och redovisning", "111": "Offentlig sektor, försvar och säkerhet",
+    "112": "Utbildning", "113": "Logistik och transport", "79": "Jordbruk och djurhållning", "80": "Miljö",
+    "81": "Underhåll och städning", "82": "Kultur och kulturarv", "83": "Livsmedelsindustri",
+    "84": "Tillverkningsindustri", "85": "Hälso- och sjukvård", "86": "Personliga tjänster",
+    "87": "Hantverk, audiovisuell produktion och scenkonst", "88": "Handel", "89": "Pappers- och grafisk industri",
+    "90": "Textil- och modeindustri", "91": "Bank, finans och försäkring", "92": "Fastigheter",
+    "93": "Sport och fritid", "94": "Kommunikation och marknadsföring", "95": "Fordonsindustri",
+    "96": "IT och telekommunikation", "97": "Förlagsverksamhet",
+    "98": "Arkitektur, teknisk konsultverksamhet och standardisering",
+    "99": "Bygg och anläggning",
+}
+DOMAINS["sv"] = {
+    "A": "Jordbruk, fiske, grönytor och djurvård", "B": "Konsthantverk", "C": "Bank, försäkring och fastigheter",
+    "D": "Försäljning och handel", "E": "Kommunikation, media och multimedia", "F": "Bygg och anläggning",
+    "G": "Hotell, turism, fritid och evenemang", "H": "Industri", "I": "Installation och underhåll",
+    "J": "Hälso- och sjukvård", "K": "Personliga och samhälleliga tjänster", "L": "Scenkonst",
+    "M": "Företagsstöd", "N": "Transport och logistik",
+}
+SOFT_SKILLS["sv"] = {
+    "Avoir l'esprit d'équipe": "Samarbetsförmåga", "Avoir le sens du service": "Serviceinriktning",
+    "Etre force de proposition": "Initiativförmåga", "Etre ouvert aux changements": "Förändringsbenägenhet",
+    "Etre à l'écoute, faire preuve d'empathie": "Lyhördhet och empati", "Faire preuve d'autonomie": "Självständighet",
+    "Faire preuve de contrôle de soi": "Självbehärskning", "Faire preuve de créativité, d'inventivité": "Kreativitet",
+    "Faire preuve de curiosité, d'ouverture d'esprit": "Nyfikenhet och öppenhet",
+    "Faire preuve de leadership": "Ledarskap",
+    "Faire preuve de persévérance": "Uthållighet", "Faire preuve de rigueur et de précision": "Noggrannhet",
+    "Faire preuve de réactivité": "Snabbhet", "Faire preuve de sens des responsabilités": "Ansvarstagande",
+    "Inspirer, donner du sens": "Förmåga att inspirera",
+    "Organiser son travail selon les priorités et les objectifs": "Prioritering och planering",
+}
+
+SECTORS["cs"] = {
+    "100": "Kovozpracující průmysl", "101": "Cestovní ruch", "102": "Hotelnictví a gastronomie",
+    "103": "Administrativa a personalistika", "104": "Elektrotechnický průmysl", "105": "Výzkum",
+    "106": "Chemický průmysl", "107": "Dřevozpracující průmysl", "108": "Energetika", "109": "Sociální služby",
+    "110": "Právo a účetnictví", "111": "Veřejná služba, obrana a bezpečnost", "112": "Vzdělávání",
+    "113": "Logistika a doprava", "79": "Zemědělství a chov zvířat", "80": "Životní prostředí",
+    "81": "Údržba a úklid", "82": "Kultura a kulturní dědictví", "83": "Potravinářský průmysl",
+    "84": "Zpracovatelský průmysl", "85": "Zdravotnictví", "86": "Osobní služby",
+    "87": "Řemesla, audiovize a scénické umění", "88": "Obchod", "89": "Papírenský a polygrafický průmysl",
+    "90": "Textilní a oděvní průmysl", "91": "Finance, bankovnictví a pojišťovnictví", "92": "Reality",
+    "93": "Sport a volný čas", "94": "Komunikace a marketing", "95": "Automobilový průmysl",
+    "96": "IT a telekomunikace", "97": "Vydavatelství", "98": "Architektura, inženýrské studie a normalizace",
+    "99": "Stavebnictví",
+}
+DOMAINS["cs"] = {
+    "A": "Zemědělství, rybářství, zeleň a péče o zvířata", "B": "Umělecká řemesla",
+    "C": "Bankovnictví, pojišťovnictví a reality", "D": "Prodej a obchod", "E": "Komunikace, média a multimédia",
+    "F": "Stavebnictví", "G": "Hotelnictví, cestovní ruch, volný čas a zábava", "H": "Průmysl",
+    "I": "Instalace a údržba", "J": "Zdravotnictví", "K": "Osobní a veřejné služby", "L": "Scénické umění",
+    "M": "Podpora podnikání", "N": "Doprava a logistika",
+}
+SOFT_SKILLS["cs"] = {
+    "Avoir l'esprit d'équipe": "Týmový duch", "Avoir le sens du service": "Zákaznická orientace",
+    "Etre force de proposition": "Proaktivita", "Etre ouvert aux changements": "Přizpůsobivost změnám",
+    "Etre à l'écoute, faire preuve d'empathie": "Aktivní naslouchání a empatie",
+    "Faire preuve d'autonomie": "Samostatnost",
+    "Faire preuve de contrôle de soi": "Sebeovládání", "Faire preuve de créativité, d'inventivité": "Kreativita",
+    "Faire preuve de curiosité, d'ouverture d'esprit": "Zvídavost a otevřenost",
+    "Faire preuve de leadership": "Leadership",
+    "Faire preuve de persévérance": "Vytrvalost", "Faire preuve de rigueur et de précision": "Pečlivost a přesnost",
+    "Faire preuve de réactivité": "Pohotovost", "Faire preuve de sens des responsabilités": "Zodpovědnost",
+    "Inspirer, donner du sens": "Schopnost inspirovat",
+    "Organiser son travail selon les priorités et les objectifs": "Time management a stanovení priorit",
+}
+
+SECTORS["ro"] = {
+    "100": "Industria metalurgică", "101": "Turism", "102": "Hoteluri și restaurante",
+    "103": "Administrație și resurse umane", "104": "Industria electronică", "105": "Cercetare",
+    "106": "Industria chimică", "107": "Industria lemnului", "108": "Energie", "109": "Asistență socială",
+    "110": "Juridic și contabilitate", "111": "Serviciu public, apărare și securitate", "112": "Educație și formare",
+    "113": "Logistică și transport", "79": "Agricultură și zootehnie", "80": "Mediu",
+    "81": "Întreținere și curățenie", "82": "Cultură și patrimoniu", "83": "Industria alimentară",
+    "84": "Industria prelucrătoare", "85": "Sănătate", "86": "Servicii personale",
+    "87": "Meșteșuguri, audiovizual și arte ale spectacolului", "88": "Comerț și distribuție",
+    "89": "Industria hârtiei și tipografie", "90": "Industria textilă și a modei",
+    "91": "Finanțe, bănci și asigurări", "92": "Imobiliare", "93": "Sport și agrement",
+    "94": "Comunicare și marketing", "95": "Industria auto", "96": "IT și telecomunicații", "97": "Editură",
+    "98": "Arhitectură, inginerie și standardizare", "99": "Construcții și lucrări publice",
+}
+DOMAINS["ro"] = {
+    "A": "Agricultură, pescuit, spații verzi și îngrijirea animalelor", "B": "Meșteșuguri artistice",
+    "C": "Bănci, asigurări și imobiliare", "D": "Vânzări și comerț", "E": "Comunicare, media și multimedia",
+    "F": "Construcții și lucrări publice", "G": "Hoteluri, turism, agrement și divertisment", "H": "Industrie",
+    "I": "Instalare și întreținere", "J": "Sănătate", "K": "Servicii personale și comunitare",
+    "L": "Arte ale spectacolului", "M": "Suport pentru afaceri", "N": "Transport și logistică",
+}
+SOFT_SKILLS["ro"] = {
+    "Avoir l'esprit d'équipe": "Spirit de echipă", "Avoir le sens du service": "Orientare către client",
+    "Etre force de proposition": "Spirit proactiv", "Etre ouvert aux changements": "Adaptabilitate la schimbare",
+    "Etre à l'écoute, faire preuve d'empathie": "Ascultare activă și empatie", "Faire preuve d'autonomie": "Autonomie",
+    "Faire preuve de contrôle de soi": "Autocontrol", "Faire preuve de créativité, d'inventivité": "Creativitate",
+    "Faire preuve de curiosité, d'ouverture d'esprit": "Curiozitate și deschidere",
+    "Faire preuve de leadership": "Leadership",
+    "Faire preuve de persévérance": "Perseverență", "Faire preuve de rigueur et de précision": "Atenție la detalii",
+    "Faire preuve de réactivité": "Reactivitate",
+    "Faire preuve de sens des responsabilités": "Simțul responsabilității",
+    "Inspirer, donner du sens": "Capacitatea de a inspira",
+    "Organiser son travail selon les priorités et les objectifs": "Gestionarea timpului și a priorităților",
+}
+
+SECTORS["el"] = {
+    "100": "Μεταλλουργία", "101": "Τουρισμός", "102": "Ξενοδοχεία και εστίαση",
+    "103": "Διοίκηση και ανθρώπινο δυναμικό", "104": "Βιομηχανία ηλεκτρονικών", "105": "Έρευνα",
+    "106": "Χημική βιομηχανία", "107": "Βιομηχανία ξύλου", "108": "Ενέργεια", "109": "Κοινωνική εργασία",
+    "110": "Νομικά και λογιστικά", "111": "Δημόσια υπηρεσία, άμυνα και ασφάλεια", "112": "Εκπαίδευση και κατάρτιση",
+    "113": "Εφοδιαστική αλυσίδα και μεταφορές", "79": "Γεωργία και κτηνοτροφία", "80": "Περιβάλλον",
+    "81": "Συντήρηση και καθαριότητα", "82": "Πολιτισμός και πολιτιστική κληρονομιά", "83": "Βιομηχανία τροφίμων",
+    "84": "Μεταποίηση", "85": "Υγεία", "86": "Προσωπικές υπηρεσίες",
+    "87": "Χειροτεχνία, οπτικοακουστικά και παραστατικές τέχνες", "88": "Εμπόριο και διανομή",
+    "89": "Βιομηχανία χάρτου και εκτυπώσεις", "90": "Κλωστοϋφαντουργία και μόδα",
+    "91": "Χρηματοοικονομικά, τράπεζες και ασφάλειες", "92": "Ακίνητα", "93": "Αθλητισμός και αναψυχή",
+    "94": "Επικοινωνία και μάρκετινγκ", "95": "Αυτοκινητοβιομηχανία", "96": "Πληροφορική και τηλεπικοινωνίες",
+    "97": "Εκδόσεις", "98": "Αρχιτεκτονική, μελέτες μηχανικού και τυποποίηση", "99": "Κατασκευές και δημόσια έργα",
+}
+DOMAINS["el"] = {
+    "A": "Γεωργία, αλιεία, πράσινο και φροντίδα ζώων", "B": "Καλλιτεχνική χειροτεχνία",
+    "C": "Τράπεζες, ασφάλειες και ακίνητα", "D": "Πωλήσεις και εμπόριο",
+    "E": "Επικοινωνία, μέσα ενημέρωσης και πολυμέσα",
+    "F": "Κατασκευές και δημόσια έργα", "G": "Φιλοξενία, τουρισμός, αναψυχή και ψυχαγωγία", "H": "Βιομηχανία",
+    "I": "Εγκατάσταση και συντήρηση", "J": "Υγεία", "K": "Προσωπικές και κοινωνικές υπηρεσίες",
+    "L": "Παραστατικές τέχνες", "M": "Υποστήριξη επιχειρήσεων", "N": "Μεταφορές και εφοδιαστική",
+}
+SOFT_SKILLS["el"] = {
+    "Avoir l'esprit d'équipe": "Ομαδικό πνεύμα", "Avoir le sens du service": "Εξυπηρέτηση πελατών",
+    "Etre force de proposition": "Πρωτοβουλία", "Etre ouvert aux changements": "Προσαρμοστικότητα",
+    "Etre à l'écoute, faire preuve d'empathie": "Ενεργητική ακρόαση και ενσυναίσθηση",
+    "Faire preuve d'autonomie": "Αυτονομία",
+    "Faire preuve de contrôle de soi": "Αυτοσυγκράτηση", "Faire preuve de créativité, d'inventivité": "Δημιουργικότητα",
+    "Faire preuve de curiosité, d'ouverture d'esprit": "Περιέργεια και ανοιχτό μυαλό",
+    "Faire preuve de leadership": "Ηγετικές ικανότητες",
+    "Faire preuve de persévérance": "Επιμονή",
+    "Faire preuve de rigueur et de précision": "Ακρίβεια και προσοχή στη λεπτομέρεια",
+    "Faire preuve de réactivité": "Ταχύτητα αντίδρασης", "Faire preuve de sens des responsabilités": "Υπευθυνότητα",
+    "Inspirer, donner du sens": "Ικανότητα έμπνευσης",
+    "Organiser son travail selon les priorités et les objectifs": "Διαχείριση χρόνου και προτεραιοτήτων",
+}
+
+SECTORS["ar"] = {
+    "100": "صناعة المعادن", "101": "السياحة", "102": "الفنادق والمطاعم", "103": "الإدارة والموارد البشرية",
+    "104": "صناعة الإلكترونيات", "105": "البحث العلمي", "106": "الصناعة الكيميائية", "107": "صناعة الأخشاب",
+    "108": "الطاقة", "109": "الخدمة الاجتماعية", "110": "القانون والمحاسبة", "111": "الخدمة العامة والدفاع والأمن",
+    "112": "التعليم والتدريب", "113": "الخدمات اللوجستية والنقل", "79": "الزراعة وتربية المواشي", "80": "البيئة",
+    "81": "الصيانة والنظافة", "82": "الثقافة والتراث", "83": "الصناعات الغذائية", "84": "الصناعة التحويلية",
+    "85": "الرعاية الصحية", "86": "الخدمات الشخصية", "87": "الحرف والإنتاج السمعي البصري وفنون الأداء",
+    "88": "التجارة والتوزيع", "89": "صناعة الورق والطباعة", "90": "صناعة النسيج والأزياء",
+    "91": "المالية والمصارف والتأمين", "92": "العقارات", "93": "الرياضة والترفيه", "94": "الاتصال والتسويق",
+    "95": "صناعة السيارات", "96": "تقنية المعلومات والاتصالات", "97": "النشر",
+    "98": "العمارة والدراسات الهندسية والمواصفات", "99": "البناء والأشغال العامة",
+}
+DOMAINS["ar"] = {
+    "A": "الزراعة وصيد الأسماك والمساحات الخضراء ورعاية الحيوان", "B": "الحرف الفنية",
+    "C": "المصارف والتأمين والعقارات", "D": "المبيعات والتجارة", "E": "الاتصال والإعلام والوسائط المتعددة",
+    "F": "البناء والأشغال العامة", "G": "الضيافة والسياحة والترفيه", "H": "الصناعة", "I": "التركيب والصيانة",
+    "J": "الرعاية الصحية", "K": "الخدمات الشخصية والمجتمعية", "L": "فنون الأداء", "M": "دعم الأعمال",
+    "N": "النقل والخدمات اللوجستية",
+}
+SOFT_SKILLS["ar"] = {
+    "Avoir l'esprit d'équipe": "روح الفريق", "Avoir le sens du service": "التوجه نحو خدمة العملاء",
+    "Etre force de proposition": "المبادرة", "Etre ouvert aux changements": "التكيف مع التغيير",
+    "Etre à l'écoute, faire preuve d'empathie": "الإصغاء الفعال والتعاطف", "Faire preuve d'autonomie": "الاستقلالية",
+    "Faire preuve de contrôle de soi": "ضبط النفس", "Faire preuve de créativité, d'inventivité": "الإبداع",
+    "Faire preuve de curiosité, d'ouverture d'esprit": "الفضول والانفتاح", "Faire preuve de leadership": "القيادة",
+    "Faire preuve de persévérance": "المثابرة", "Faire preuve de rigueur et de précision": "الدقة والاهتمام بالتفاصيل",
+    "Faire preuve de réactivité": "سرعة الاستجابة", "Faire preuve de sens des responsabilités": "تحمل المسؤولية",
+    "Inspirer, donner du sens": "القدرة على الإلهام",
+    "Organiser son travail selon les priorités et les objectifs": "إدارة الوقت والأولويات",
+}
