@@ -115,6 +115,17 @@ class DatasetOptionsTests(unittest.TestCase):
         data = make().job_dataset(postings=50, repost_rate=0)
         self.assertFalse(any(row["repost_of"] for row in data.postings))
 
+    def test_salaries_over_time(self):
+        data = make_dataset("es_AR", 600, start_date="2024-11-01", end_date="2026-10-31", seed=2)
+        first = sorted(row["salary_min"] for row in data.postings if row["posted_date"] < "2025-07-01")
+        last = sorted(row["salary_min"] for row in data.postings if row["posted_date"] >= "2026-03-01")
+        self.assertLess(first[len(first) // 2], last[len(last) // 2] * 0.6)  # inflation in Argentina
+        self.assertEqual({row["remote"] for row in data.postings}, {"on_site", "hybrid", "remote"})
+        same_day = make_dataset("fr_FR", 50, start_date="2026-10-31", end_date="2026-10-31", seed=2)
+        for row in same_day.postings:
+            self.assertEqual(row["salary_min"] % 500, 0)
+            self.assertLessEqual(row["salary_min"], row["salary_max"])
+
     def test_id_template(self):
         data = make().job_dataset(postings=300, start_date=START, end_date=END, id_template="JOB-{year}-{n:06d}")
         self.assertEqual([row["job_id"] for row in data.postings[:2]],

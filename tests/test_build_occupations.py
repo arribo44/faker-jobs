@@ -19,7 +19,8 @@ SOURCES = (build_occupations.ROME_PATH, build_occupations.BMO_PATH, build_occupa
            build_occupations.NAF_PATH, build_occupations.fetch_salaries.EUROSTAT_PATH,
            build_occupations.fetch_salaries.BLS_PATH, build_occupations.fetch_salaries.LFS_PATH,
            build_occupations.fetch_salaries.OECD_PATH, build_occupations.fetch_salaries.ILOSTAT_PATH,
-           build_occupations.fetch_salaries.WORLD_BANK_PATH, build_occupations.COUNTRY_INFO_PATH,
+           build_occupations.fetch_salaries.WORLD_BANK_PATH, build_occupations.fetch_salaries.TELEWORK_PATH,
+           build_occupations.COUNTRY_INFO_PATH,
            fetch_esco.MAPPING_PATH,
            *map(fetch_esco.cache_path, fetch_esco.LANGUAGES))
 

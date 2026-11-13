@@ -37,9 +37,15 @@ contracts (build_occupations.py) and cache them in DATAS/salaries/:
 - worldbank_gdp.json: World Bank GDP per capita, current local currency
   (NY.GDP.PCAP.CN), 2010 onwards: it brings the ILOSTAT figures of past
   years to the latest one, and gives an earnings level to the countries
-  ILOSTAT does not cover.
+  ILOSTAT does not cover; its growth gives the yearly growth of the salaries
+  (job datasets over several years).
+- eurostat_telework.json: Eurostat LFS, employees aged 15-64 working from
+  home usually / sometimes, % of the employees (lfsa_ehomp), latest year,
+  every country of the survey and the EU: the share of postings offering
+  hybrid or full remote work.
 
-All are public APIs that need no key. Re-run when a newer survey is out.
+All are public APIs that need no key. Re-run when a newer survey is out;
+`fetch_salaries.py telework` (or another name of FETCHERS) only fetches that one.
 """
 import csv
 import io
@@ -57,6 +63,10 @@ BLS_PATH = os.path.join(SALARY_DIR, "bls_oews.json")
 OECD_PATH = os.path.join(SALARY_DIR, "oecd_wages.json")
 ILOSTAT_PATH = os.path.join(SALARY_DIR, "ilostat.json")
 WORLD_BANK_PATH = os.path.join(SALARY_DIR, "worldbank_gdp.json")
+TELEWORK_PATH = os.path.join(SALARY_DIR, "eurostat_telework.json")
+TELEWORK_COUNTRIES = ("EU27_2020", "BE", "BG", "CZ", "DK", "DE", "EE", "IE", "EL", "ES", "FR", "HR", "IT", "CY",
+                      "LV", "LT", "LU", "HU", "MT", "NL", "AT", "PL", "PT", "RO", "SI", "SK", "FI", "SE", "IS",
+                      "NO", "CH", "UK", "BA", "ME", "MK", "RS", "TR")
 ILOSTAT_URL = "https://sdmx.ilo.org/rest/data/ILO,{dataflow}/?startPeriod={start}&format=csvfile"
 ILOSTAT_START = "2012"
 # Series that are not mean gross monthly earnings: left out.
@@ -261,14 +271,49 @@ def fetch_world_bank():
     return {"source": "World Bank, GDP per capita (current LCU), NY.GDP.PCAP.CN", "gdp_per_capita": values}
 
 
+def fetch_telework():
+    """{country (Eurostat code): {"usually": %, "sometimes": %}} of the latest year with both."""
+    query = "".join(f"&geo={geo}" for geo in TELEWORK_COUNTRIES)
+    raw = get_json(EUROSTAT_URL.format(dataset="lfsa_ehomp") + query
+                   + "&sex=T&age=Y15-64&wstatus=SAL&unit=PC&freq=A&frequenc=USU&frequenc=SMT&sinceTimePeriod=2019")
+    ids, sizes = raw["id"], raw["size"]
+    codes = {dim: {index: code for code, index in raw["dimension"][dim]["category"]["index"].items()} for dim in ids}
+    by_year = {}
+    for flat, value in raw["value"].items():
+        flat, coords = int(flat), {}
+        for dim, size in zip(reversed(ids), reversed(sizes), strict=True):
+            coords[dim] = codes[dim][flat % size]
+            flat //= size
+        key = {"USU": "usually", "SMT": "sometimes"}[coords["frequenc"]]
+        by_year.setdefault(coords["geo"], {}).setdefault(coords["time"], {})[key] = value
+    values = {}
+    for geo, years in by_year.items():
+        complete = [year for year, entry in years.items() if len(entry) == 2]
+        if complete:
+            year = max(complete)
+            values[geo] = {"year": int(year), **years[year]}
+    return {"source": "Eurostat LFS, employees aged 15-64 working from home usually / sometimes, "
+                      "% of the employees (lfsa_ehomp)", "values": values}
+
+
 def save(path, data):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=1, sort_keys=True)
     print(f"wrote {path}", file=sys.stderr)
 
 
+FETCHERS = {"telework": (TELEWORK_PATH, fetch_telework)}
+
+
 def main():
     os.makedirs(SALARY_DIR, exist_ok=True)
+    if len(sys.argv) > 1:
+        for name in sys.argv[1:]:
+            if name not in FETCHERS:
+                sys.exit(f"unknown data {name!r}: one of {', '.join(FETCHERS)}")
+            path, fetcher = FETCHERS[name]
+            save(path, fetcher())
+        return
     # National currency (EUR in the euro area, CHF in Switzerland...), EUR for the
     # countries that adopted it since.
     common = {"sex": "T", "indic_se": "ERN", "freq": "A", "time": "2022"}
@@ -293,6 +338,7 @@ def main():
     save(OECD_PATH, fetch_oecd())
     save(ILOSTAT_PATH, fetch_ilostat())
     save(WORLD_BANK_PATH, fetch_world_bank())
+    save(TELEWORK_PATH, fetch_telework())
 
 
 if __name__ == "__main__":

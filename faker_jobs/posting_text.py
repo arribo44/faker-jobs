@@ -18,6 +18,7 @@ from typing import Any
 # {language: texts}. Placeholders: {company}, {city}, {country}, {sector},
 # {size} (employees, formatted), {industry}, {title} (occupation name),
 # {code}, {domain}, {contact_person}, {contact}, {job_id}, {date}, {portal}.
+# `remote`: the line of the hybrid and full remote postings (none on site).
 TEXTS: dict[str, dict[str, Any]] = {
     "fr": {
         "intro": [
@@ -53,6 +54,7 @@ TEXTS: dict[str, dict[str, Any]] = {
         "contract": "Contrat : {value}",
         "salary": "Rémunération : {value}",
         "location": "Lieu de travail : {city}, {country}",
+        "remote": {"hybrid": "Télétravail partiel possible (hybride)", "remote": "Poste en télétravail complet"},
         "benefits": "Avantages : {value}",
         "apply": ["Pour postuler", "Candidature", "Comment postuler ?"],
         "apply_text": [
@@ -98,6 +100,7 @@ TEXTS: dict[str, dict[str, Any]] = {
         "contract": "Employment type: {value}",
         "salary": "Salary: {value}",
         "location": "Location: {city}, {country}",
+        "remote": {"hybrid": "Hybrid work: part of the week from home", "remote": "Fully remote position"},
         "benefits": "Benefits: {value}",
         "apply": ["How to apply", "Apply", "Interested?"],
         "apply_text": [
@@ -142,6 +145,10 @@ TEXTS: dict[str, dict[str, Any]] = {
         "contract": "Vertragsart: {value}",
         "salary": "Vergütung: {value}",
         "location": "Arbeitsort: {city}, {country}",
+        "remote": {
+            "hybrid": "Hybrides Arbeiten: teilweise Homeoffice möglich",
+            "remote": "Vollständig remote (100 % Homeoffice)",
+        },
         "benefits": "Vorteile: {value}",
         "apply": ["Bewerbung", "So bewirbst du dich", "Interesse?"],
         "apply_text": [
@@ -187,6 +194,7 @@ TEXTS: dict[str, dict[str, Any]] = {
         "contract": "Tipo de contrato: {value}",
         "salary": "Salario: {value}",
         "location": "Lugar de trabajo: {city}, {country}",
+        "remote": {"hybrid": "Modalidad híbrida: teletrabajo parcial", "remote": "Teletrabajo 100 % (en remoto)"},
         "benefits": "Beneficios: {value}",
         "apply": ["Cómo inscribirse", "Candidaturas", "¿Te interesa?"],
         "apply_text": [
@@ -231,6 +239,7 @@ TEXTS: dict[str, dict[str, Any]] = {
         "contract": "Contratto: {value}",
         "salary": "Retribuzione: {value}",
         "location": "Sede di lavoro: {city}, {country}",
+        "remote": {"hybrid": "Lavoro ibrido: smart working parziale", "remote": "Lavoro full remote"},
         "benefits": "Benefit: {value}",
         "apply": ["Come candidarsi", "Candidature", "Ti interessa?"],
         "apply_text": [
@@ -275,6 +284,10 @@ TEXTS: dict[str, dict[str, Any]] = {
         "contract": "Contrato: {value}",
         "salary": "Remuneração: {value}",
         "location": "Local de trabalho: {city}, {country}",
+        "remote": {
+            "hybrid": "Regime híbrido: teletrabalho parcial",
+            "remote": "Regime de teletrabalho a 100 % (remoto)",
+        },
         "benefits": "Benefícios: {value}",
         "apply": ["Como candidatar-se", "Candidaturas", "Interessado/a?"],
         "apply_text": [
@@ -319,6 +332,10 @@ TEXTS: dict[str, dict[str, Any]] = {
         "contract": "Dienstverband: {value}",
         "salary": "Salaris: {value}",
         "location": "Standplaats: {city}, {country}",
+        "remote": {
+            "hybrid": "Hybride werken: deels thuiswerken mogelijk",
+            "remote": "Volledig op afstand (thuiswerken)",
+        },
         "benefits": "Extra's: {value}",
         "apply": ["Solliciteren", "Interesse?", "Hoe solliciteren?"],
         "apply_text": [
@@ -364,6 +381,7 @@ TEXTS: dict[str, dict[str, Any]] = {
         "contract": "Rodzaj umowy: {value}",
         "salary": "Wynagrodzenie: {value}",
         "location": "Miejsce pracy: {city}, {country}",
+        "remote": {"hybrid": "Praca hybrydowa: częściowo zdalnie", "remote": "Praca w pełni zdalna"},
         "benefits": "Benefity: {value}",
         "apply": ["Jak aplikować", "Aplikuj", "Zainteresowany/a?"],
         "apply_text": [
@@ -466,6 +484,8 @@ def render_posting(
     lines += [heading("profile"), *bullets(profile), ""]
 
     offer = [line("contract", posting["work_type"]), line("salary", posting["salary_range"]), line("location")]
+    if posting["remote"] != "on_site":
+        offer.append(texts["remote"][posting["remote"]])
     if posting["benefits"]:
         offer.append(line("benefits", _join(posting["benefits"], texts)))
     lines += [heading("offer"), *bullets(offer), ""]

@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Job ids from a template: `job_id("JOB-{year}-######")` returns a string, with `#` a random digit, `?` an uppercase letter, `*` either, `{year}`, `{month}`, `{day}`, `{date}` (format specs: `{date:%y%m%d}`), `{country}` (ISO code of the country of the job), `{locale}` and `{n}` (the posting's number). `job_posting()`, `job_occupation_posting()`, `job_dataset()` and `make_dataset()` take `id_template=` (the posting's date and country; in datasets `{n}` numbers the postings from 1 across the locales and the ids are unique), `python -m faker_jobs export` `--id-template`. Without a template, ids stay 15 or 16-digit numbers and the output is unchanged.
 
+- Remote work: `remote` ('on_site', 'hybrid' or 'remote') in `job_posting()`, `job_occupation_posting()` and the dataset postings, with a line in the posting text in each language. The share of postings offering it is the country's share of employees working from home usually or sometimes (Eurostat LFS 2025, `lfsa_ehomp`, 37 European countries; the EU's elsewhere) times a hand-made factor of the occupation's ISCO major group; full remote for half the share working from home "usually". `countries.json` gives `telework` [usually, sometimes] of each country (`fetch_salaries.py telework` caches `DATAS/salaries/eurostat_telework.json`).
+- Salaries over time in datasets: the postings' salaries are those of `end_date`, earlier ones lowered by the country's yearly growth of the GDP per capita in local currency (World Bank, latest 5 years, between 0 and 100%; `wage_growth` of each country in `countries.json`, the median elsewhere).
+
 ### Changed
 - `job_id` of `JobPosting`, `OccupationPosting` and `PostingRow` (and `repost_of`) is typed `int | str`; `job_id()` is overloaded (`int` without a template, `str` with one).
 

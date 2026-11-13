@@ -200,6 +200,8 @@ class OccupationPosting(TypedDict):
     forms in Canada), "Busfahrer (m/w/d)" in German, "autista di autobus
     (m/f)" in Italian (Spanish keeps both forms).
     `seniority` is 'junior', 'mid' or 'senior', from the experience asked.
+    `remote` is 'on_site', 'hybrid' or 'remote' (full remote work), see
+    `job_occupation_posting`.
 
     The company is in the occupation's sector (`company_sector`) and in the
     country of the job (see `job_occupation_posting`); `company_size` is its
@@ -234,6 +236,7 @@ class OccupationPosting(TypedDict):
     job_posting_date: _datetime.date
     contact_person: str
     contact: str
+    remote: str
 
 
 class JobPosting(TypedDict):
@@ -248,7 +251,7 @@ class JobPosting(TypedDict):
     `salary_currency`; `salary_range` is their text in the local wording.
 
     `seniority` is 'junior' (under 3 years of experience asked), 'mid' (3 to
-    7) or 'senior' (8 and more)."""
+    7) or 'senior' (8 and more). `remote` is 'on_site', 'hybrid' or 'remote'."""
 
     occupation: OccupationRecord
     job_id: int | str
@@ -275,6 +278,7 @@ class JobPosting(TypedDict):
     job_posting_date: _datetime.date
     contact_person: str
     contact: str
+    remote: str
 
 
 def _load_cities() -> dict[str, Any]:
@@ -470,6 +474,27 @@ def _load_countries() -> dict[str, Any]:
         with open(_COUNTRIES_PATH, encoding="utf-8") as f:
             _countries_cache = json.load(f)
     return _countries_cache
+
+
+# Remote work: the share of postings offering it is the country's share of
+# employees working from home (Eurostat LFS, usually or sometimes) times a
+# factor of the occupation's ISCO major group (hand-made, illustrative:
+# about 2 for professionals and managers, under 0.2 for manual work; their
+# mean over the EU employment is about 1); at most MAX_REMOTE_SHARE. Of
+# those, FULL_REMOTE_SHARE times the share working from home "usually" are
+# full remote, the others hybrid.
+REMOTE_FACTORS = {"1": 2.0, "2": 2.2, "3": 1.5, "4": 1.35, "5": 0.2, "6": 0.1, "7": 0.13, "8": 0.1, "9": 0.1,
+                  "0": 0.05}
+MAX_REMOTE_SHARE = 0.9
+FULL_REMOTE_SHARE = 0.5
+
+
+def _labour(country: str) -> dict[str, Any]:
+    """The telework shares [usually, sometimes] and yearly wage growth of a
+    country (countries.json), the defaults (EU, median) where it has none."""
+    data = _load_countries()
+    economy = data["countries"].get(country, {})
+    return {key: economy.get(key, data["meta"][key]) for key in ("telework", "wage_growth")}
 
 
 def _locale_country(locale: str | None) -> str | None:
@@ -1421,7 +1446,19 @@ class JobsProvider(BaseProvider):
             "job_posting_date": self.job_posting_date(),
             "contact_person": self.generator.name(),
             "contact": self._phone_number(),
+            "remote": self._remote(occupation["isco_group"], conditions["country"]),
         }
+
+    def _remote(self, isco_group: str | None, country: str) -> str:
+        """'on_site', 'hybrid' or 'remote': the country's share of employees
+        working from home (usually + sometimes; Eurostat, else the EU's) times
+        the occupation group's factor, of which a part is full remote."""
+        usually, sometimes = _labour(country)["telework"]
+        share = min(MAX_REMOTE_SHARE, (usually + sometimes) * REMOTE_FACTORS.get(isco_group or "", 1.0))
+        if self.generator.random.random() >= share:
+            return "on_site"
+        full = FULL_REMOTE_SHARE * usually / (usually + sometimes) if usually + sometimes else 0
+        return "remote" if self.generator.random.random() < full else "hybrid"
 
     def _phone_number(self) -> str:
         """A phone number of the Faker locale; a generic one where it has none (en_PH, fil_PH...)."""
@@ -1715,4 +1752,5 @@ class JobsProvider(BaseProvider):
             "job_posting_date": posting["job_posting_date"],
             "contact_person": posting["contact_person"],
             "contact": posting["contact"],
+            "remote": posting["remote"],
         }

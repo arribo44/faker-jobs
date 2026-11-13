@@ -31,6 +31,19 @@ class PostingTextTests(unittest.TestCase):
                 self.assertEqual(len(texts["months"]), 12)
                 self.assertEqual(set(texts["transitions"]), {"ecological", "digital", "demographic"})
 
+    def test_remote_line(self):
+        for language, texts in TEXTS.items():
+            with self.subTest(language=language):
+                self.assertEqual(set(texts["remote"]), {"hybrid", "remote"})
+        Faker.seed(4)
+        fake = Faker("fr_FR")
+        fake.add_provider(JobsProvider)
+        postings = [fake.job_occupation_posting() for _ in range(60)]
+        for posting in postings:
+            text = fake.job_posting_text(posting)
+            for kind, line in TEXTS["fr"]["remote"].items():
+                self.assertEqual(line in text, posting["remote"] == kind)
+
     def test_text_holds_the_posting_facts(self):
         for locale, language in LOCALES.items():
             fake = make_faker(locale)

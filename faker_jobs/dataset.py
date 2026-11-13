@@ -25,6 +25,12 @@ period, as two tables linked by `company_id` (`JobsProvider.job_dataset()`,
   'expired'. A share `repost_rate` of the postings are published again on
   another job board a few days later (`repost_of`: the first one's
   `job_id`), as job boards do: a test case for deduplication.
+- Salaries: those of the postings (`job_occupation_posting`) on `end_date`;
+  earlier postings lowered by the country's yearly growth of the GDP per
+  capita in local currency (World Bank, latest 5 years; about 5% in France,
+  much more where inflation is high), rounded as the postings' salaries.
+- Remote work: 'on_site', 'hybrid' or 'remote', as the postings (see
+  `job_occupation_posting`).
 - Job ids: numbers by default, else from `id_template` (see
   `JobsProvider.job_id`) with the publication date, the country and `{n}`,
   the posting's number from 1 (across the locales of `make_dataset`);
@@ -94,6 +100,7 @@ class PostingRow(TypedDict):
     sector: str
     seniority: str
     work_type: str
+    remote: str
     experience_min: int
     experience_max: int
     qualification: str
@@ -229,6 +236,9 @@ class _Builder:
         self.rng = provider.generator.random
         self.conditions = provider._local_conditions()
         self.country_name = (self.conditions.get("place_names") or {}).get("country", self.conditions["country"])
+        from faker_jobs import _labour
+
+        self.growth = _labour(self.conditions["country"])["wage_growth"]
         # {sector: [(company_id, (profile, employees, site, activity), activity index)]}
         self.pool: dict[str, list[tuple[str, Any, int | None]]] = {}
         self.companies: list[CompanyRow] = []
@@ -312,14 +322,15 @@ class _Builder:
         posted = self.posted_date(contract["kind"] == "seasonal")
         closed, status = self.lifecycle(posted)
         location = posting["location"]
+        salary_min, salary_max = self.salaries(posting["salary_min"], posting["salary_max"], posted)
         return {
             "job_id": self.job_id(posting["job_id"], posted), "company_id": company_id, "locale": self.locale,
             "job_title": posting["job_title"], "occupation_code": occupation["code"],
             "occupation": occupation["title"], "isco_code": occupation["isco_code"],
             "isco_group": occupation["isco_group"], "sector": occupation["sector"], "seniority": posting["seniority"],
-            "work_type": posting["work_type"], "experience_min": posting["experience_min"],
+            "work_type": posting["work_type"], "remote": posting["remote"], "experience_min": posting["experience_min"],
             "experience_max": posting["experience_max"], "qualification": posting["qualification"],
-            "salary_min": posting["salary_min"], "salary_max": posting["salary_max"],
+            "salary_min": salary_min, "salary_max": salary_max,
             "salary_currency": posting["salary_currency"], "city": location["city"], "country": location["country"],
             "latitude": location["latitude"], "longitude": location["longitude"],
             "job_portal": posting["job_portal"], "posted_date": posted.isoformat(), "closed_date": closed,
@@ -327,6 +338,17 @@ class _Builder:
             "benefits": "; ".join(posting["benefits"]), "contact_person": posting["contact_person"],
             "contact": posting["contact"],
         }
+
+    def salaries(self, low: int, high: int, posted: _datetime.date) -> tuple[int, int]:
+        """The salaries of a posting on `end_date`, brought back to its date by the country's growth."""
+        years = (self.end - posted).days / 365.25
+        if not years:
+            return low, high
+        factor = (1 + self.growth) ** -years
+        scale = self.conditions.get("salary_scale", 1)
+        step = (1000 if (low + high) / 2 >= 100_000 * scale else 500) * scale
+        low, high = round(low * factor / step) * step, round(high * factor / step) * step
+        return int(low), int(max(high, low + step))
 
     def job_id(self, default: int | str, posted: _datetime.date) -> int | str:
         """The job id of the next posting: `default`, or one from the template not used yet."""
