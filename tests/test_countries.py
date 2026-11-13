@@ -8,6 +8,7 @@ import re
 import unittest
 
 from faker import Faker
+from faker.config import AVAILABLE_LOCALES
 
 from faker_jobs import JobsProvider, _conditions_locale, _load_companies, _load_conditions
 
@@ -47,6 +48,8 @@ class CountryConditionsTests(unittest.TestCase):
 
     def test_postings_are_in_the_country(self):
         for locale, (country, local_name, currency, base) in COUNTRIES.items():
+            if locale not in AVAILABLE_LOCALES:
+                continue  # de_LU: Faker 21+
             with self.subTest(locale=locale):
                 fake, provider = make(locale)
                 conditions = provider._local_conditions()

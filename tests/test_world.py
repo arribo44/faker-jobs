@@ -69,6 +69,8 @@ class EveryLocaleTests(unittest.TestCase):
         for locale, country in (("ja_JP", "Japan"), ("pt_BR", "Brazil"), ("hi_IN", "India"), ("zh_CN", "China"),
                                 ("ar_EG", "Egypt"), ("fr_DZ", "Algeria"), ("de_LI", "Liechtenstein"),
                                 ("zh_TW", "Taiwan")):
+            if locale not in AVAILABLE_LOCALES:
+                continue  # fr_DZ: recent Faker versions only
             fake, provider = make(locale)
             self.assertEqual(provider._local_conditions()["country"], country, locale)
             self.assertEqual(fake.job_location()["country"], country, locale)

@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - `job_location(country="Palau")` raised an error: its only city has a population of 0 (now a uniform pick).
+- Tests: locales missing from older Faker versions (`de_LU`, `fr_DZ` before Faker 21) are skipped (the CI with Faker 20 failed since 0.10.0; the library itself was not affected).
 
 ---
 
