@@ -30,10 +30,25 @@ class CitiesDataTests(unittest.TestCase):
         self.assertGreater(len(cities["france"]["cities"]), 400)
         self.assertGreater(len(cities["united states"]["cities"]), 2000)
 
-    def test_local_names_only_for_four_countries(self):
+    def test_local_names_only_in_the_countries_of_the_locales(self):
+        languages = {code: set(names) for code, names in build_cities.LOCAL_LANGUAGES.items()}
         for key, entry in _load_cities().items():
-            lengths = {len(row) for row in entry["cities"]}
-            self.assertEqual(lengths, {5} if key in ("france", "germany", "spain", "italy") else {4}, key)
+            local = [row[4] for row in entry["cities"] if len(row) > 4]
+            self.assertTrue(all(len(row) in (4, 5) for row in entry["cities"]), key)
+            for names in local:
+                self.assertIsInstance(names, dict)
+                self.assertTrue(names)
+            if key in ("france", "germany", "spain", "italy", "belgium", "switzerland", "austria",
+                       "luxembourg", "canada", "mexico", "chile", "colombia"):
+                self.assertTrue(local, key)
+            else:
+                self.assertFalse(local, key)
+        self.assertEqual(languages["CH"], {"fr", "de", "it"})
+        geneva = next(row for row in _load_cities()["switzerland"]["cities"] if row[0] == "Geneva")
+        self.assertEqual(geneva[4], {"fr": "Genève", "de": "Genf", "it": "Ginevra"})
+        # Only the names that differ from the English one.
+        paris = next(row for row in _load_cities()["france"]["cities"] if row[0] == "Paris")
+        self.assertEqual(len(paris), 4)
 
     def test_no_districts(self):
         names = {row[0] for row in _load_cities()["france"]["cities"]}

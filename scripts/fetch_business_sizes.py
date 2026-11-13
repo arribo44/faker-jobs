@@ -5,7 +5,10 @@ industry, used by build_companies.py to pick the size of the hiring
 companies (LinkedIn, the source of the companies, lists few small ones),
 and cache it in DATAS/business_sizes/sizes.json:
 
-- France, Germany, Spain, Italy: Eurostat structural business statistics
+- France, Germany, Spain, Italy, and Belgium, Austria, Luxembourg, Ireland
+  and Switzerland where Eurostat has enough figures (OPTIONAL_COUNTRIES:
+  left out with a warning otherwise, their companies then keep the
+  LinkedIn shares): Eurostat structural business statistics
   (sbs_sc_ovw), persons employed (EMP_NR: employees and working owners;
   employees alone are not published by size for services) by NACE Rev. 2
   section (B to R: market economy, without agriculture, public
@@ -32,6 +35,14 @@ and cache it in DATAS/business_sizes/sizes.json:
   and employee size band (businesses with employees), from
   BPE_2026_detailed_tables.xlsx, saved in DATAS/business_sizes/ (--download).
 
+- Canada, New Zealand: OECD Structural and Demographic Business Statistics
+  (SDBS, DSD_SDBSBSC_ISIC4@DF_SDBS_ISIC4), employees (Canada) or persons
+  employed (New Zealand) by ISIC Rev. 4 section (as NACE's) and size class
+  1-9, 10-49, 50-249, 250+ (New Zealand: 1-9, 10+ only), latest year with
+  figures. The OECD has no such
+  split for Mexico, Chile, Colombia and Australia: their companies keep the
+  LinkedIn shares.
+
 NAICS sectors and the UK section groups are mapped to NACE sections. Every
 country gets {section: [employees of each size group]} with its own size
 groups (`groups`, [low, high] employees, high None for no upper bound).
@@ -50,7 +61,10 @@ USER_AGENT = "faker-jobs data build (https://github.com/arribo44/faker-jobs)"
 
 EUROSTAT_URL = ("https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/sbs_sc_ovw"
                 "?format=JSON&lang=EN&indic_sbs=EMP_NR")
-EUROSTAT_COUNTRIES = {"FR": "France", "DE": "Germany", "ES": "Spain", "IT": "Italy"}
+EUROSTAT_COUNTRIES = {"FR": "France", "DE": "Germany", "ES": "Spain", "IT": "Italy", "BE": "Belgium",
+                      "AT": "Austria", "LU": "Luxembourg", "IE": "Ireland", "CH": "Switzerland"}
+OPTIONAL_COUNTRIES = {"Belgium", "Austria", "Luxembourg", "Ireland", "Switzerland", "Canada", "New Zealand"}
+MIN_SECTIONS = 13
 EU_GEO = "EU27_2020"
 # Eurostat size classes, and the group of EUROSTAT_GROUPS of each.
 # 2-9: without the one-person businesses (0_1), which do not hire.
@@ -240,13 +254,61 @@ def read_uk():
             "sections": sections}
 
 
+OECD_SDBS_URL = ("https://sdmx.oecd.org/public/rest/data/OECD.SDD.TPS,DSD_SDBSBSC_ISIC4@DF_SDBS_ISIC4,"
+                 "/A.{areas}.EMPE+EMPN...?startPeriod=2018&format=csv")
+# OECD country -> (country, measure: EMPE employees, EMPN persons employed,
+# {size class: [low, high] employees}, the size groups it publishes by section).
+OECD_COUNTRIES = {
+    "CAN": ("Canada", "EMPE", {"S1T9": [1, 9], "S10T49": [10, 49], "S50T249": [50, 249], "S_GE250": [250, None]}),
+    "NZL": ("New Zealand", "EMPN", {"S1T9": [1, 9], "S_GE10": [10, None]}),
+}
+
+
+def read_oecd():
+    """{country: {"groups": [low, high] employees, "sections": {NACE section: [employment of each group]}}}."""
+    import csv
+    import io
+
+    url = OECD_SDBS_URL.format(areas="+".join(OECD_COUNTRIES))
+    with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": USER_AGENT}), timeout=300) as r:
+        rows = list(csv.DictReader(io.StringIO(r.read().decode("utf-8"))))
+    values = {}
+    for row in rows:
+        country, measure, classes = OECD_COUNTRIES[row["REF_AREA"]]
+        if row["MEASURE"] == measure and row["SIZE_CLASS"] in classes and row["OBS_VALUE"]:
+            values[(country, row["ACTIVITY"], row["SIZE_CLASS"], row["TIME_PERIOD"])] = float(row["OBS_VALUE"])
+    result = {}
+    for country, measure, classes in OECD_COUNTRIES.values():
+        sections = {}
+        activities = {key[1] for key in values if key[0] == country}
+        for activity in sorted(activities):
+            # Sections ('C'), or joined ones ('D_E': the same split for each).
+            letters = activity.split("_")
+            if not all(len(letter) == 1 and letter.isalpha() for letter in letters):
+                continue
+            years = sorted({key[3] for key in values if key[:2] == (country, activity)}, reverse=True)
+            for year in years:
+                row = [values.get((country, activity, size, year)) for size in classes]
+                if None not in row:
+                    for letter in letters:
+                        sections[letter] = [round(value) for value in row]
+                    break
+        employment = "employees" if measure == "EMPE" else "persons employed"
+        result[country] = {"source": f"OECD SDBS (DSD_SDBSBSC_ISIC4), {employment} by ISIC Rev. 4 section "
+                                     "and size class", "groups": list(classes.values()), "sections": sections}
+    return result
+
+
 def main():
     if "--download" in sys.argv:
         download()
-    data = {**fetch_eurostat(), "United States": read_us(), "United Kingdom": read_uk()}
-    for country, entry in data.items():
-        if len(entry["sections"]) < 13:
-            sys.exit(f"{country}: only {sorted(entry['sections'])} sections")
+    data = {**fetch_eurostat(), "United States": read_us(), "United Kingdom": read_uk(), **read_oecd()}
+    for country, entry in list(data.items()):
+        if len(entry["sections"]) < MIN_SECTIONS:
+            if country not in OPTIONAL_COUNTRIES:
+                sys.exit(f"{country}: only {sorted(entry['sections'])} sections")
+            print(f"{country}: left out, only {sorted(entry['sections'])} sections", file=sys.stderr)
+            del data[country]
     with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=1, sort_keys=True)
         f.write("\n")

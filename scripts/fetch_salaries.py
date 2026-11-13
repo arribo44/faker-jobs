@@ -4,9 +4,11 @@ Fetch the earnings and labour figures used for the posting salaries and
 contracts (build_occupations.py) and cache them in DATAS/salaries/:
 
 - eurostat_ses2022.json: Eurostat Structure of Earnings Survey 2022, mean
-  gross annual earnings in EUR (both sexes; all enterprise sizes, or those
-  of 10 employees or more where only those are published, as for France
-  and Italy) for France, Germany, Spain and Italy:
+  gross annual earnings in national currency (EUR, CHF for Switzerland;
+  both sexes; all enterprise sizes, or those of 10 employees or more where
+  only those are published, as for France and Italy) for France, Germany,
+  Spain, Italy and the countries of COUNTRY_LOCALES with their own
+  earnings (Belgium, Austria, Luxembourg, Ireland, Switzerland):
   - by ISCO-08 major group and NACE Rev. 2 section (earn_ses22_49);
   - by ISCO-08 major group and age band (earn_ses22_28).
 - eurostat_lfs.json: Eurostat Labour Force Survey, latest year, people
@@ -17,9 +19,18 @@ contracts (build_occupations.py) and cache them in DATAS/salaries/:
 - bls_oews.json: U.S. Bureau of Labor Statistics, Occupational Employment
   and Wage Statistics, national mean annual wage by SOC major group, latest
   year available.
+- oecd_wages.json: OECD average annual wages (full-time equivalent
+  employees, national currency, current prices; DSD_EARNINGS@AV_AN_WAGE)
+  and statutory minimum wages (yearly, national currency, current prices;
+  DSD_EARNINGS@MW_CURP), 2022 onwards, for the countries of the locales:
+  the earnings of the countries without a survey of their own (Canada,
+  Mexico, Chile, Colombia, United Kingdom, Australia, New Zealand) are those
+  of the country of their language scaled by the ratio of the average wages.
 
-Both are public APIs that need no key. Re-run when a newer survey is out.
+All are public APIs that need no key. Re-run when a newer survey is out.
 """
+import csv
+import io
 import json
 import os
 import sys
@@ -30,12 +41,19 @@ SALARY_DIR = os.path.join(ROOT, "DATAS", "salaries")
 EUROSTAT_PATH = os.path.join(SALARY_DIR, "eurostat_ses2022.json")
 LFS_PATH = os.path.join(SALARY_DIR, "eurostat_lfs.json")
 BLS_PATH = os.path.join(SALARY_DIR, "bls_oews.json")
+OECD_PATH = os.path.join(SALARY_DIR, "oecd_wages.json")
 LFS_YEAR = "2025"
 
 EUROSTAT_URL = "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/{dataset}?format=JSON&lang=EN"
 BLS_URL = "https://api.bls.gov/publicAPI/v1/timeseries/data/"
 USER_AGENT = "faker-jobs data build (https://github.com/arribo44/faker-jobs)"
-COUNTRIES = ("FR", "DE", "ES", "IT")
+COUNTRIES = ("FR", "DE", "ES", "IT", "BE", "AT", "LU", "IE", "CH")
+OECD_URL = "https://sdmx.oecd.org/public/rest/data/OECD.ELS.SAE,DSD_EARNINGS@{dataset},/all?startPeriod={start}&format=csv"
+OECD_START = "2022"
+# ISO 3166 alpha-3 codes of the OECD data → alpha-2.
+OECD_COUNTRIES = {"FRA": "FR", "DEU": "DE", "ESP": "ES", "ITA": "IT", "USA": "US", "BEL": "BE", "AUT": "AT",
+                  "LUX": "LU", "IRL": "IE", "CHE": "CH", "CAN": "CA", "MEX": "MX", "CHL": "CL", "COL": "CO",
+                  "GBR": "GB", "AUS": "AU", "NZL": "NZ"}
 
 # SOC 2018 major groups (BLS OEWS occupation codes).
 SOC_MAJOR_GROUPS = {
@@ -129,6 +147,35 @@ def fetch_bls():
     return {"year": years.pop(), "labels": SOC_MAJOR_GROUPS, "mean_annual_wage": wages}
 
 
+def get_text(url):
+    with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": USER_AGENT}), timeout=120) as r:
+        return r.read().decode("utf-8")
+
+
+def oecd(dataset, measure_filter):
+    """{country (alpha-2): {year: value}} of an OECD earnings dataset (CSV),
+    for the rows that pass `measure_filter(row)`."""
+    rows = csv.DictReader(io.StringIO(get_text(OECD_URL.format(dataset=dataset, start=OECD_START))))
+    result = {}
+    for row in rows:
+        code = OECD_COUNTRIES.get(row["REF_AREA"])
+        if code and measure_filter(row) and row["OBS_VALUE"]:
+            result.setdefault(code, {})[row["TIME_PERIOD"]] = float(row["OBS_VALUE"])
+    return result
+
+
+def fetch_oecd():
+    # National currency (not USD PPP), current prices, yearly amounts.
+    average = oecd("AV_AN_WAGE", lambda row: row["UNIT_MEASURE"] != "USD_PPP" and row["PRICE_BASE"] == "V")
+    minimum = oecd("MW_CURP", lambda row: row["PAY_PERIOD"] == "A" and row["PRICE_BASE"] == "V")
+    missing = sorted(set(OECD_COUNTRIES.values()) - set(average))
+    if missing:
+        sys.exit(f"OECD: no average wages for {missing}")
+    return {"source": "OECD average annual wages (AV_AN_WAGE) and minimum wages at current prices "
+                      "(MW_CURP), national currency, yearly",
+            "average_wage": dict(sorted(average.items())), "minimum_wage": dict(sorted(minimum.items()))}
+
+
 def save(path, data):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=1, sort_keys=True)
@@ -137,9 +184,10 @@ def save(path, data):
 
 def main():
     os.makedirs(SALARY_DIR, exist_ok=True)
-    common = {"sex": "T", "indic_se": "ERN", "unit": "EUR", "freq": "A", "time": "2022"}
+    # National currency: EUR in the euro area, CHF in Switzerland.
+    common = {"sex": "T", "indic_se": "ERN", "unit": "NAC", "freq": "A", "time": "2022"}
     data = {
-        "source": "Eurostat SES 2022, mean gross annual earnings, EUR (earn_ses22_49, earn_ses22_28)",
+        "source": "Eurostat SES 2022, mean gross annual earnings, national currency (earn_ses22_49, earn_ses22_28)",
         "by_isco_section": eurostat_by_size("earn_ses22_49", ("isco08", "nace_r2"), **common),
         "by_isco_age": eurostat_by_size("earn_ses22_28", ("isco08", "age"), **common),
     }
@@ -150,6 +198,7 @@ def main():
     save(EUROSTAT_PATH, data)
     save(LFS_PATH, fetch_lfs())
     save(BLS_PATH, fetch_bls())
+    save(OECD_PATH, fetch_oecd())
 
 
 if __name__ == "__main__":

@@ -1,4 +1,998 @@
 {
+ "de_AT": {
+  "base": "de_DE",
+  "country": "Austria",
+  "place_names": {
+   "country": "Österreich"
+  },
+  "currency": "EUR",
+  "salary_format": {
+   "template": "{min} € - {max} € brutto/Jahr",
+   "thousands": "."
+  },
+  "qualifications": {
+   "high": [
+    "Master",
+    "Diplomstudium",
+    "Bachelor",
+    "Master im Bereich {field}",
+    "Bachelor im Bereich {field}",
+    "Abgeschlossenes Studium (Uni/FH) im Bereich {field}",
+    "Doktorat"
+   ],
+   "mid": [
+    "Matura (HTL/HAK)",
+    "Meisterprüfung",
+    "Lehrabschluss",
+    "HTL-Abschluss im Bereich {field}",
+    "Meisterprüfung im Bereich {field}",
+    "Kolleg im Bereich {field}"
+   ],
+   "low": [
+    "Pflichtschulabschluss",
+    "Lehrabschluss",
+    "Lehrabschluss im Bereich {field}",
+    "Fachschule im Bereich {field}"
+   ]
+  },
+  "benefits": {
+   "Überzahlung je nach Qualifikation": {
+    "requires": null,
+    "not_for": [
+     "Praktikum",
+     "Lehre"
+    ]
+   },
+   "Klimaticket": {
+    "requires": null,
+    "not_for": []
+   },
+   "Homeoffice": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Gleitzeit": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Essenszuschuss": {
+    "requires": null,
+    "not_for": []
+   },
+   "Betriebliche Pensionskasse": {
+    "requires": null,
+    "not_for": [
+     "Praktikum",
+     "Arbeitskräfteüberlassung"
+    ]
+   },
+   "Weiterbildungsmöglichkeiten": {
+    "requires": null,
+    "not_for": []
+   },
+   "Betriebliche Gesundheitsförderung": {
+    "requires": null,
+    "not_for": []
+   },
+   "Dienstrad": {
+    "requires": null,
+    "not_for": [
+     "Praktikum",
+     "Arbeitskräfteüberlassung"
+    ]
+   },
+   "Mitarbeiterrabatte": {
+    "requires": null,
+    "not_for": []
+   },
+   "Firmenwagen": {
+    "requires": "executive",
+    "not_for": [
+     "Praktikum",
+     "Lehre",
+     "Teilzeit"
+    ]
+   }
+  },
+  "job_portals": {
+   "all": [
+    "karriere.at",
+    "AMS eJob-Room",
+    "StepStone",
+    "Indeed",
+    "LinkedIn",
+    "willhaben Jobs",
+    "derStandard Karriere",
+    "XING"
+   ]
+  },
+  "contracts": {
+   "Vollzeit": {
+    "kind": "permanent",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Teilzeit": {
+    "kind": "part_time",
+    "salary_factor": 0.5,
+    "max_experience": null,
+    "employee": true
+   },
+   "Befristet": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Arbeitskräfteüberlassung": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Lehre": {
+    "kind": "apprentice",
+    "salary_factor": 0.3,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Praktikum": {
+    "kind": "intern",
+    "salary_factor": 0.35,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Freier Dienstvertrag": {
+    "kind": "freelance",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": false
+   }
+  },
+  "contract_weights": {
+   "0": {
+    "Vollzeit": 92.0,
+    "Teilzeit": 0.0,
+    "Befristet": 0.0,
+    "Arbeitskräfteüberlassung": 0.0,
+    "Lehre": 5,
+    "Praktikum": 3,
+    "Freier Dienstvertrag": 0.0
+   },
+   "1": {
+    "Vollzeit": 74.22,
+    "Teilzeit": 6.42,
+    "Befristet": 4.51,
+    "Arbeitskräfteüberlassung": 3.16,
+    "Lehre": 5,
+    "Praktikum": 3,
+    "Freier Dienstvertrag": 3.69
+   },
+   "2": {
+    "Vollzeit": 53.38,
+    "Teilzeit": 15.32,
+    "Befristet": 11.34,
+    "Arbeitskräfteüberlassung": 7.94,
+    "Lehre": 5,
+    "Praktikum": 3,
+    "Freier Dienstvertrag": 4.02
+   },
+   "3": {
+    "Vollzeit": 61.01,
+    "Teilzeit": 12.75,
+    "Befristet": 9.17,
+    "Arbeitskräfteüberlassung": 6.42,
+    "Lehre": 5,
+    "Praktikum": 3,
+    "Freier Dienstvertrag": 2.66
+   },
+   "4": {
+    "Vollzeit": 61.13,
+    "Teilzeit": 18.7,
+    "Befristet": 6.84,
+    "Arbeitskräfteüberlassung": 4.79,
+    "Lehre": 5,
+    "Praktikum": 3,
+    "Freier Dienstvertrag": 0.53
+   },
+   "5": {
+    "Vollzeit": 47.81,
+    "Teilzeit": 21.34,
+    "Befristet": 11.95,
+    "Arbeitskräfteüberlassung": 8.36,
+    "Lehre": 5,
+    "Praktikum": 3,
+    "Freier Dienstvertrag": 2.54
+   },
+   "6": {
+    "Vollzeit": 33.29,
+    "Teilzeit": 8.78,
+    "Befristet": 24.08,
+    "Arbeitskräfteüberlassung": 16.85,
+    "Lehre": 5,
+    "Praktikum": 3,
+    "Freier Dienstvertrag": 9
+   },
+   "7": {
+    "Vollzeit": 59.48,
+    "Teilzeit": 3.9,
+    "Befristet": 15.04,
+    "Arbeitskräfteüberlassung": 10.53,
+    "Lehre": 5,
+    "Praktikum": 3,
+    "Freier Dienstvertrag": 3.06
+   },
+   "8": {
+    "Vollzeit": 78.35,
+    "Teilzeit": 5.06,
+    "Befristet": 4.16,
+    "Arbeitskräfteüberlassung": 2.91,
+    "Lehre": 5,
+    "Praktikum": 3,
+    "Freier Dienstvertrag": 1.52
+   },
+   "9": {
+    "Vollzeit": 59.49,
+    "Teilzeit": 19.84,
+    "Befristet": 7.08,
+    "Arbeitskräfteüberlassung": 4.96,
+    "Lehre": 5,
+    "Praktikum": 3,
+    "Freier Dienstvertrag": 0.63
+   }
+  },
+  "salary": {
+   "base": {
+    "0": {
+     "*": 58268,
+     "B": 74296,
+     "C": 61922,
+     "D": 77125,
+     "E": 56585,
+     "F": 64618,
+     "G": 59448,
+     "H": 62459,
+     "I": 43333,
+     "J": 61773,
+     "K": 65033,
+     "L": 61625,
+     "M": 57163,
+     "N": 50651,
+     "P": 43958,
+     "Q": 49227,
+     "R": 51484,
+     "S": 51476
+    },
+    "1": {
+     "*": 112755,
+     "B": 140602,
+     "C": 114388,
+     "D": 132252,
+     "E": 112572,
+     "F": 102153,
+     "G": 104594,
+     "H": 101634,
+     "I": 55738,
+     "J": 116767,
+     "K": 144780,
+     "L": 129860,
+     "M": 159644,
+     "N": 90131,
+     "P": 86992,
+     "Q": 83875,
+     "R": 91323,
+     "S": 97082
+    },
+    "2": {
+     "*": 70309,
+     "B": 107125,
+     "C": 76221,
+     "D": 91378,
+     "E": 68135,
+     "F": 70956,
+     "G": 75315,
+     "H": 69685,
+     "I": 52145,
+     "J": 71668,
+     "K": 85763,
+     "L": 72837,
+     "M": 73125,
+     "N": 55269,
+     "P": 61475,
+     "Q": 66532,
+     "R": 64463,
+     "S": 61890
+    },
+    "3": {
+     "*": 58268,
+     "B": 74296,
+     "C": 61922,
+     "D": 77125,
+     "E": 56585,
+     "F": 64618,
+     "G": 59448,
+     "H": 62459,
+     "I": 43333,
+     "J": 61773,
+     "K": 65033,
+     "L": 61625,
+     "M": 57163,
+     "N": 50651,
+     "P": 43958,
+     "Q": 49227,
+     "R": 51484,
+     "S": 51476
+    },
+    "4": {
+     "*": 48160,
+     "B": 52489,
+     "C": 50768,
+     "D": 58406,
+     "E": 48041,
+     "F": 47388,
+     "G": 43323,
+     "H": 43375,
+     "I": 35683,
+     "J": 48932,
+     "K": 63533,
+     "L": 49249,
+     "M": 48785,
+     "N": 43714,
+     "P": 42897,
+     "Q": 42425,
+     "R": 43505,
+     "S": 47415
+    },
+    "5": {
+     "*": 36196,
+     "B": 68621,
+     "C": 41375,
+     "D": 50779,
+     "E": 49001,
+     "F": 49771,
+     "G": 36775,
+     "H": 46590,
+     "I": 30729,
+     "J": 36703,
+     "K": 50562,
+     "L": 36143,
+     "M": 38612,
+     "N": 35134,
+     "P": 33913,
+     "Q": 39056,
+     "R": 36120,
+     "S": 30873
+    },
+    "6": {
+     "*": 32851,
+     "B": 36101,
+     "C": 37382,
+     "D": 37771,
+     "E": 35737,
+     "F": 37044,
+     "G": 32676,
+     "H": 34976,
+     "I": 27553,
+     "K": 28812,
+     "L": 31822,
+     "M": 32085,
+     "N": 30671,
+     "P": 29527,
+     "Q": 29925,
+     "R": 32401,
+     "S": 30894
+    },
+    "7": {
+     "*": 44146,
+     "B": 50937,
+     "C": 47530,
+     "D": 58363,
+     "E": 49618,
+     "F": 42577,
+     "G": 39539,
+     "H": 43132,
+     "J": 52676,
+     "K": 48294,
+     "M": 46270,
+     "N": 39076,
+     "Q": 35490,
+     "S": 45539
+    },
+    "8": {
+     "*": 43748,
+     "B": 48510,
+     "C": 45814,
+     "D": 58961,
+     "E": 40988,
+     "F": 46365,
+     "G": 39474,
+     "H": 43692,
+     "K": 37120,
+     "M": 37987,
+     "N": 38044,
+     "Q": 33244,
+     "S": 30595
+    },
+    "9": {
+     "*": 32851,
+     "B": 36101,
+     "C": 37382,
+     "D": 37771,
+     "E": 35737,
+     "F": 37044,
+     "G": 32676,
+     "H": 34976,
+     "I": 27553,
+     "K": 28812,
+     "L": 31822,
+     "M": 32085,
+     "N": 30671,
+     "P": 29527,
+     "Q": 29925,
+     "R": 32401,
+     "S": 30894
+    }
+   },
+   "age_ratio": {
+    "0": {
+     "Y_LT30": 0.709824,
+     "Y30-49": 1.000498,
+     "Y_GE50": 1.219349
+    },
+    "1": {
+     "Y_LT30": 0.506851,
+     "Y30-49": 0.917689,
+     "Y_GE50": 1.165536
+    },
+    "2": {
+     "Y_LT30": 0.682516,
+     "Y30-49": 0.992163,
+     "Y_GE50": 1.259554
+    },
+    "3": {
+     "Y_LT30": 0.709824,
+     "Y30-49": 1.000498,
+     "Y_GE50": 1.219349
+    },
+    "4": {
+     "Y_LT30": 0.735154,
+     "Y30-49": 0.971429,
+     "Y_GE50": 1.229651
+    },
+    "5": {
+     "Y_LT30": 0.824677,
+     "Y30-49": 1.023345,
+     "Y_GE50": 1.121422
+    },
+    "6": {
+     "Y_LT30": 0.989346,
+     "Y30-49": 0.989498,
+     "Y_GE50": 1.016803
+    },
+    "7": {
+     "Y_LT30": 0.782449,
+     "Y30-49": 1.067345,
+     "Y_GE50": 1.139197
+    },
+    "8": {
+     "Y_LT30": 0.957987,
+     "Y30-49": 0.988274,
+     "Y_GE50": 1.030081
+    },
+    "9": {
+     "Y_LT30": 0.989346,
+     "Y30-49": 0.989498,
+     "Y_GE50": 1.016803
+    }
+   }
+  },
+  "minimum_wage": null,
+  "salary_source": "salaries: Eurostat SES 2022 (© European Union), by ISCO-08 major group, NACE section and age; minimum wage: OECD; contract mix: Eurostat LFS 2025, aged 15-64, thousands (lfsa_eegais, lfsa_etgais, lfsa_epgais, lfsa_esgais)"
+ },
+ "de_CH": {
+  "base": "de_DE",
+  "country": "Switzerland",
+  "place_names": {
+   "country": "Schweiz"
+  },
+  "currency": "CHF",
+  "salary_format": {
+   "template": "CHF {min} - {max} brutto/Jahr",
+   "thousands": "'"
+  },
+  "qualifications": {
+   "high": [
+    "Master (Universität/ETH)",
+    "Master FH",
+    "Bachelor FH",
+    "Master im Bereich {field}",
+    "Bachelor FH im Bereich {field}",
+    "Doktorat"
+   ],
+   "mid": [
+    "Eidg. Fachausweis",
+    "Diplom HF",
+    "Berufsmaturität",
+    "Eidg. Fachausweis im Bereich {field}",
+    "Diplom HF im Bereich {field}"
+   ],
+   "low": [
+    "EFZ",
+    "EBA",
+    "EFZ im Bereich {field}",
+    "Obligatorische Schule"
+   ]
+  },
+  "benefits": {
+   "Überdurchschnittliche Pensionskasse": {
+    "requires": null,
+    "not_for": [
+     "Praktikum",
+     "Temporär"
+    ]
+   },
+   "13. Monatslohn": {
+    "requires": null,
+    "not_for": [
+     "Praktikum"
+    ]
+   },
+   "5 Wochen Ferien": {
+    "requires": null,
+    "not_for": [
+     "Praktikum",
+     "Lehrstelle"
+    ]
+   },
+   "Homeoffice": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Gleitzeit": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Weiterbildungsmöglichkeiten": {
+    "requires": null,
+    "not_for": []
+   },
+   "Halbtax-Abo": {
+    "requires": null,
+    "not_for": []
+   },
+   "Personalrestaurant": {
+    "requires": null,
+    "not_for": []
+   },
+   "Mitarbeiterrabatte": {
+    "requires": null,
+    "not_for": []
+   },
+   "Jahresbonus": {
+    "requires": null,
+    "not_for": [
+     "Praktikum",
+     "Lehrstelle"
+    ]
+   },
+   "Geschäftsfahrzeug": {
+    "requires": "executive",
+    "not_for": [
+     "Praktikum",
+     "Lehrstelle"
+    ]
+   }
+  },
+  "job_portals": {
+   "all": [
+    "jobs.ch",
+    "JobScout24",
+    "Indeed",
+    "LinkedIn",
+    "Job-Room (RAV)",
+    "XING"
+   ]
+  },
+  "contracts": {
+   "Festanstellung": {
+    "kind": "permanent",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Temporär": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Befristet": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Teilzeit": {
+    "kind": "part_time",
+    "salary_factor": 0.6,
+    "max_experience": null,
+    "employee": true
+   },
+   "Lehrstelle": {
+    "kind": "apprentice",
+    "salary_factor": 0.2,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Praktikum": {
+    "kind": "intern",
+    "salary_factor": 0.35,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Selbstständig": {
+    "kind": "freelance",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": false
+   }
+  },
+  "contract_weights": {
+   "0": {
+    "Festanstellung": 43.72,
+    "Temporär": 26.33,
+    "Befristet": 21.94,
+    "Teilzeit": 0.0,
+    "Lehrstelle": 5,
+    "Praktikum": 3,
+    "Selbstständig": 0.0
+   },
+   "1": {
+    "Festanstellung": 75.66,
+    "Temporär": 3.27,
+    "Befristet": 2.73,
+    "Teilzeit": 6.73,
+    "Lehrstelle": 5,
+    "Praktikum": 3,
+    "Selbstständig": 3.62
+   },
+   "2": {
+    "Festanstellung": 53.8,
+    "Temporär": 11.95,
+    "Befristet": 9.96,
+    "Teilzeit": 14.31,
+    "Lehrstelle": 5,
+    "Praktikum": 3,
+    "Selbstständig": 1.99
+   },
+   "3": {
+    "Festanstellung": 58.55,
+    "Temporär": 11.11,
+    "Befristet": 9.26,
+    "Teilzeit": 11.3,
+    "Lehrstelle": 5,
+    "Praktikum": 3,
+    "Selbstständig": 1.78
+   },
+   "4": {
+    "Festanstellung": 57.01,
+    "Temporär": 11.32,
+    "Befristet": 9.43,
+    "Teilzeit": 13.37,
+    "Lehrstelle": 5,
+    "Praktikum": 3,
+    "Selbstständig": 0.88
+   },
+   "5": {
+    "Festanstellung": 47.47,
+    "Temporär": 14.37,
+    "Befristet": 11.98,
+    "Teilzeit": 16.37,
+    "Lehrstelle": 5,
+    "Praktikum": 3,
+    "Selbstständig": 1.8
+   },
+   "6": {
+    "Festanstellung": 36.37,
+    "Temporär": 23.75,
+    "Befristet": 19.79,
+    "Teilzeit": 6.09,
+    "Lehrstelle": 5,
+    "Praktikum": 3,
+    "Selbstständig": 6
+   },
+   "7": {
+    "Festanstellung": 49.97,
+    "Temporär": 19.45,
+    "Befristet": 16.21,
+    "Teilzeit": 4.29,
+    "Lehrstelle": 5,
+    "Praktikum": 3,
+    "Selbstständig": 2.08
+   },
+   "8": {
+    "Festanstellung": 73.88,
+    "Temporär": 5.94,
+    "Befristet": 4.95,
+    "Teilzeit": 5.89,
+    "Lehrstelle": 5,
+    "Praktikum": 3,
+    "Selbstständig": 1.34
+   },
+   "9": {
+    "Festanstellung": 58.77,
+    "Temporär": 8.59,
+    "Befristet": 7.16,
+    "Teilzeit": 15.98,
+    "Lehrstelle": 5,
+    "Praktikum": 3,
+    "Selbstständig": 1.5
+   }
+  },
+  "salary": {
+   "base": {
+    "0": {
+     "*": 98763,
+     "B": 106421,
+     "C": 101200,
+     "D": 113562,
+     "E": 98074,
+     "F": 99100,
+     "G": 101114,
+     "H": 102740,
+     "I": 73992,
+     "J": 110427,
+     "K": 137345,
+     "L": 99534,
+     "M": 102056,
+     "N": 90299,
+     "O": 108319,
+     "P": 93262,
+     "Q": 83304,
+     "R": 86632,
+     "S": 92251
+    },
+    "1": {
+     "*": 153046,
+     "B": 139869,
+     "C": 160857,
+     "D": 164036,
+     "E": 138760,
+     "F": 132035,
+     "G": 152654,
+     "H": 128039,
+     "I": 92937,
+     "J": 161439,
+     "K": 220943,
+     "L": 147484,
+     "M": 185380,
+     "N": 131522,
+     "O": 140333,
+     "P": 129439,
+     "Q": 122580,
+     "R": 114740,
+     "S": 129480
+    },
+    "2": {
+     "*": 120464,
+     "B": 146670,
+     "C": 121026,
+     "D": 128681,
+     "E": 114057,
+     "F": 101964,
+     "G": 127906,
+     "H": 114010,
+     "I": 90067,
+     "J": 125460,
+     "K": 158683,
+     "L": 108446,
+     "M": 125198,
+     "N": 105282,
+     "O": 116424,
+     "P": 115040,
+     "Q": 110288,
+     "R": 97293,
+     "S": 107655
+    },
+    "3": {
+     "*": 98763,
+     "B": 106421,
+     "C": 101200,
+     "D": 113562,
+     "E": 98074,
+     "F": 99100,
+     "G": 101114,
+     "H": 102740,
+     "I": 73992,
+     "J": 110427,
+     "K": 137345,
+     "L": 99534,
+     "M": 102056,
+     "N": 90299,
+     "O": 108319,
+     "P": 93262,
+     "Q": 83304,
+     "R": 86632,
+     "S": 92251
+    },
+    "4": {
+     "*": 81809,
+     "B": 84350,
+     "C": 80405,
+     "D": 88912,
+     "E": 82330,
+     "F": 79024,
+     "G": 77245,
+     "H": 75561,
+     "I": 62679,
+     "J": 87215,
+     "K": 102760,
+     "L": 80754,
+     "M": 84995,
+     "N": 72071,
+     "O": 92692,
+     "P": 88098,
+     "Q": 79542,
+     "R": 73891,
+     "S": 82361
+    },
+    "5": {
+     "*": 66739,
+     "B": 83572,
+     "C": 70577,
+     "D": 90031,
+     "E": 84813,
+     "F": 78316,
+     "G": 65342,
+     "H": 73744,
+     "I": 59726,
+     "J": 88248,
+     "K": 124041,
+     "L": 73279,
+     "M": 74776,
+     "N": 64980,
+     "O": 87604,
+     "P": 77409,
+     "Q": 69483,
+     "R": 64866,
+     "S": 65011
+    },
+    "6": {
+     "*": 71444,
+     "C": 73620,
+     "E": 71890,
+     "F": 71865,
+     "G": 67141,
+     "I": 71595,
+     "M": 74952,
+     "N": 72107,
+     "O": 85313,
+     "P": 58609,
+     "Q": 77828,
+     "R": 57361,
+     "S": 71480
+    },
+    "7": {
+     "*": 77497,
+     "B": 81576,
+     "C": 77502,
+     "D": 90141,
+     "E": 85497,
+     "F": 77396,
+     "G": 74163,
+     "H": 84534,
+     "I": 65484,
+     "J": 83717,
+     "K": 113361,
+     "L": 78504,
+     "M": 84088,
+     "N": 77059,
+     "O": 88200,
+     "P": 83270,
+     "Q": 79037,
+     "R": 79658,
+     "S": 75061
+    },
+    "8": {
+     "*": 73779,
+     "B": 78675,
+     "C": 71764,
+     "D": 90148,
+     "E": 77589,
+     "F": 80605,
+     "G": 70414,
+     "H": 76106,
+     "I": 56415,
+     "J": 95865,
+     "K": 103285,
+     "L": 62264,
+     "M": 75744,
+     "N": 73278,
+     "O": 89313,
+     "P": 70342,
+     "Q": 65932,
+     "R": 64404,
+     "S": 61107
+    },
+    "9": {
+     "*": 63084,
+     "B": 75117,
+     "C": 66396,
+     "D": 79669,
+     "E": 72303,
+     "F": 72229,
+     "G": 63667,
+     "H": 64432,
+     "I": 55150,
+     "J": 60009,
+     "K": 66159,
+     "L": 65548,
+     "M": 67182,
+     "N": 58753,
+     "O": 71609,
+     "P": 63223,
+     "Q": 63466,
+     "R": 58011,
+     "S": 60242
+    }
+   },
+   "age_ratio": {
+    "0": {
+     "Y_LT30": 0.756619,
+     "Y30-49": 1.013588,
+     "Y_GE50": 1.124905
+    },
+    "1": {
+     "Y_LT30": 0.566843,
+     "Y30-49": 0.947016,
+     "Y_GE50": 1.131542
+    },
+    "2": {
+     "Y_LT30": 0.695162,
+     "Y30-49": 1.001029,
+     "Y_GE50": 1.1746
+    },
+    "3": {
+     "Y_LT30": 0.756619,
+     "Y30-49": 1.013588,
+     "Y_GE50": 1.124905
+    },
+    "4": {
+     "Y_LT30": 0.821181,
+     "Y30-49": 1.013189,
+     "Y_GE50": 1.083927
+    },
+    "5": {
+     "Y_LT30": 0.900208,
+     "Y30-49": 1.008466,
+     "Y_GE50": 1.061104
+    },
+    "6": {
+     "Y_LT30": 0.89757,
+     "Y30-49": 1.011478,
+     "Y_GE50": 1.105691
+    },
+    "7": {
+     "Y_LT30": 0.872524,
+     "Y30-49": 1.012517,
+     "Y_GE50": 1.083358
+    },
+    "8": {
+     "Y_LT30": 0.887922,
+     "Y30-49": 0.995663,
+     "Y_GE50": 1.05137
+    },
+    "9": {
+     "Y_LT30": 0.947023,
+     "Y30-49": 0.994103,
+     "Y_GE50": 1.030705
+    }
+   }
+  },
+  "minimum_wage": null,
+  "salary_source": "salaries: Eurostat SES 2022 (© European Union), by ISCO-08 major group, NACE section and age; minimum wage: OECD; contract mix: Eurostat LFS 2025, aged 15-64, thousands (lfsa_eegais, lfsa_etgais, lfsa_epgais, lfsa_esgais)"
+ },
  "de_DE": {
   "country": "Germany",
   "place_names": {
@@ -4756,6 +5750,2277 @@
    ]
   }
  },
+ "de_LU": {
+  "base": "de_DE",
+  "country": "Luxembourg",
+  "place_names": {
+   "country": "Luxemburg"
+  },
+  "currency": "EUR",
+  "qualifications": {
+   "high": [
+    "Master",
+    "Bachelor",
+    "Master im Bereich {field}",
+    "Bachelor im Bereich {field}",
+    "Promotion"
+   ],
+   "mid": [
+    "BTS",
+    "Diplôme de technicien (DT)",
+    "Bachelor",
+    "BTS im Bereich {field}",
+    "DT im Bereich {field}"
+   ],
+   "low": [
+    "DAP",
+    "CCP",
+    "Sekundarschulabschluss",
+    "DAP im Bereich {field}"
+   ]
+  },
+  "benefits": {
+   "Essensgutscheine": {
+    "requires": null,
+    "not_for": [
+     "Praktikum"
+    ]
+   },
+   "Zusatzrentenversicherung": {
+    "requires": null,
+    "not_for": [
+     "Praktikum",
+     "Zeitarbeit"
+    ]
+   },
+   "Krankenzusatzversicherung": {
+    "requires": null,
+    "not_for": [
+     "Praktikum"
+    ]
+   },
+   "13. Monatsgehalt": {
+    "requires": null,
+    "not_for": [
+     "Praktikum"
+    ]
+   },
+   "Homeoffice": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Gleitzeit": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Weiterbildungsmöglichkeiten": {
+    "requires": null,
+    "not_for": []
+   },
+   "Jahresbonus": {
+    "requires": null,
+    "not_for": [
+     "Praktikum",
+     "Ausbildung"
+    ]
+   },
+   "Mitarbeiterrabatte": {
+    "requires": null,
+    "not_for": []
+   },
+   "Firmenwagen": {
+    "requires": "executive",
+    "not_for": [
+     "Praktikum",
+     "Ausbildung",
+     "Teilzeit"
+    ]
+   }
+  },
+  "job_portals": {
+   "all": [
+    "ADEM",
+    "jobs.lu",
+    "Moovijob",
+    "StepStone",
+    "Indeed",
+    "LinkedIn"
+   ]
+  },
+  "contracts": {
+   "Unbefristet (CDI)": {
+    "kind": "permanent",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Befristet (CDD)": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Zeitarbeit": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Teilzeit": {
+    "kind": "part_time",
+    "salary_factor": 0.5,
+    "max_experience": null,
+    "employee": true
+   },
+   "Ausbildung": {
+    "kind": "apprentice",
+    "salary_factor": 0.4,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Praktikum": {
+    "kind": "intern",
+    "salary_factor": 0.3,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Selbstständig": {
+    "kind": "freelance",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": false
+   }
+  },
+  "contract_weights": {
+   "0": {
+    "Unbefristet (CDI)": 60,
+    "Befristet (CDD)": 14,
+    "Zeitarbeit": 8,
+    "Teilzeit": 8,
+    "Ausbildung": 4,
+    "Praktikum": 3,
+    "Selbstständig": 3
+   },
+   "1": {
+    "Unbefristet (CDI)": 84.78,
+    "Befristet (CDD)": 0.0,
+    "Zeitarbeit": 0.0,
+    "Teilzeit": 0.0,
+    "Ausbildung": 4,
+    "Praktikum": 3,
+    "Selbstständig": 8.22
+   },
+   "2": {
+    "Unbefristet (CDI)": 64.16,
+    "Befristet (CDD)": 12.94,
+    "Zeitarbeit": 7.39,
+    "Teilzeit": 5.68,
+    "Ausbildung": 4,
+    "Praktikum": 3,
+    "Selbstständig": 2.83
+   },
+   "3": {
+    "Unbefristet (CDI)": 62.36,
+    "Befristet (CDD)": 10.85,
+    "Zeitarbeit": 6.2,
+    "Teilzeit": 11.09,
+    "Ausbildung": 4,
+    "Praktikum": 3,
+    "Selbstständig": 2.5
+   },
+   "4": {
+    "Unbefristet (CDI)": 83.45,
+    "Befristet (CDD)": 0.0,
+    "Zeitarbeit": 0.0,
+    "Teilzeit": 9.55,
+    "Ausbildung": 4,
+    "Praktikum": 3,
+    "Selbstständig": 0.0
+   },
+   "5": {
+    "Unbefristet (CDI)": 45.69,
+    "Befristet (CDD)": 19.46,
+    "Zeitarbeit": 11.12,
+    "Teilzeit": 13.54,
+    "Ausbildung": 4,
+    "Praktikum": 3,
+    "Selbstständig": 3.18
+   },
+   "6": {
+    "Unbefristet (CDI)": 93.0,
+    "Befristet (CDD)": 0.0,
+    "Zeitarbeit": 0.0,
+    "Teilzeit": 0.0,
+    "Ausbildung": 4,
+    "Praktikum": 3,
+    "Selbstständig": 0.0
+   },
+   "7": {
+    "Unbefristet (CDI)": 93.0,
+    "Befristet (CDD)": 0.0,
+    "Zeitarbeit": 0.0,
+    "Teilzeit": 0.0,
+    "Ausbildung": 4,
+    "Praktikum": 3,
+    "Selbstständig": 0.0
+   },
+   "8": {
+    "Unbefristet (CDI)": 93.0,
+    "Befristet (CDD)": 0.0,
+    "Zeitarbeit": 0.0,
+    "Teilzeit": 0.0,
+    "Ausbildung": 4,
+    "Praktikum": 3,
+    "Selbstständig": 0.0
+   },
+   "9": {
+    "Unbefristet (CDI)": 28.12,
+    "Befristet (CDD)": 29.89,
+    "Zeitarbeit": 17.08,
+    "Teilzeit": 17.91,
+    "Ausbildung": 4,
+    "Praktikum": 3,
+    "Selbstständig": 0.0
+   }
+  },
+  "salary": {
+   "base": {
+    "0": {
+     "*": 76729,
+     "C": 63580,
+     "D": 91590,
+     "F": 61957,
+     "G": 62485,
+     "H": 103307,
+     "I": 48974,
+     "J": 66155,
+     "M": 63968,
+     "N": 58404,
+     "O": 85727,
+     "Q": 87986,
+     "R": 59204,
+     "S": 76028
+    },
+    "1": {
+     "*": 158634,
+     "C": 131900,
+     "D": 147791,
+     "F": 129844,
+     "G": 119799,
+     "H": 135891,
+     "I": 80220,
+     "J": 119979,
+     "K": 181136,
+     "L": 117012,
+     "M": 193426,
+     "N": 137892,
+     "O": 151570,
+     "Q": 129796,
+     "R": 104457,
+     "S": 113604
+    },
+    "2": {
+     "*": 96440,
+     "C": 72556,
+     "D": 92986,
+     "F": 77254,
+     "G": 76823,
+     "H": 100041,
+     "I": 57067,
+     "J": 76730,
+     "K": 98245,
+     "L": 93889,
+     "M": 91815,
+     "N": 76754,
+     "O": 125169,
+     "P": 117993,
+     "Q": 114672,
+     "R": 95121,
+     "S": 85838
+    },
+    "3": {
+     "*": 76729,
+     "C": 63580,
+     "D": 91590,
+     "F": 61957,
+     "G": 62485,
+     "H": 103307,
+     "I": 48974,
+     "J": 66155,
+     "M": 63968,
+     "N": 58404,
+     "O": 85727,
+     "Q": 87986,
+     "R": 59204,
+     "S": 76028
+    },
+    "4": {
+     "*": 59079,
+     "C": 53292,
+     "E": 53463,
+     "F": 47307,
+     "G": 45392,
+     "H": 56171,
+     "I": 40125,
+     "K": 86062,
+     "L": 55721,
+     "M": 58133,
+     "N": 43985,
+     "O": 84538,
+     "P": 69839,
+     "Q": 70622,
+     "R": 65856,
+     "S": 74739
+    },
+    "5": {
+     "*": 45890,
+     "C": 46003,
+     "F": 59829,
+     "G": 39824,
+     "H": 66427,
+     "I": 37016,
+     "M": 54433,
+     "N": 44104,
+     "O": 97721,
+     "P": 56114,
+     "Q": 55670,
+     "R": 56183,
+     "S": 43207
+    },
+    "6": {
+     "*": 43990,
+     "G": 40729,
+     "N": 38661,
+     "Q": 41004,
+     "R": 56150
+    },
+    "7": {
+     "*": 46410,
+     "C": 46161,
+     "D": 66989,
+     "F": 43375,
+     "G": 43261,
+     "H": 72421,
+     "M": 49571,
+     "N": 40473,
+     "O": 84634,
+     "P": 82408,
+     "Q": 59030
+    },
+    "8": {
+     "*": 48924,
+     "C": 53901,
+     "F": 52813,
+     "G": 47797,
+     "H": 43823,
+     "M": 68693,
+     "N": 42918,
+     "Q": 38244
+    },
+    "9": {
+     "*": 38365,
+     "C": 42608,
+     "E": 45705,
+     "F": 38219,
+     "G": 35033,
+     "H": 43221,
+     "M": 35307,
+     "N": 33322,
+     "O": 66775,
+     "P": 63629,
+     "Q": 39440,
+     "R": 51120,
+     "S": 39105
+    }
+   },
+   "age_ratio": {
+    "0": {
+     "Y_LT30": 0.707868,
+     "Y30-49": 0.98496,
+     "Y_GE50": 1.254076
+    },
+    "1": {
+     "Y_LT30": 0.449519,
+     "Y30-49": 0.902039,
+     "Y_GE50": 1.265214
+    },
+    "2": {
+     "Y_LT30": 0.629676,
+     "Y30-49": 1.01853,
+     "Y_GE50": 1.281128
+    },
+    "3": {
+     "Y_LT30": 0.707868,
+     "Y30-49": 0.98496,
+     "Y_GE50": 1.254076
+    },
+    "4": {
+     "Y_LT30": 0.720357,
+     "Y30-49": 0.99807,
+     "Y_GE50": 1.159177
+    },
+    "5": {
+     "Y_LT30": 0.807845,
+     "Y30-49": 1.006603,
+     "Y_GE50": 1.138767
+    },
+    "6": {
+     "Y_LT30": 0.859604,
+     "Y30-49": 1.012798,
+     "Y_GE50": 1.061741
+    },
+    "7": {
+     "Y_LT30": 0.806184,
+     "Y30-49": 1.016807,
+     "Y_GE50": 1.074165
+    },
+    "8": {
+     "Y_LT30": 0.825934,
+     "Y30-49": 0.982258,
+     "Y_GE50": 1.093165
+    },
+    "9": {
+     "Y_LT30": 0.909788,
+     "Y30-49": 0.979773,
+     "Y_GE50": 1.067509
+    }
+   }
+  },
+  "minimum_wage": 27591.27,
+  "salary_source": "salaries: Eurostat SES 2022 (© European Union), by ISCO-08 major group, NACE section and age; minimum wage: OECD; contract mix: Eurostat LFS 2025, aged 15-64, thousands (lfsa_eegais, lfsa_etgais, lfsa_epgais, lfsa_esgais)"
+ },
+ "en_AU": {
+  "base": "en_US",
+  "country": "Australia",
+  "currency": "AUD",
+  "salary_format": {
+   "template": "${min} - ${max} + super",
+   "thousands": ","
+  },
+  "qualifications": {
+   "high": [
+    "Bachelor's degree",
+    "Master's degree",
+    "Bachelor's degree in {field}",
+    "Master's degree in {field}",
+    "PhD"
+   ],
+   "mid": [
+    "Diploma",
+    "Advanced Diploma",
+    "Diploma of {field}",
+    "Certificate IV in {field}",
+    "Bachelor's degree"
+   ],
+   "low": [
+    "Year 12",
+    "Certificate III in {field}",
+    "Certificate II in {field}",
+    "Trade qualification"
+   ]
+  },
+  "benefits": {
+   "Above-award salary": {
+    "requires": null,
+    "not_for": [
+     "Internship",
+     "Apprenticeship"
+    ]
+   },
+   "Additional superannuation": {
+    "requires": null,
+    "not_for": [
+     "Casual",
+     "Internship"
+    ]
+   },
+   "Salary packaging": {
+    "requires": null,
+    "not_for": [
+     "Casual",
+     "Internship"
+    ]
+   },
+   "Hybrid working": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Flexible hours": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Paid parental leave": {
+    "requires": null,
+    "not_for": [
+     "Casual",
+     "Contract/Temp",
+     "Internship"
+    ]
+   },
+   "Study leave": {
+    "requires": null,
+    "not_for": [
+     "Casual",
+     "Contract/Temp",
+     "Internship"
+    ]
+   },
+   "Employee assistance program": {
+    "requires": null,
+    "not_for": []
+   },
+   "Performance bonus": {
+    "requires": null,
+    "not_for": [
+     "Internship",
+     "Apprenticeship"
+    ]
+   },
+   "Wellbeing allowance": {
+    "requires": null,
+    "not_for": []
+   },
+   "Staff discounts": {
+    "requires": null,
+    "not_for": []
+   },
+   "Fully maintained vehicle": {
+    "requires": "executive",
+    "not_for": [
+     "Internship",
+     "Apprenticeship"
+    ]
+   }
+  },
+  "job_portals": {
+   "all": [
+    "SEEK",
+    "Indeed",
+    "LinkedIn",
+    "Jora",
+    "CareerOne",
+    "Workforce Australia"
+   ]
+  },
+  "contracts": {
+   "Full time": {
+    "kind": "permanent",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Part time": {
+    "kind": "part_time",
+    "salary_factor": 0.5,
+    "max_experience": null,
+    "employee": true
+   },
+   "Casual": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Contract/Temp": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Apprenticeship": {
+    "kind": "apprentice",
+    "salary_factor": 0.5,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Internship": {
+    "kind": "intern",
+    "salary_factor": 0.4,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Contractor (ABN)": {
+    "kind": "freelance",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": false
+   }
+  },
+  "contract_weights": {
+   "0": {
+    "Full time": 55,
+    "Part time": 18,
+    "Casual": 10,
+    "Contract/Temp": 8,
+    "Apprenticeship": 4,
+    "Internship": 2,
+    "Contractor (ABN)": 3
+   },
+   "1": {
+    "Full time": 55,
+    "Part time": 18,
+    "Casual": 10,
+    "Contract/Temp": 8,
+    "Apprenticeship": 4,
+    "Internship": 2,
+    "Contractor (ABN)": 3
+   },
+   "2": {
+    "Full time": 55,
+    "Part time": 18,
+    "Casual": 10,
+    "Contract/Temp": 8,
+    "Apprenticeship": 4,
+    "Internship": 2,
+    "Contractor (ABN)": 3
+   },
+   "3": {
+    "Full time": 55,
+    "Part time": 18,
+    "Casual": 10,
+    "Contract/Temp": 8,
+    "Apprenticeship": 4,
+    "Internship": 2,
+    "Contractor (ABN)": 3
+   },
+   "4": {
+    "Full time": 55,
+    "Part time": 18,
+    "Casual": 10,
+    "Contract/Temp": 8,
+    "Apprenticeship": 4,
+    "Internship": 2,
+    "Contractor (ABN)": 3
+   },
+   "5": {
+    "Full time": 55,
+    "Part time": 18,
+    "Casual": 10,
+    "Contract/Temp": 8,
+    "Apprenticeship": 4,
+    "Internship": 2,
+    "Contractor (ABN)": 3
+   },
+   "6": {
+    "Full time": 55,
+    "Part time": 18,
+    "Casual": 10,
+    "Contract/Temp": 8,
+    "Apprenticeship": 4,
+    "Internship": 2,
+    "Contractor (ABN)": 3
+   },
+   "7": {
+    "Full time": 55,
+    "Part time": 18,
+    "Casual": 10,
+    "Contract/Temp": 8,
+    "Apprenticeship": 4,
+    "Internship": 2,
+    "Contractor (ABN)": 3
+   },
+   "8": {
+    "Full time": 55,
+    "Part time": 18,
+    "Casual": 10,
+    "Contract/Temp": 8,
+    "Apprenticeship": 4,
+    "Internship": 2,
+    "Contractor (ABN)": 3
+   },
+   "9": {
+    "Full time": 55,
+    "Part time": 18,
+    "Casual": 10,
+    "Contract/Temp": 8,
+    "Apprenticeship": 4,
+    "Internship": 2,
+    "Contractor (ABN)": 3
+   }
+  },
+  "place_names": {
+   "country": "Australia"
+  },
+  "salary": {
+   "base": {
+    "0": {
+     "*": 73635.510334
+    },
+    "1": {
+     "*": 176157.678378
+    },
+    "2": {
+     "*": 128801.507782
+    },
+    "3": {
+     "*": 96381.833162
+    },
+    "4": {
+     "*": 62527.12307
+    },
+    "5": {
+     "*": 56924.421197
+    },
+    "6": {
+     "*": 50339.427437
+    },
+    "7": {
+     "*": 78025.506174
+    },
+    "8": {
+     "*": 61514.513532
+    },
+    "9": {
+     "*": 47313.725884
+    }
+   },
+   "age_ratio": {
+    "0": {
+     "Y_LT30": 0.802705,
+     "Y30-49": 1.004733,
+     "Y_GE50": 1.090986
+    },
+    "1": {
+     "Y_LT30": 0.488714,
+     "Y30-49": 0.913304,
+     "Y_GE50": 1.121247
+    },
+    "2": {
+     "Y_LT30": 0.652849,
+     "Y30-49": 0.970801,
+     "Y_GE50": 1.157495
+    },
+    "3": {
+     "Y_LT30": 0.710311,
+     "Y30-49": 1.007522,
+     "Y_GE50": 1.120844
+    },
+    "4": {
+     "Y_LT30": 0.773121,
+     "Y30-49": 1.007026,
+     "Y_GE50": 1.104287
+    },
+    "5": {
+     "Y_LT30": 0.876143,
+     "Y30-49": 1.013801,
+     "Y_GE50": 1.060105
+    },
+    "6": {
+     "Y_LT30": 0.889805,
+     "Y30-49": 1.01208,
+     "Y_GE50": 1.074879
+    },
+    "7": {
+     "Y_LT30": 0.794588,
+     "Y30-49": 1.035544,
+     "Y_GE50": 1.064795
+    },
+    "8": {
+     "Y_LT30": 0.845771,
+     "Y30-49": 1.015567,
+     "Y_GE50": 1.023818
+    },
+    "9": {
+     "Y_LT30": 0.925618,
+     "Y30-49": 1.014011,
+     "Y_GE50": 1.019812
+    }
+   }
+  },
+  "minimum_wage": 48461.0,
+  "salary_source": "salaries: those of United States scaled by the ratio of the OECD average annual wages 2025 (AU / US, national currency); minimum wage: OECD"
+ },
+ "en_CA": {
+  "base": "en_US",
+  "country": "Canada",
+  "currency": "CAD",
+  "salary_format": {
+   "template": "${min} - ${max} a year",
+   "thousands": ","
+  },
+  "qualifications": {
+   "high": [
+    "Bachelor's degree",
+    "Master's degree",
+    "Bachelor's degree in {field}",
+    "Master's degree in {field}",
+    "Doctoral degree"
+   ],
+   "mid": [
+    "College diploma",
+    "College diploma in {field}",
+    "Advanced diploma in {field}",
+    "Bachelor's degree",
+    "Red Seal trade certificate"
+   ],
+   "low": [
+    "Secondary school diploma",
+    "Apprenticeship certificate in {field}",
+    "Trade certificate in {field}"
+   ]
+  },
+  "benefits": {
+   "Group health benefits": {
+    "requires": null,
+    "not_for": [
+     "Temporary",
+     "Co-op / Internship"
+    ]
+   },
+   "Dental coverage": {
+    "requires": null,
+    "not_for": [
+     "Temporary",
+     "Co-op / Internship"
+    ]
+   },
+   "RRSP matching": {
+    "requires": null,
+    "not_for": [
+     "Temporary",
+     "Co-op / Internship",
+     "Contract"
+    ]
+   },
+   "Defined benefit pension plan": {
+    "requires": null,
+    "not_for": [
+     "Temporary",
+     "Co-op / Internship",
+     "Contract"
+    ]
+   },
+   "Paid vacation": {
+    "requires": null,
+    "not_for": [
+     "Contract"
+    ]
+   },
+   "Remote work": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Flexible hours": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Tuition reimbursement": {
+    "requires": null,
+    "not_for": [
+     "Temporary",
+     "Co-op / Internship",
+     "Contract"
+    ]
+   },
+   "Employee assistance program": {
+    "requires": null,
+    "not_for": []
+   },
+   "Life insurance": {
+    "requires": null,
+    "not_for": [
+     "Temporary",
+     "Co-op / Internship"
+    ]
+   },
+   "Performance bonus": {
+    "requires": null,
+    "not_for": [
+     "Co-op / Internship"
+    ]
+   },
+   "Wellness allowance": {
+    "requires": null,
+    "not_for": []
+   },
+   "Employee discount": {
+    "requires": null,
+    "not_for": []
+   },
+   "Company vehicle": {
+    "requires": "executive",
+    "not_for": [
+     "Co-op / Internship",
+     "Permanent part-time"
+    ]
+   }
+  },
+  "job_portals": {
+   "all": [
+    "Indeed",
+    "LinkedIn",
+    "Job Bank",
+    "Glassdoor",
+    "Eluta",
+    "Talent.com",
+    "Monster"
+   ]
+  },
+  "contracts": {
+   "Permanent full-time": {
+    "kind": "permanent",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Permanent part-time": {
+    "kind": "part_time",
+    "salary_factor": 0.5,
+    "max_experience": null,
+    "employee": true
+   },
+   "Temporary": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Contract": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Co-op / Internship": {
+    "kind": "intern",
+    "salary_factor": 0.4,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Self-employed": {
+    "kind": "freelance",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": false
+   }
+  },
+  "contract_weights": {
+   "0": {
+    "Permanent full-time": 58,
+    "Permanent part-time": 15,
+    "Temporary": 10,
+    "Contract": 8,
+    "Co-op / Internship": 5,
+    "Self-employed": 4
+   },
+   "1": {
+    "Permanent full-time": 58,
+    "Permanent part-time": 15,
+    "Temporary": 10,
+    "Contract": 8,
+    "Co-op / Internship": 5,
+    "Self-employed": 4
+   },
+   "2": {
+    "Permanent full-time": 58,
+    "Permanent part-time": 15,
+    "Temporary": 10,
+    "Contract": 8,
+    "Co-op / Internship": 5,
+    "Self-employed": 4
+   },
+   "3": {
+    "Permanent full-time": 58,
+    "Permanent part-time": 15,
+    "Temporary": 10,
+    "Contract": 8,
+    "Co-op / Internship": 5,
+    "Self-employed": 4
+   },
+   "4": {
+    "Permanent full-time": 58,
+    "Permanent part-time": 15,
+    "Temporary": 10,
+    "Contract": 8,
+    "Co-op / Internship": 5,
+    "Self-employed": 4
+   },
+   "5": {
+    "Permanent full-time": 58,
+    "Permanent part-time": 15,
+    "Temporary": 10,
+    "Contract": 8,
+    "Co-op / Internship": 5,
+    "Self-employed": 4
+   },
+   "6": {
+    "Permanent full-time": 58,
+    "Permanent part-time": 15,
+    "Temporary": 10,
+    "Contract": 8,
+    "Co-op / Internship": 5,
+    "Self-employed": 4
+   },
+   "7": {
+    "Permanent full-time": 58,
+    "Permanent part-time": 15,
+    "Temporary": 10,
+    "Contract": 8,
+    "Co-op / Internship": 5,
+    "Self-employed": 4
+   },
+   "8": {
+    "Permanent full-time": 58,
+    "Permanent part-time": 15,
+    "Temporary": 10,
+    "Contract": 8,
+    "Co-op / Internship": 5,
+    "Self-employed": 4
+   },
+   "9": {
+    "Permanent full-time": 58,
+    "Permanent part-time": 15,
+    "Temporary": 10,
+    "Contract": 8,
+    "Co-op / Internship": 5,
+    "Self-employed": 4
+   }
+  },
+  "place_names": {
+   "country": "Canada"
+  },
+  "salary": {
+   "base": {
+    "0": {
+     "*": 59749.910582
+    },
+    "1": {
+     "*": 142939.26237
+    },
+    "2": {
+     "*": 104513.14234
+    },
+    "3": {
+     "*": 78206.912495
+    },
+    "4": {
+     "*": 50736.254769
+    },
+    "5": {
+     "*": 46190.065921
+    },
+    "6": {
+     "*": 40846.817988
+    },
+    "7": {
+     "*": 63312.07587
+    },
+    "8": {
+     "*": 49914.595097
+    },
+    "9": {
+     "*": 38391.679205
+    }
+   },
+   "age_ratio": {
+    "0": {
+     "Y_LT30": 0.802705,
+     "Y30-49": 1.004733,
+     "Y_GE50": 1.090986
+    },
+    "1": {
+     "Y_LT30": 0.488714,
+     "Y30-49": 0.913304,
+     "Y_GE50": 1.121247
+    },
+    "2": {
+     "Y_LT30": 0.652849,
+     "Y30-49": 0.970801,
+     "Y_GE50": 1.157495
+    },
+    "3": {
+     "Y_LT30": 0.710311,
+     "Y30-49": 1.007522,
+     "Y_GE50": 1.120844
+    },
+    "4": {
+     "Y_LT30": 0.773121,
+     "Y30-49": 1.007026,
+     "Y_GE50": 1.104287
+    },
+    "5": {
+     "Y_LT30": 0.876143,
+     "Y30-49": 1.013801,
+     "Y_GE50": 1.060105
+    },
+    "6": {
+     "Y_LT30": 0.889805,
+     "Y30-49": 1.01208,
+     "Y_GE50": 1.074879
+    },
+    "7": {
+     "Y_LT30": 0.794588,
+     "Y30-49": 1.035544,
+     "Y_GE50": 1.064795
+    },
+    "8": {
+     "Y_LT30": 0.845771,
+     "Y30-49": 1.015567,
+     "Y_GE50": 1.023818
+    },
+    "9": {
+     "Y_LT30": 0.925618,
+     "Y30-49": 1.014011,
+     "Y_GE50": 1.019812
+    }
+   }
+  },
+  "minimum_wage": 34465.6,
+  "salary_source": "salaries: those of United States scaled by the ratio of the OECD average annual wages 2025 (CA / US, national currency); minimum wage: OECD"
+ },
+ "en_GB": {
+  "base": "en_US",
+  "country": "United Kingdom",
+  "currency": "GBP",
+  "salary_format": {
+   "template": "£{min} - £{max} per annum",
+   "thousands": ","
+  },
+  "experience_none": "No experience required",
+  "qualifications": {
+   "high": [
+    "Bachelor's degree",
+    "Master's degree",
+    "BSc/BA in {field}",
+    "MSc/MA in {field}",
+    "PhD"
+   ],
+   "mid": [
+    "HND",
+    "Foundation degree",
+    "HNC in {field}",
+    "Level 4 qualification in {field}",
+    "Bachelor's degree"
+   ],
+   "low": [
+    "GCSEs",
+    "A-levels",
+    "NVQ Level 2 in {field}",
+    "NVQ Level 3 in {field}",
+    "BTEC in {field}"
+   ]
+  },
+  "benefits": {
+   "Workplace pension": {
+    "requires": null,
+    "not_for": [
+     "Contractor"
+    ]
+   },
+   "Private medical insurance": {
+    "requires": null,
+    "not_for": [
+     "Temporary",
+     "Internship"
+    ]
+   },
+   "25 days annual leave plus bank holidays": {
+    "requires": null,
+    "not_for": [
+     "Internship"
+    ]
+   },
+   "Hybrid working": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Flexible working": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Cycle to work scheme": {
+    "requires": null,
+    "not_for": [
+     "Temporary",
+     "Internship"
+    ]
+   },
+   "Season ticket loan": {
+    "requires": null,
+    "not_for": [
+     "Temporary",
+     "Internship"
+    ]
+   },
+   "Life assurance": {
+    "requires": null,
+    "not_for": [
+     "Temporary",
+     "Internship"
+    ]
+   },
+   "Employee assistance programme": {
+    "requires": null,
+    "not_for": []
+   },
+   "Annual bonus": {
+    "requires": null,
+    "not_for": [
+     "Internship",
+     "Apprenticeship"
+    ]
+   },
+   "Enhanced parental leave": {
+    "requires": null,
+    "not_for": [
+     "Temporary",
+     "Internship"
+    ]
+   },
+   "Training and development": {
+    "requires": null,
+    "not_for": []
+   },
+   "Company car": {
+    "requires": "executive",
+    "not_for": [
+     "Internship",
+     "Apprenticeship",
+     "Part-time"
+    ]
+   }
+  },
+  "job_portals": {
+   "all": [
+    "Indeed",
+    "LinkedIn",
+    "Reed",
+    "Totaljobs",
+    "CV-Library",
+    "Find a job (GOV.UK)",
+    "Guardian Jobs"
+   ]
+  },
+  "contracts": {
+   "Permanent": {
+    "kind": "permanent",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Part-time": {
+    "kind": "part_time",
+    "salary_factor": 0.5,
+    "max_experience": null,
+    "employee": true
+   },
+   "Fixed-term contract": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Temporary": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Apprenticeship": {
+    "kind": "apprentice",
+    "salary_factor": 0.45,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Internship": {
+    "kind": "intern",
+    "salary_factor": 0.4,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Contractor": {
+    "kind": "freelance",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": false
+   }
+  },
+  "contract_weights": {
+   "0": {
+    "Permanent": 60,
+    "Part-time": 15,
+    "Fixed-term contract": 8,
+    "Temporary": 7,
+    "Apprenticeship": 4,
+    "Internship": 2,
+    "Contractor": 4
+   },
+   "1": {
+    "Permanent": 60,
+    "Part-time": 15,
+    "Fixed-term contract": 8,
+    "Temporary": 7,
+    "Apprenticeship": 4,
+    "Internship": 2,
+    "Contractor": 4
+   },
+   "2": {
+    "Permanent": 60,
+    "Part-time": 15,
+    "Fixed-term contract": 8,
+    "Temporary": 7,
+    "Apprenticeship": 4,
+    "Internship": 2,
+    "Contractor": 4
+   },
+   "3": {
+    "Permanent": 60,
+    "Part-time": 15,
+    "Fixed-term contract": 8,
+    "Temporary": 7,
+    "Apprenticeship": 4,
+    "Internship": 2,
+    "Contractor": 4
+   },
+   "4": {
+    "Permanent": 60,
+    "Part-time": 15,
+    "Fixed-term contract": 8,
+    "Temporary": 7,
+    "Apprenticeship": 4,
+    "Internship": 2,
+    "Contractor": 4
+   },
+   "5": {
+    "Permanent": 60,
+    "Part-time": 15,
+    "Fixed-term contract": 8,
+    "Temporary": 7,
+    "Apprenticeship": 4,
+    "Internship": 2,
+    "Contractor": 4
+   },
+   "6": {
+    "Permanent": 60,
+    "Part-time": 15,
+    "Fixed-term contract": 8,
+    "Temporary": 7,
+    "Apprenticeship": 4,
+    "Internship": 2,
+    "Contractor": 4
+   },
+   "7": {
+    "Permanent": 60,
+    "Part-time": 15,
+    "Fixed-term contract": 8,
+    "Temporary": 7,
+    "Apprenticeship": 4,
+    "Internship": 2,
+    "Contractor": 4
+   },
+   "8": {
+    "Permanent": 60,
+    "Part-time": 15,
+    "Fixed-term contract": 8,
+    "Temporary": 7,
+    "Apprenticeship": 4,
+    "Internship": 2,
+    "Contractor": 4
+   },
+   "9": {
+    "Permanent": 60,
+    "Part-time": 15,
+    "Fixed-term contract": 8,
+    "Temporary": 7,
+    "Apprenticeship": 4,
+    "Internship": 2,
+    "Contractor": 4
+   }
+  },
+  "place_names": {
+   "country": "United Kingdom"
+  },
+  "salary": {
+   "base": {
+    "0": {
+     "*": 32469.8416
+    },
+    "1": {
+     "*": 77677.358215
+    },
+    "2": {
+     "*": 56795.485447
+    },
+    "3": {
+     "*": 42499.913991
+    },
+    "4": {
+     "*": 27571.558513
+    },
+    "5": {
+     "*": 25101.027087
+    },
+    "6": {
+     "*": 22197.35054
+    },
+    "7": {
+     "*": 34405.625964
+    },
+    "8": {
+     "*": 27125.044716
+    },
+    "9": {
+     "*": 20863.156621
+    }
+   },
+   "age_ratio": {
+    "0": {
+     "Y_LT30": 0.802705,
+     "Y30-49": 1.004733,
+     "Y_GE50": 1.090986
+    },
+    "1": {
+     "Y_LT30": 0.488714,
+     "Y30-49": 0.913304,
+     "Y_GE50": 1.121247
+    },
+    "2": {
+     "Y_LT30": 0.652849,
+     "Y30-49": 0.970801,
+     "Y_GE50": 1.157495
+    },
+    "3": {
+     "Y_LT30": 0.710311,
+     "Y30-49": 1.007522,
+     "Y_GE50": 1.120844
+    },
+    "4": {
+     "Y_LT30": 0.773121,
+     "Y30-49": 1.007026,
+     "Y_GE50": 1.104287
+    },
+    "5": {
+     "Y_LT30": 0.876143,
+     "Y30-49": 1.013801,
+     "Y_GE50": 1.060105
+    },
+    "6": {
+     "Y_LT30": 0.889805,
+     "Y30-49": 1.01208,
+     "Y_GE50": 1.074879
+    },
+    "7": {
+     "Y_LT30": 0.794588,
+     "Y30-49": 1.035544,
+     "Y_GE50": 1.064795
+    },
+    "8": {
+     "Y_LT30": 0.845771,
+     "Y30-49": 1.015567,
+     "Y_GE50": 1.023818
+    },
+    "9": {
+     "Y_LT30": 0.925618,
+     "Y30-49": 1.014011,
+     "Y_GE50": 1.019812
+    }
+   }
+  },
+  "minimum_wage": 24996.0,
+  "salary_source": "salaries: those of United States scaled by the ratio of the OECD average annual wages 2025 (GB / US, national currency); minimum wage: OECD"
+ },
+ "en_IE": {
+  "base": "en_US",
+  "country": "Ireland",
+  "currency": "EUR",
+  "salary_format": {
+   "template": "€{min} - €{max} per annum",
+   "thousands": ","
+  },
+  "experience_none": "No experience required",
+  "qualifications": {
+   "high": [
+    "Level 8 Honours Degree",
+    "Master's degree",
+    "Honours Degree in {field}",
+    "Master's in {field}",
+    "PhD"
+   ],
+   "mid": [
+    "Level 7 Ordinary Degree",
+    "Higher Certificate",
+    "Higher Certificate in {field}",
+    "Ordinary Degree in {field}"
+   ],
+   "low": [
+    "Leaving Certificate",
+    "Junior Certificate",
+    "QQI Level 5 in {field}",
+    "QQI Level 4 in {field}"
+   ]
+  },
+  "benefits": {
+   "Pension contribution": {
+    "requires": null,
+    "not_for": [
+     "Temporary",
+     "Internship"
+    ]
+   },
+   "Private health insurance": {
+    "requires": null,
+    "not_for": [
+     "Temporary",
+     "Internship"
+    ]
+   },
+   "Bike to Work scheme": {
+    "requires": null,
+    "not_for": [
+     "Temporary",
+     "Internship"
+    ]
+   },
+   "TaxSaver commuter ticket": {
+    "requires": null,
+    "not_for": []
+   },
+   "Hybrid working": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Flexible hours": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Education assistance": {
+    "requires": null,
+    "not_for": [
+     "Temporary",
+     "Internship"
+    ]
+   },
+   "Annual bonus": {
+    "requires": null,
+    "not_for": [
+     "Internship",
+     "Apprenticeship"
+    ]
+   },
+   "Life assurance": {
+    "requires": null,
+    "not_for": [
+     "Temporary",
+     "Internship"
+    ]
+   },
+   "Employee assistance programme": {
+    "requires": null,
+    "not_for": []
+   },
+   "Additional annual leave": {
+    "requires": null,
+    "not_for": [
+     "Internship"
+    ]
+   },
+   "Company car": {
+    "requires": "executive",
+    "not_for": [
+     "Internship",
+     "Apprenticeship",
+     "Part-time"
+    ]
+   }
+  },
+  "job_portals": {
+   "all": [
+    "IrishJobs.ie",
+    "Jobs.ie",
+    "Indeed",
+    "LinkedIn",
+    "JobsIreland"
+   ]
+  },
+  "contracts": {
+   "Permanent": {
+    "kind": "permanent",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Part-time": {
+    "kind": "part_time",
+    "salary_factor": 0.5,
+    "max_experience": null,
+    "employee": true
+   },
+   "Fixed-term contract": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Temporary": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Apprenticeship": {
+    "kind": "apprentice",
+    "salary_factor": 0.5,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Internship": {
+    "kind": "intern",
+    "salary_factor": 0.4,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Contractor": {
+    "kind": "freelance",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": false
+   }
+  },
+  "contract_weights": {
+   "0": {
+    "Permanent": 60,
+    "Part-time": 14,
+    "Fixed-term contract": 9,
+    "Temporary": 6,
+    "Apprenticeship": 4,
+    "Internship": 3,
+    "Contractor": 4
+   },
+   "1": {
+    "Permanent": 79.86,
+    "Part-time": 4.38,
+    "Fixed-term contract": 0.0,
+    "Temporary": 0.0,
+    "Apprenticeship": 4,
+    "Internship": 3,
+    "Contractor": 8.77
+   },
+   "2": {
+    "Permanent": 66.66,
+    "Part-time": 7.63,
+    "Fixed-term contract": 9.25,
+    "Temporary": 6.17,
+    "Apprenticeship": 4,
+    "Internship": 3,
+    "Contractor": 3.29
+   },
+   "3": {
+    "Permanent": 72.2,
+    "Part-time": 8.87,
+    "Fixed-term contract": 5.92,
+    "Temporary": 3.95,
+    "Apprenticeship": 4,
+    "Internship": 3,
+    "Contractor": 2.06
+   },
+   "4": {
+    "Permanent": 61.16,
+    "Part-time": 19.33,
+    "Fixed-term contract": 7.5,
+    "Temporary": 5.0,
+    "Apprenticeship": 4,
+    "Internship": 3,
+    "Contractor": 0.0
+   },
+   "5": {
+    "Permanent": 35.96,
+    "Part-time": 31.81,
+    "Fixed-term contract": 13.98,
+    "Temporary": 9.32,
+    "Apprenticeship": 4,
+    "Internship": 3,
+    "Contractor": 1.93
+   },
+   "6": {
+    "Permanent": 66.59,
+    "Part-time": 14.41,
+    "Fixed-term contract": 0.0,
+    "Temporary": 0.0,
+    "Apprenticeship": 4,
+    "Internship": 3,
+    "Contractor": 12
+   },
+   "7": {
+    "Permanent": 73.44,
+    "Part-time": 4.39,
+    "Fixed-term contract": 4.52,
+    "Temporary": 3.01,
+    "Apprenticeship": 4,
+    "Internship": 3,
+    "Contractor": 7.65
+   },
+   "8": {
+    "Permanent": 72.16,
+    "Part-time": 6.74,
+    "Fixed-term contract": 5.76,
+    "Temporary": 3.84,
+    "Apprenticeship": 4,
+    "Internship": 3,
+    "Contractor": 4.5
+   },
+   "9": {
+    "Permanent": 37.16,
+    "Part-time": 29.56,
+    "Fixed-term contract": 14.79,
+    "Temporary": 9.86,
+    "Apprenticeship": 4,
+    "Internship": 3,
+    "Contractor": 1.63
+   }
+  },
+  "place_names": {
+   "country": "Ireland"
+  },
+  "salary": {
+   "base": {
+    "0": {
+     "*": 57921,
+     "C": 60514,
+     "D": 72444,
+     "F": 45950,
+     "G": 53593,
+     "H": 68194,
+     "I": 45855,
+     "J": 78932,
+     "K": 63761,
+     "M": 53005,
+     "N": 54252,
+     "O": 64603,
+     "P": 48010,
+     "Q": 43987,
+     "R": 43102,
+     "S": 38833
+    },
+    "1": {
+     "*": 87677,
+     "C": 110129,
+     "E": 77471,
+     "F": 90674,
+     "G": 66878,
+     "H": 66993,
+     "I": 40021,
+     "J": 158554,
+     "L": 69025,
+     "M": 123055,
+     "N": 87484,
+     "Q": 61740,
+     "R": 55259,
+     "S": 74772
+    },
+    "2": {
+     "*": 69088,
+     "B": 108697,
+     "C": 71000,
+     "D": 80068,
+     "E": 78075,
+     "F": 59699,
+     "G": 69903,
+     "H": 78300,
+     "I": 30906,
+     "J": 88405,
+     "K": 86977,
+     "L": 69877,
+     "M": 65328,
+     "N": 72165,
+     "O": 75143,
+     "P": 63674,
+     "Q": 65718,
+     "S": 43802
+    },
+    "3": {
+     "*": 57921,
+     "C": 60514,
+     "D": 72444,
+     "F": 45950,
+     "G": 53593,
+     "H": 68194,
+     "I": 45855,
+     "J": 78932,
+     "K": 63761,
+     "M": 53005,
+     "N": 54252,
+     "O": 64603,
+     "P": 48010,
+     "Q": 43987,
+     "R": 43102,
+     "S": 38833
+    },
+    "4": {
+     "*": 39486,
+     "B": 41093,
+     "C": 39177,
+     "D": 58619,
+     "E": 32805,
+     "F": 37293,
+     "G": 38338,
+     "H": 38944,
+     "I": 29497,
+     "J": 52124,
+     "K": 51048,
+     "L": 34331,
+     "M": 38304,
+     "N": 36033,
+     "O": 44253,
+     "P": 37351,
+     "Q": 38140,
+     "R": 34394,
+     "S": 37928
+    },
+    "5": {
+     "*": 40755,
+     "C": 44227,
+     "F": 39883,
+     "G": 35880,
+     "H": 60060,
+     "I": 32630,
+     "J": 65951,
+     "M": 48967,
+     "N": 38351,
+     "Q": 36588,
+     "S": 27867
+    },
+    "6": {
+     "*": 34213,
+     "G": 39479,
+     "I": 27037,
+     "M": 33777,
+     "N": 36588,
+     "O": 45024,
+     "P": 31027,
+     "Q": 35360,
+     "R": 43111,
+     "S": 29300
+    },
+    "7": {
+     "*": 32115,
+     "C": 34592,
+     "G": 30629,
+     "J": 42120,
+     "K": 45310,
+     "M": 45185,
+     "N": 31456,
+     "Q": 30824,
+     "S": 28657
+    },
+    "8": {
+     "*": 43082,
+     "B": 52839,
+     "C": 46337,
+     "D": 67379,
+     "E": 38698,
+     "G": 38024,
+     "H": 39480,
+     "N": 38014,
+     "Q": 35021
+    },
+    "9": {
+     "*": 33151,
+     "C": 41242,
+     "F": 40226,
+     "G": 31127,
+     "I": 28967,
+     "L": 31161,
+     "N": 31588,
+     "O": 39095,
+     "P": 23449,
+     "Q": 30740,
+     "R": 30593
+    }
+   },
+   "age_ratio": {
+    "0": {
+     "Y_LT30": 0.694498,
+     "Y30-49": 1.096511,
+     "Y_GE50": 1.054954
+    },
+    "1": {
+     "Y_LT30": 0.460611,
+     "Y30-49": 0.986656,
+     "Y_GE50": 1.217355
+    },
+    "2": {
+     "Y_LT30": 0.686878,
+     "Y30-49": 1.042062,
+     "Y_GE50": 1.150967
+    },
+    "3": {
+     "Y_LT30": 0.694498,
+     "Y30-49": 1.096511,
+     "Y_GE50": 1.054954
+    },
+    "4": {
+     "Y_LT30": 0.840804,
+     "Y30-49": 1.024566,
+     "Y_GE50": 1.048321
+    },
+    "5": {
+     "Y_LT30": 0.791976,
+     "Y30-49": 1.034867,
+     "Y_GE50": 1.113139
+    },
+    "6": {
+     "Y_LT30": 0.912869,
+     "Y30-49": 1.007249,
+     "Y_GE50": 1.035191
+    },
+    "7": {
+     "Y_LT30": 0.914526,
+     "Y30-49": 1.058322,
+     "Y_GE50": 1.054056
+    },
+    "8": {
+     "Y_LT30": 0.818625,
+     "Y30-49": 1.042918,
+     "Y_GE50": 1.015482
+    },
+    "9": {
+     "Y_LT30": 0.907544,
+     "Y30-49": 1.085397,
+     "Y_GE50": 1.017828
+    }
+   }
+  },
+  "minimum_wage": 21840.0,
+  "salary_source": "salaries: Eurostat SES 2022 (© European Union), by ISCO-08 major group, NACE section and age; minimum wage: OECD; contract mix: Eurostat LFS 2025, aged 15-64, thousands (lfsa_eegais, lfsa_etgais, lfsa_epgais, lfsa_esgais)"
+ },
+ "en_NZ": {
+  "base": "en_US",
+  "country": "New Zealand",
+  "currency": "NZD",
+  "salary_format": {
+   "template": "${min} - ${max} per annum",
+   "thousands": ","
+  },
+  "qualifications": {
+   "high": [
+    "Bachelor's degree",
+    "Master's degree",
+    "Bachelor's degree in {field}",
+    "Postgraduate diploma in {field}",
+    "PhD"
+   ],
+   "mid": [
+    "New Zealand Diploma",
+    "Level 6 Diploma in {field}",
+    "Level 5 Certificate in {field}",
+    "Bachelor's degree"
+   ],
+   "low": [
+    "NCEA Level 2",
+    "NCEA Level 3",
+    "Level 4 Certificate in {field}",
+    "Trade certificate in {field}"
+   ]
+  },
+  "benefits": {
+   "KiwiSaver employer contribution": {
+    "requires": null,
+    "not_for": [
+     "Contractor"
+    ]
+   },
+   "Health insurance": {
+    "requires": null,
+    "not_for": [
+     "Casual",
+     "Internship"
+    ]
+   },
+   "Life insurance": {
+    "requires": null,
+    "not_for": [
+     "Casual",
+     "Internship"
+    ]
+   },
+   "Hybrid working": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Flexible hours": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Professional development": {
+    "requires": null,
+    "not_for": []
+   },
+   "Wellbeing leave": {
+    "requires": null,
+    "not_for": [
+     "Casual",
+     "Internship"
+    ]
+   },
+   "Employee assistance programme": {
+    "requires": null,
+    "not_for": []
+   },
+   "Performance bonus": {
+    "requires": null,
+    "not_for": [
+     "Internship",
+     "Apprenticeship"
+    ]
+   },
+   "Paid parental leave top-up": {
+    "requires": null,
+    "not_for": [
+     "Casual",
+     "Fixed term",
+     "Internship"
+    ]
+   },
+   "Staff discounts": {
+    "requires": null,
+    "not_for": []
+   },
+   "Company vehicle": {
+    "requires": "executive",
+    "not_for": [
+     "Internship",
+     "Apprenticeship"
+    ]
+   }
+  },
+  "job_portals": {
+   "all": [
+    "SEEK",
+    "Trade Me Jobs",
+    "Indeed",
+    "LinkedIn",
+    "Jora",
+    "Work and Income"
+   ]
+  },
+  "contracts": {
+   "Full time": {
+    "kind": "permanent",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Part time": {
+    "kind": "part_time",
+    "salary_factor": 0.5,
+    "max_experience": null,
+    "employee": true
+   },
+   "Fixed term": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Casual": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Apprenticeship": {
+    "kind": "apprentice",
+    "salary_factor": 0.5,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Internship": {
+    "kind": "intern",
+    "salary_factor": 0.4,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Contractor": {
+    "kind": "freelance",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": false
+   }
+  },
+  "contract_weights": {
+   "0": {
+    "Full time": 58,
+    "Part time": 16,
+    "Fixed term": 10,
+    "Casual": 6,
+    "Apprenticeship": 4,
+    "Internship": 2,
+    "Contractor": 4
+   },
+   "1": {
+    "Full time": 58,
+    "Part time": 16,
+    "Fixed term": 10,
+    "Casual": 6,
+    "Apprenticeship": 4,
+    "Internship": 2,
+    "Contractor": 4
+   },
+   "2": {
+    "Full time": 58,
+    "Part time": 16,
+    "Fixed term": 10,
+    "Casual": 6,
+    "Apprenticeship": 4,
+    "Internship": 2,
+    "Contractor": 4
+   },
+   "3": {
+    "Full time": 58,
+    "Part time": 16,
+    "Fixed term": 10,
+    "Casual": 6,
+    "Apprenticeship": 4,
+    "Internship": 2,
+    "Contractor": 4
+   },
+   "4": {
+    "Full time": 58,
+    "Part time": 16,
+    "Fixed term": 10,
+    "Casual": 6,
+    "Apprenticeship": 4,
+    "Internship": 2,
+    "Contractor": 4
+   },
+   "5": {
+    "Full time": 58,
+    "Part time": 16,
+    "Fixed term": 10,
+    "Casual": 6,
+    "Apprenticeship": 4,
+    "Internship": 2,
+    "Contractor": 4
+   },
+   "6": {
+    "Full time": 58,
+    "Part time": 16,
+    "Fixed term": 10,
+    "Casual": 6,
+    "Apprenticeship": 4,
+    "Internship": 2,
+    "Contractor": 4
+   },
+   "7": {
+    "Full time": 58,
+    "Part time": 16,
+    "Fixed term": 10,
+    "Casual": 6,
+    "Apprenticeship": 4,
+    "Internship": 2,
+    "Contractor": 4
+   },
+   "8": {
+    "Full time": 58,
+    "Part time": 16,
+    "Fixed term": 10,
+    "Casual": 6,
+    "Apprenticeship": 4,
+    "Internship": 2,
+    "Contractor": 4
+   },
+   "9": {
+    "Full time": 58,
+    "Part time": 16,
+    "Fixed term": 10,
+    "Casual": 6,
+    "Apprenticeship": 4,
+    "Internship": 2,
+    "Contractor": 4
+   }
+  },
+  "place_names": {
+   "country": "New Zealand"
+  },
+  "salary": {
+   "base": {
+    "0": {
+     "*": 65005.370886
+    },
+    "1": {
+     "*": 155511.860589
+    },
+    "2": {
+     "*": 113705.870254
+    },
+    "3": {
+     "*": 85085.806875
+    },
+    "4": {
+     "*": 55198.895305
+    },
+    "5": {
+     "*": 50252.834476
+    },
+    "6": {
+     "*": 44439.607139
+    },
+    "7": {
+     "*": 68880.855778
+    },
+    "8": {
+     "*": 54304.964397
+    },
+    "9": {
+     "*": 41768.520177
+    }
+   },
+   "age_ratio": {
+    "0": {
+     "Y_LT30": 0.802705,
+     "Y30-49": 1.004733,
+     "Y_GE50": 1.090986
+    },
+    "1": {
+     "Y_LT30": 0.488714,
+     "Y30-49": 0.913304,
+     "Y_GE50": 1.121247
+    },
+    "2": {
+     "Y_LT30": 0.652849,
+     "Y30-49": 0.970801,
+     "Y_GE50": 1.157495
+    },
+    "3": {
+     "Y_LT30": 0.710311,
+     "Y30-49": 1.007522,
+     "Y_GE50": 1.120844
+    },
+    "4": {
+     "Y_LT30": 0.773121,
+     "Y30-49": 1.007026,
+     "Y_GE50": 1.104287
+    },
+    "5": {
+     "Y_LT30": 0.876143,
+     "Y30-49": 1.013801,
+     "Y_GE50": 1.060105
+    },
+    "6": {
+     "Y_LT30": 0.889805,
+     "Y30-49": 1.01208,
+     "Y_GE50": 1.074879
+    },
+    "7": {
+     "Y_LT30": 0.794588,
+     "Y30-49": 1.035544,
+     "Y_GE50": 1.064795
+    },
+    "8": {
+     "Y_LT30": 0.845771,
+     "Y30-49": 1.015567,
+     "Y_GE50": 1.023818
+    },
+    "9": {
+     "Y_LT30": 0.925618,
+     "Y30-49": 1.014011,
+     "Y_GE50": 1.019812
+    }
+   }
+  },
+  "minimum_wage": 48698.0,
+  "salary_source": "salaries: those of United States scaled by the ratio of the OECD average annual wages 2025 (NZ / US, national currency); minimum wage: OECD"
+ },
  "en_US": {
   "country": "United States",
   "currency": "USD",
@@ -5261,6 +8526,968 @@
    "Education and training": "112",
    "Logistics and transport": "113"
   }
+ },
+ "es_CL": {
+  "base": "es_ES",
+  "country": "Chile",
+  "currency": "CLP",
+  "salary_format": {
+   "template": "${min} - ${max} brutos anuales",
+   "thousands": "."
+  },
+  "experience_none": "Sin experiencia",
+  "qualifications": {
+   "high": [
+    "Título profesional universitario",
+    "Magíster",
+    "Ingeniería civil",
+    "Título profesional en {field}",
+    "Magíster en {field}",
+    "Doctorado"
+   ],
+   "mid": [
+    "Técnico de nivel superior",
+    "Técnico de nivel superior en {field}",
+    "Ingeniería de ejecución",
+    "Título profesional en {field}"
+   ],
+   "low": [
+    "Enseñanza media completa",
+    "Enseñanza media técnico-profesional",
+    "Técnico de nivel medio en {field}",
+    "Enseñanza básica"
+   ]
+  },
+  "benefits": {
+   "Seguro complementario de salud": {
+    "requires": null,
+    "not_for": [
+     "Práctica profesional",
+     "Honorarios"
+    ]
+   },
+   "Seguro de vida": {
+    "requires": null,
+    "not_for": [
+     "Práctica profesional"
+    ]
+   },
+   "Aguinaldo de Fiestas Patrias y Navidad": {
+    "requires": null,
+    "not_for": [
+     "Práctica profesional"
+    ]
+   },
+   "Bono de colación": {
+    "requires": null,
+    "not_for": []
+   },
+   "Bono de movilización": {
+    "requires": null,
+    "not_for": []
+   },
+   "Caja de compensación": {
+    "requires": null,
+    "not_for": [
+     "Práctica profesional"
+    ]
+   },
+   "Trabajo híbrido": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Horario flexible": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Capacitación": {
+    "requires": null,
+    "not_for": []
+   },
+   "Bono por desempeño": {
+    "requires": null,
+    "not_for": [
+     "Práctica profesional"
+    ]
+   },
+   "Días administrativos adicionales": {
+    "requires": null,
+    "not_for": [
+     "Práctica profesional"
+    ]
+   },
+   "Vehículo de la empresa": {
+    "requires": "executive",
+    "not_for": [
+     "Práctica profesional"
+    ]
+   }
+  },
+  "job_portals": {
+   "all": [
+    "Laborum",
+    "Computrabajo",
+    "Trabajando.com",
+    "Indeed",
+    "LinkedIn",
+    "Bolsa Nacional de Empleo"
+   ]
+  },
+  "contracts": {
+   "Contrato indefinido": {
+    "kind": "permanent",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Plazo fijo": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Por obra o faena": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Jornada parcial": {
+    "kind": "part_time",
+    "salary_factor": 0.5,
+    "max_experience": null,
+    "employee": true
+   },
+   "Práctica profesional": {
+    "kind": "intern",
+    "salary_factor": 0.3,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Honorarios": {
+    "kind": "freelance",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": false
+   }
+  },
+  "contract_weights": {
+   "0": {
+    "Contrato indefinido": 58,
+    "Plazo fijo": 15,
+    "Por obra o faena": 8,
+    "Jornada parcial": 8,
+    "Práctica profesional": 5,
+    "Honorarios": 6
+   },
+   "1": {
+    "Contrato indefinido": 58,
+    "Plazo fijo": 15,
+    "Por obra o faena": 8,
+    "Jornada parcial": 8,
+    "Práctica profesional": 5,
+    "Honorarios": 6
+   },
+   "2": {
+    "Contrato indefinido": 58,
+    "Plazo fijo": 15,
+    "Por obra o faena": 8,
+    "Jornada parcial": 8,
+    "Práctica profesional": 5,
+    "Honorarios": 6
+   },
+   "3": {
+    "Contrato indefinido": 58,
+    "Plazo fijo": 15,
+    "Por obra o faena": 8,
+    "Jornada parcial": 8,
+    "Práctica profesional": 5,
+    "Honorarios": 6
+   },
+   "4": {
+    "Contrato indefinido": 58,
+    "Plazo fijo": 15,
+    "Por obra o faena": 8,
+    "Jornada parcial": 8,
+    "Práctica profesional": 5,
+    "Honorarios": 6
+   },
+   "5": {
+    "Contrato indefinido": 58,
+    "Plazo fijo": 15,
+    "Por obra o faena": 8,
+    "Jornada parcial": 8,
+    "Práctica profesional": 5,
+    "Honorarios": 6
+   },
+   "6": {
+    "Contrato indefinido": 58,
+    "Plazo fijo": 15,
+    "Por obra o faena": 8,
+    "Jornada parcial": 8,
+    "Práctica profesional": 5,
+    "Honorarios": 6
+   },
+   "7": {
+    "Contrato indefinido": 58,
+    "Plazo fijo": 15,
+    "Por obra o faena": 8,
+    "Jornada parcial": 8,
+    "Práctica profesional": 5,
+    "Honorarios": 6
+   },
+   "8": {
+    "Contrato indefinido": 58,
+    "Plazo fijo": 15,
+    "Por obra o faena": 8,
+    "Jornada parcial": 8,
+    "Práctica profesional": 5,
+    "Honorarios": 6
+   },
+   "9": {
+    "Contrato indefinido": 58,
+    "Plazo fijo": 15,
+    "Por obra o faena": 8,
+    "Jornada parcial": 8,
+    "Práctica profesional": 5,
+    "Honorarios": 6
+   }
+  },
+  "place_names": {
+   "country": "Chile"
+  },
+  "salary": {
+   "base": {
+    "0": {
+     "*": 18074061.237382,
+     "B": 24722936.539547,
+     "C": 21879752.87504,
+     "D": 29555483.593503,
+     "E": 19966092.359884,
+     "F": 18367680.242675,
+     "G": 18386065.226432,
+     "H": 22505383.057587,
+     "I": 14450597.232844,
+     "J": 18452034.87403,
+     "K": 24946800.753527,
+     "L": 15671035.713406,
+     "M": 16430227.395598,
+     "N": 15958706.635718,
+     "O": 19714650.670269,
+     "P": 17005028.505406,
+     "Q": 13781167.53017,
+     "R": 13522696.287942,
+     "S": 14051534.938358
+    },
+    "1": {
+     "*": 34443726.333546,
+     "C": 35728512.257257,
+     "E": 31687060.239659,
+     "F": 33826747.908061,
+     "G": 31653534.681044,
+     "H": 30952201.624204,
+     "I": 24463924.562503,
+     "J": 37306917.18626,
+     "K": 40838456.272014,
+     "L": 31570261.519322,
+     "M": 39494189.518502,
+     "N": 49892520.037421,
+     "O": 29281871.776417,
+     "P": 27301160.14403,
+     "Q": 25321529.981276,
+     "R": 26548998.01445,
+     "S": 27457432.505963
+    },
+    "2": {
+     "*": 23044495.669515,
+     "B": 32410022.689155,
+     "C": 26386777.569537,
+     "D": 35884784.61919,
+     "E": 27587208.861893,
+     "F": 22766017.239081,
+     "G": 22031699.358442,
+     "H": 23930760.033556,
+     "I": 17838841.592259,
+     "J": 24235734.469992,
+     "K": 28902816.670137,
+     "L": 24378488.461515,
+     "M": 20994029.245815,
+     "N": 21535845.531824,
+     "O": 23312159.403621,
+     "P": 20514938.198506,
+     "Q": 26010966.872156,
+     "R": 19260974.159329,
+     "S": 16229074.043906
+    },
+    "3": {
+     "*": 18074061.237382,
+     "B": 24722936.539547,
+     "C": 21879752.87504,
+     "D": 29555483.593503,
+     "E": 19966092.359884,
+     "F": 18367680.242675,
+     "G": 18386065.226432,
+     "H": 22505383.057587,
+     "I": 14450597.232844,
+     "J": 18452034.87403,
+     "K": 24946800.753527,
+     "L": 15671035.713406,
+     "M": 16430227.395598,
+     "N": 15958706.635718,
+     "O": 19714650.670269,
+     "P": 17005028.505406,
+     "Q": 13781167.53017,
+     "R": 13522696.287942,
+     "S": 14051534.938358
+    },
+    "4": {
+     "*": 13977995.003331,
+     "B": 16733579.627585,
+     "C": 15408779.327463,
+     "D": 22217712.135275,
+     "E": 17399764.921361,
+     "F": 14424101.226841,
+     "G": 13623272.963788,
+     "H": 15747820.057331,
+     "I": 12797570.899181,
+     "J": 13298832.073962,
+     "K": 20122905.456633,
+     "L": 12254673.143539,
+     "M": 12262784.165785,
+     "N": 11606332.098704,
+     "O": 15976010.149842,
+     "P": 14606869.594777,
+     "Q": 13102545.335617,
+     "R": 13941765.770634,
+     "S": 12704023.775948
+    },
+    "5": {
+     "*": 11207810.539034,
+     "C": 11989713.083515,
+     "E": 17914544.466551,
+     "F": 13724390.37445,
+     "G": 11257017.407325,
+     "H": 17620384.726443,
+     "I": 10650312.94335,
+     "J": 10423745.055289,
+     "K": 13483763.381163,
+     "L": 11298653.988186,
+     "M": 10894184.345536,
+     "N": 12082719.471932,
+     "O": 20882637.873642,
+     "P": 10810370.448998,
+     "Q": 11408423.15591,
+     "R": 11731782.576103,
+     "S": 8678793.802842
+    },
+    "6": {
+     "*": 11939424.745592,
+     "C": 18145438.233144,
+     "E": 12516929.529482,
+     "G": 10046852.888274,
+     "I": 11955646.790083,
+     "M": 14383005.380797,
+     "N": 12388775.378001,
+     "O": 13275039.742042,
+     "Q": 9340653.218087,
+     "R": 12078934.328217
+    },
+    "7": {
+     "*": 13727634.783349,
+     "B": 18592625.926287,
+     "C": 14485744.995908,
+     "D": 25242041.963268,
+     "E": 18016743.346847,
+     "F": 12479618.827152,
+     "G": 12900851.249109,
+     "H": 21865153.034998,
+     "I": 12131926.340222,
+     "J": 13378860.826786,
+     "M": 14650669.114903,
+     "N": 12230340.076802,
+     "O": 14076408.739911,
+     "P": 15074605.210942,
+     "Q": 12984665.145647,
+     "R": 13182033.353625,
+     "S": 12484485.440499
+    },
+    "8": {
+     "*": 14331094.838425,
+     "B": 16052794.493767,
+     "C": 16306399.122648,
+     "D": 19346410.260316,
+     "E": 16794141.927019,
+     "F": 14108852.828894,
+     "G": 11682034.972997,
+     "H": 13779545.325721,
+     "I": 9751070.943716,
+     "J": 12203844.0708,
+     "M": 11972409.569391,
+     "N": 13003590.864221,
+     "O": 16225288.900191,
+     "P": 15866240.982117,
+     "Q": 12961954.28336,
+     "R": 11932935.927795,
+     "S": 9031893.637936
+    },
+    "9": {
+     "*": 10847140.416511,
+     "B": 15270351.214471,
+     "C": 12665090.869169,
+     "D": 11543066.125188,
+     "E": 14989169.109955,
+     "F": 11072626.83494,
+     "G": 10430774.607901,
+     "H": 13344253.798538,
+     "I": 10084704.325421,
+     "J": 9664012.63828,
+     "K": 10922843.290804,
+     "L": 9696997.462079,
+     "M": 9516392.033409,
+     "N": 9838669.983969,
+     "O": 12105971.069036,
+     "P": 10491336.907336,
+     "Q": 9917617.26716,
+     "R": 9805685.16017,
+     "S": 9458533.408057
+    }
+   },
+   "age_ratio": {
+    "0": {
+     "Y_LT30": 0.698459,
+     "Y30-49": 0.98902,
+     "Y_GE50": 1.126462
+    },
+    "1": {
+     "Y_LT30": 0.53727,
+     "Y30-49": 0.95419,
+     "Y_GE50": 1.080065
+    },
+    "2": {
+     "Y_LT30": 0.675787,
+     "Y30-49": 0.965108,
+     "Y_GE50": 1.155759
+    },
+    "3": {
+     "Y_LT30": 0.698459,
+     "Y30-49": 0.98902,
+     "Y_GE50": 1.126462
+    },
+    "4": {
+     "Y_LT30": 0.774662,
+     "Y30-49": 0.963636,
+     "Y_GE50": 1.114894
+    },
+    "5": {
+     "Y_LT30": 0.899407,
+     "Y30-49": 0.979158,
+     "Y_GE50": 1.07483
+    },
+    "6": {
+     "Y_LT30": 0.791667,
+     "Y30-49": 0.973188,
+     "Y_GE50": 1.099592
+    },
+    "7": {
+     "Y_LT30": 0.842636,
+     "Y30-49": 0.990861,
+     "Y_GE50": 1.052862
+    },
+    "8": {
+     "Y_LT30": 0.783685,
+     "Y30-49": 0.992605,
+     "Y_GE50": 1.044297
+    },
+    "9": {
+     "Y_LT30": 0.937039,
+     "Y30-49": 0.996411,
+     "Y_GE50": 1.01984
+    }
+   }
+  },
+  "minimum_wage": 4388000.0,
+  "salary_source": "salaries: those of Spain scaled by the ratio of the OECD average annual wages 2022 (CL / ES, national currency); minimum wage: OECD",
+  "salary_scale": 1000
+ },
+ "es_CO": {
+  "base": "es_ES",
+  "country": "Colombia",
+  "currency": "COP",
+  "salary_format": {
+   "template": "${min} - ${max} anuales",
+   "thousands": "."
+  },
+  "experience_none": "Sin experiencia",
+  "qualifications": {
+   "high": [
+    "Profesional universitario",
+    "Especialización",
+    "Maestría",
+    "Profesional en {field}",
+    "Especialización en {field}",
+    "Doctorado"
+   ],
+   "mid": [
+    "Tecnólogo",
+    "Técnico profesional",
+    "Tecnólogo en {field}",
+    "Técnico profesional en {field}"
+   ],
+   "low": [
+    "Bachiller",
+    "Bachiller técnico",
+    "Técnico laboral en {field}",
+    "Básica primaria"
+   ]
+  },
+  "benefits": {
+   "Prima extralegal": {
+    "requires": null,
+    "not_for": [
+     "Contrato de aprendizaje"
+    ]
+   },
+   "Medicina prepagada": {
+    "requires": null,
+    "not_for": [
+     "Contrato de aprendizaje",
+     "Obra o labor"
+    ]
+   },
+   "Auxilio de alimentación": {
+    "requires": null,
+    "not_for": []
+   },
+   "Auxilio de transporte": {
+    "requires": null,
+    "not_for": []
+   },
+   "Fondo de empleados": {
+    "requires": null,
+    "not_for": [
+     "Contrato de aprendizaje"
+    ]
+   },
+   "Seguro de vida": {
+    "requires": null,
+    "not_for": [
+     "Contrato de aprendizaje"
+    ]
+   },
+   "Trabajo híbrido": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Horario flexible": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Capacitación": {
+    "requires": null,
+    "not_for": []
+   },
+   "Bonificación por resultados": {
+    "requires": null,
+    "not_for": [
+     "Contrato de aprendizaje"
+    ]
+   },
+   "Día de cumpleaños libre": {
+    "requires": null,
+    "not_for": []
+   },
+   "Vehículo de la empresa": {
+    "requires": "executive",
+    "not_for": [
+     "Contrato de aprendizaje"
+    ]
+   }
+  },
+  "job_portals": {
+   "all": [
+    "Computrabajo",
+    "elempleo.com",
+    "Magneto",
+    "Indeed",
+    "LinkedIn",
+    "Servicio Público de Empleo"
+   ]
+  },
+  "contracts": {
+   "Término indefinido": {
+    "kind": "permanent",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Término fijo": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Obra o labor": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Medio tiempo": {
+    "kind": "part_time",
+    "salary_factor": 0.5,
+    "max_experience": null,
+    "employee": true
+   },
+   "Contrato de aprendizaje": {
+    "kind": "apprentice",
+    "salary_factor": 0.3,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Prestación de servicios": {
+    "kind": "freelance",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": false
+   }
+  },
+  "contract_weights": {
+   "0": {
+    "Término indefinido": 55,
+    "Término fijo": 18,
+    "Obra o labor": 8,
+    "Medio tiempo": 6,
+    "Contrato de aprendizaje": 5,
+    "Prestación de servicios": 8
+   },
+   "1": {
+    "Término indefinido": 55,
+    "Término fijo": 18,
+    "Obra o labor": 8,
+    "Medio tiempo": 6,
+    "Contrato de aprendizaje": 5,
+    "Prestación de servicios": 8
+   },
+   "2": {
+    "Término indefinido": 55,
+    "Término fijo": 18,
+    "Obra o labor": 8,
+    "Medio tiempo": 6,
+    "Contrato de aprendizaje": 5,
+    "Prestación de servicios": 8
+   },
+   "3": {
+    "Término indefinido": 55,
+    "Término fijo": 18,
+    "Obra o labor": 8,
+    "Medio tiempo": 6,
+    "Contrato de aprendizaje": 5,
+    "Prestación de servicios": 8
+   },
+   "4": {
+    "Término indefinido": 55,
+    "Término fijo": 18,
+    "Obra o labor": 8,
+    "Medio tiempo": 6,
+    "Contrato de aprendizaje": 5,
+    "Prestación de servicios": 8
+   },
+   "5": {
+    "Término indefinido": 55,
+    "Término fijo": 18,
+    "Obra o labor": 8,
+    "Medio tiempo": 6,
+    "Contrato de aprendizaje": 5,
+    "Prestación de servicios": 8
+   },
+   "6": {
+    "Término indefinido": 55,
+    "Término fijo": 18,
+    "Obra o labor": 8,
+    "Medio tiempo": 6,
+    "Contrato de aprendizaje": 5,
+    "Prestación de servicios": 8
+   },
+   "7": {
+    "Término indefinido": 55,
+    "Término fijo": 18,
+    "Obra o labor": 8,
+    "Medio tiempo": 6,
+    "Contrato de aprendizaje": 5,
+    "Prestación de servicios": 8
+   },
+   "8": {
+    "Término indefinido": 55,
+    "Término fijo": 18,
+    "Obra o labor": 8,
+    "Medio tiempo": 6,
+    "Contrato de aprendizaje": 5,
+    "Prestación de servicios": 8
+   },
+   "9": {
+    "Término indefinido": 55,
+    "Término fijo": 18,
+    "Obra o labor": 8,
+    "Medio tiempo": 6,
+    "Contrato de aprendizaje": 5,
+    "Prestación de servicios": 8
+   }
+  },
+  "place_names": {
+   "country": "Colombia"
+  },
+  "salary": {
+   "base": {
+    "0": {
+     "*": 44101602.571628,
+     "B": 60325186.871426,
+     "C": 53387678.23054,
+     "D": 72116840.489456,
+     "E": 48718252.007623,
+     "F": 44818047.454093,
+     "G": 44862907.722977,
+     "H": 54914246.792256,
+     "I": 35260171.342534,
+     "J": 45023876.923089,
+     "K": 60871426.616068,
+     "L": 38238101.544603,
+     "M": 40090566.765563,
+     "N": 38940032.810665,
+     "O": 48104721.859656,
+     "P": 41493109.878013,
+     "Q": 33626729.787301,
+     "R": 32996047.183584,
+     "S": 34286439.623824
+    },
+    "1": {
+     "*": 84044394.333809,
+     "C": 87179335.476971,
+     "E": 77317992.840611,
+     "F": 82538936.486862,
+     "G": 77236188.820882,
+     "H": 75524901.504939,
+     "I": 59693184.848036,
+     "J": 91030721.502598,
+     "K": 99647851.387275,
+     "L": 77032998.191233,
+     "M": 96367774.080077,
+     "N": 121740214.39279,
+     "O": 71449214.134894,
+     "P": 66616179.872519,
+     "Q": 61785784.44949,
+     "R": 64780867.107309,
+     "S": 66997492.15803
+    },
+    "2": {
+     "*": 56229708.206285,
+     "B": 79082056.943476,
+     "C": 64385041.205395,
+     "D": 87560647.762482,
+     "E": 67314152.879561,
+     "F": 55550207.074666,
+     "G": 53758435.158666,
+     "H": 58392237.050411,
+     "I": 43527655.013852,
+     "J": 59136389.74601,
+     "K": 70524300.944087,
+     "L": 59484716.539695,
+     "M": 51226468.806087,
+     "N": 52548527.318481,
+     "O": 56882820.944444,
+     "P": 50057462.975767,
+     "Q": 63468044.532626,
+     "R": 46997728.753969,
+     "S": 39599742.647189
+    },
+    "3": {
+     "*": 44101602.571628,
+     "B": 60325186.871426,
+     "C": 53387678.23054,
+     "D": 72116840.489456,
+     "E": 48718252.007623,
+     "F": 44818047.454093,
+     "G": 44862907.722977,
+     "H": 54914246.792256,
+     "I": 35260171.342534,
+     "J": 45023876.923089,
+     "K": 60871426.616068,
+     "L": 38238101.544603,
+     "M": 40090566.765563,
+     "N": 38940032.810665,
+     "O": 48104721.859656,
+     "P": 41493109.878013,
+     "Q": 33626729.787301,
+     "R": 32996047.183584,
+     "S": 34286439.623824
+    },
+    "4": {
+     "*": 34106998.54829,
+     "B": 40830761.202142,
+     "C": 37598183.003175,
+     "D": 54212315.526195,
+     "E": 42456286.239338,
+     "F": 35195519.778555,
+     "G": 33241459.242771,
+     "H": 38425459.138176,
+     "I": 31226705.402026,
+     "J": 32449807.438942,
+     "K": 49100883.712807,
+     "L": 29902008.050286,
+     "M": 29921799.345382,
+     "N": 28320023.862302,
+     "O": 38982254.240202,
+     "P": 35641483.628045,
+     "Q": 31970858.097625,
+     "R": 34018597.430196,
+     "S": 30998445.798589
+    },
+    "5": {
+     "*": 27347611.563265,
+     "C": 29255492.410493,
+     "E": 43712373.768079,
+     "F": 33488190.72163,
+     "G": 27467678.753513,
+     "H": 42994609.465941,
+     "I": 25987289.880353,
+     "J": 25434453.037346,
+     "K": 32901048.967124,
+     "L": 27569274.068337,
+     "M": 26582348.152897,
+     "N": 29482432.594257,
+     "O": 50954668.353439,
+     "P": 26377838.103575,
+     "Q": 27837116.261966,
+     "R": 28626129.226449,
+     "S": 21176685.75242
+    },
+    "6": {
+     "*": 29132786.380899,
+     "C": 44275765.968471,
+     "E": 30541926.591714,
+     "G": 24514817.525231,
+     "I": 29172368.971091,
+     "M": 35095243.883403,
+     "N": 30229224.129202,
+     "O": 32391752.973328,
+     "Q": 22791655.432231,
+     "R": 29473196.656546
+    },
+    "7": {
+     "*": 33496107.239669,
+     "B": 45366926.038081,
+     "C": 35345933.621282,
+     "D": 61591829.757552,
+     "E": 43961744.086285,
+     "F": 30450886.634274,
+     "G": 31478714.559578,
+     "H": 53352053.899368,
+     "I": 29602499.784504,
+     "J": 32645081.550553,
+     "M": 35748356.621562,
+     "N": 29842634.164999,
+     "O": 34347132.928785,
+     "P": 36782781.645231,
+     "Q": 31683224.608901,
+     "R": 32164812.789563,
+     "S": 30462761.411331
+    },
+    "8": {
+     "*": 34968579.59479,
+     "B": 39169611.833775,
+     "C": 39788419.660435,
+     "D": 47206197.06231,
+     "E": 40978536.205524,
+     "F": 34426298.109168,
+     "G": 28504742.616528,
+     "H": 33622771.528281,
+     "I": 23793094.964074,
+     "J": 29777982.60102,
+     "M": 29213270.980955,
+     "N": 31729404.297458,
+     "O": 39590506.709477,
+     "P": 38714412.046573,
+     "Q": 31627808.982633,
+     "R": 29116953.344823,
+     "S": 22038266.79892
+    },
+    "9": {
+     "*": 26467558.641342,
+     "B": 37260411.566875,
+     "C": 30903447.58213,
+     "D": 28165651.760555,
+     "E": 36574313.33689,
+     "F": 27017756.645003,
+     "G": 25451605.493095,
+     "H": 32560638.691478,
+     "I": 24607176.902345,
+     "J": 23580668.396713,
+     "K": 26652277.395569,
+     "L": 23661152.996769,
+     "M": 23220466.825971,
+     "N": 24006840.951108,
+     "O": 29539167.640198,
+     "P": 25599380.496477,
+     "Q": 24199476.223373,
+     "R": 23926356.351052,
+     "S": 23079288.920955
+    }
+   },
+   "age_ratio": {
+    "0": {
+     "Y_LT30": 0.698459,
+     "Y30-49": 0.98902,
+     "Y_GE50": 1.126462
+    },
+    "1": {
+     "Y_LT30": 0.53727,
+     "Y30-49": 0.95419,
+     "Y_GE50": 1.080065
+    },
+    "2": {
+     "Y_LT30": 0.675787,
+     "Y30-49": 0.965108,
+     "Y_GE50": 1.155759
+    },
+    "3": {
+     "Y_LT30": 0.698459,
+     "Y30-49": 0.98902,
+     "Y_GE50": 1.126462
+    },
+    "4": {
+     "Y_LT30": 0.774662,
+     "Y30-49": 0.963636,
+     "Y_GE50": 1.114894
+    },
+    "5": {
+     "Y_LT30": 0.899407,
+     "Y30-49": 0.979158,
+     "Y_GE50": 1.07483
+    },
+    "6": {
+     "Y_LT30": 0.791667,
+     "Y30-49": 0.973188,
+     "Y_GE50": 1.099592
+    },
+    "7": {
+     "Y_LT30": 0.842636,
+     "Y30-49": 0.990861,
+     "Y_GE50": 1.052862
+    },
+    "8": {
+     "Y_LT30": 0.783685,
+     "Y30-49": 0.992605,
+     "Y_GE50": 1.044297
+    },
+    "9": {
+     "Y_LT30": 0.937039,
+     "Y30-49": 0.996411,
+     "Y_GE50": 1.01984
+    }
+   }
+  },
+  "minimum_wage": 14000000.0,
+  "salary_source": "salaries: those of Spain scaled by the ratio of the OECD average annual wages 2022 (CO / ES, national currency); minimum wage: OECD",
+  "salary_scale": 1000
  },
  "es_ES": {
   "country": "Spain",
@@ -10007,6 +14234,1934 @@
     "58.1"
    ]
   }
+ },
+ "es_MX": {
+  "base": "es_ES",
+  "country": "Mexico",
+  "place_names": {
+   "country": "México"
+  },
+  "currency": "MXN",
+  "salary_format": {
+   "template": "${min} - ${max} MXN brutos al año",
+   "thousands": ","
+  },
+  "experience_none": "Sin experiencia",
+  "qualifications": {
+   "high": [
+    "Licenciatura",
+    "Maestría",
+    "Ingeniería",
+    "Licenciatura en {field}",
+    "Maestría en {field}",
+    "Doctorado"
+   ],
+   "mid": [
+    "Técnico Superior Universitario (TSU)",
+    "Carrera técnica",
+    "TSU en {field}",
+    "Carrera técnica en {field}",
+    "Licenciatura trunca"
+   ],
+   "low": [
+    "Secundaria",
+    "Preparatoria o bachillerato",
+    "Carrera técnica en {field}",
+    "Primaria"
+   ]
+  },
+  "benefits": {
+   "Prestaciones superiores a las de ley": {
+    "requires": null,
+    "not_for": [
+     "Prácticas profesionales"
+    ]
+   },
+   "Vales de despensa": {
+    "requires": null,
+    "not_for": []
+   },
+   "Fondo de ahorro": {
+    "requires": null,
+    "not_for": [
+     "Prácticas profesionales",
+     "Por obra determinada"
+    ]
+   },
+   "Seguro de gastos médicos mayores": {
+    "requires": null,
+    "not_for": [
+     "Prácticas profesionales"
+    ]
+   },
+   "Seguro de vida": {
+    "requires": null,
+    "not_for": [
+     "Prácticas profesionales"
+    ]
+   },
+   "Aguinaldo de 30 días": {
+    "requires": null,
+    "not_for": [
+     "Prácticas profesionales"
+    ]
+   },
+   "Home office": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Horario flexible": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Capacitación continua": {
+    "requires": null,
+    "not_for": []
+   },
+   "Bono de productividad": {
+    "requires": null,
+    "not_for": [
+     "Prácticas profesionales"
+    ]
+   },
+   "Comedor subsidiado": {
+    "requires": null,
+    "not_for": []
+   },
+   "Automóvil utilitario": {
+    "requires": "executive",
+    "not_for": [
+     "Prácticas profesionales"
+    ]
+   }
+  },
+  "job_portals": {
+   "all": [
+    "OCC Mundial",
+    "Computrabajo",
+    "Indeed",
+    "LinkedIn",
+    "Bumeran",
+    "Portal del Empleo"
+   ]
+  },
+  "contracts": {
+   "Tiempo indeterminado": {
+    "kind": "permanent",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Tiempo determinado": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Por obra determinada": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Medio tiempo": {
+    "kind": "part_time",
+    "salary_factor": 0.5,
+    "max_experience": null,
+    "employee": true
+   },
+   "Prácticas profesionales": {
+    "kind": "intern",
+    "salary_factor": 0.3,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Honorarios": {
+    "kind": "freelance",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": false
+   }
+  },
+  "contract_weights": {
+   "0": {
+    "Tiempo indeterminado": 60,
+    "Tiempo determinado": 14,
+    "Por obra determinada": 6,
+    "Medio tiempo": 10,
+    "Prácticas profesionales": 5,
+    "Honorarios": 5
+   },
+   "1": {
+    "Tiempo indeterminado": 60,
+    "Tiempo determinado": 14,
+    "Por obra determinada": 6,
+    "Medio tiempo": 10,
+    "Prácticas profesionales": 5,
+    "Honorarios": 5
+   },
+   "2": {
+    "Tiempo indeterminado": 60,
+    "Tiempo determinado": 14,
+    "Por obra determinada": 6,
+    "Medio tiempo": 10,
+    "Prácticas profesionales": 5,
+    "Honorarios": 5
+   },
+   "3": {
+    "Tiempo indeterminado": 60,
+    "Tiempo determinado": 14,
+    "Por obra determinada": 6,
+    "Medio tiempo": 10,
+    "Prácticas profesionales": 5,
+    "Honorarios": 5
+   },
+   "4": {
+    "Tiempo indeterminado": 60,
+    "Tiempo determinado": 14,
+    "Por obra determinada": 6,
+    "Medio tiempo": 10,
+    "Prácticas profesionales": 5,
+    "Honorarios": 5
+   },
+   "5": {
+    "Tiempo indeterminado": 60,
+    "Tiempo determinado": 14,
+    "Por obra determinada": 6,
+    "Medio tiempo": 10,
+    "Prácticas profesionales": 5,
+    "Honorarios": 5
+   },
+   "6": {
+    "Tiempo indeterminado": 60,
+    "Tiempo determinado": 14,
+    "Por obra determinada": 6,
+    "Medio tiempo": 10,
+    "Prácticas profesionales": 5,
+    "Honorarios": 5
+   },
+   "7": {
+    "Tiempo indeterminado": 60,
+    "Tiempo determinado": 14,
+    "Por obra determinada": 6,
+    "Medio tiempo": 10,
+    "Prácticas profesionales": 5,
+    "Honorarios": 5
+   },
+   "8": {
+    "Tiempo indeterminado": 60,
+    "Tiempo determinado": 14,
+    "Por obra determinada": 6,
+    "Medio tiempo": 10,
+    "Prácticas profesionales": 5,
+    "Honorarios": 5
+   },
+   "9": {
+    "Tiempo indeterminado": 60,
+    "Tiempo determinado": 14,
+    "Por obra determinada": 6,
+    "Medio tiempo": 10,
+    "Prácticas profesionales": 5,
+    "Honorarios": 5
+   }
+  },
+  "salary": {
+   "base": {
+    "0": {
+     "*": 243288.577611,
+     "B": 332786.748151,
+     "C": 294515.653429,
+     "D": 397835.963352,
+     "E": 268756.542699,
+     "F": 247240.879709,
+     "G": 247488.353505,
+     "H": 302937.041142,
+     "I": 194514.403832,
+     "J": 248376.347715,
+     "K": 335800.105552,
+     "L": 210942.296716,
+     "M": 221161.508772,
+     "N": 214814.533763,
+     "O": 265371.974603,
+     "P": 228898.704224,
+     "Q": 185503.446193,
+     "R": 182024.255763,
+     "S": 189142.766725
+    },
+    "1": {
+     "*": 463634.878583,
+     "C": 480928.929755,
+     "E": 426528.366432,
+     "F": 455329.949128,
+     "G": 426077.090686,
+     "H": 416636.693224,
+     "I": 329300.27908,
+     "J": 502175.283025,
+     "K": 549712.087823,
+     "L": 424956.179962,
+     "M": 531617.386134,
+     "N": 671585.653822,
+     "O": 394152.970973,
+     "P": 367491.308751,
+     "Q": 340844.20381,
+     "R": 357366.719029,
+     "S": 369594.836018
+    },
+    "2": {
+     "*": 310193.846284,
+     "B": 436259.909536,
+     "C": 355183.126709,
+     "D": 483032.457023,
+     "E": 371341.709874,
+     "F": 306445.346135,
+     "G": 296560.951568,
+     "H": 322123.53899,
+     "I": 240122.368747,
+     "J": 326228.692551,
+     "K": 389050.643586,
+     "L": 328150.253792,
+     "M": 282593.239364,
+     "N": 289886.437711,
+     "O": 313796.773611,
+     "P": 276144.36338,
+     "Q": 350124.471169,
+     "R": 259265.194749,
+     "S": 218453.854296
+    },
+    "3": {
+     "*": 243288.577611,
+     "B": 332786.748151,
+     "C": 294515.653429,
+     "D": 397835.963352,
+     "E": 268756.542699,
+     "F": 247240.879709,
+     "G": 247488.353505,
+     "H": 302937.041142,
+     "I": 194514.403832,
+     "J": 248376.347715,
+     "K": 335800.105552,
+     "L": 210942.296716,
+     "M": 221161.508772,
+     "N": 214814.533763,
+     "O": 265371.974603,
+     "P": 228898.704224,
+     "Q": 185503.446193,
+     "R": 182024.255763,
+     "S": 189142.766725
+    },
+    "4": {
+     "*": 188152.87154,
+     "B": 225244.82641,
+     "C": 207412.155799,
+     "D": 299064.804095,
+     "E": 234212.112202,
+     "F": 194157.750419,
+     "G": 183378.083001,
+     "H": 211975.863747,
+     "I": 172263.598095,
+     "J": 179010.898362,
+     "K": 270867.348607,
+     "L": 164955.842465,
+     "M": 165065.022081,
+     "N": 156228.751828,
+     "O": 215047.450277,
+     "P": 196617.931099,
+     "Q": 176368.751656,
+     "R": 187665.202589,
+     "S": 171004.39319
+    },
+    "5": {
+     "*": 150864.393362,
+     "C": 161389.308343,
+     "E": 241141.378496,
+     "F": 184739.188881,
+     "G": 151526.749699,
+     "H": 237181.797757,
+     "I": 143360.114424,
+     "J": 140310.363818,
+     "K": 181500.193607,
+     "L": 152087.205061,
+     "M": 146642.781544,
+     "N": 162641.234606,
+     "O": 281093.839304,
+     "P": 145514.592179,
+     "Q": 153564.769198,
+     "R": 157917.396555,
+     "S": 116822.1891
+    },
+    "6": {
+     "*": 160712.394724,
+     "C": 244249.358231,
+     "E": 168485.983382,
+     "G": 135237.150995,
+     "I": 160930.753956,
+     "M": 193604.573698,
+     "N": 166760.945449,
+     "O": 178690.638155,
+     "Q": 125731.245764,
+     "R": 162590.284119
+    },
+    "7": {
+     "*": 184782.860727,
+     "B": 250268.794392,
+     "C": 194987.515501,
+     "D": 339774.243574,
+     "E": 242517.041658,
+     "F": 167983.757148,
+     "G": 173653.818538,
+     "H": 294319.13012,
+     "I": 163303.590943,
+     "J": 180088.13724,
+     "M": 197207.501026,
+     "N": 164628.303617,
+     "O": 189477.584214,
+     "P": 202913.955621,
+     "Q": 174782.007903,
+     "R": 177438.711892,
+     "S": 168049.264918
+    },
+    "8": {
+     "*": 192905.824156,
+     "B": 216081.017308,
+     "C": 219494.699968,
+     "D": 260415.220038,
+     "E": 226060.034209,
+     "F": 189914.302678,
+     "G": 157247.761577,
+     "H": 185481.610269,
+     "I": 131255.734332,
+     "J": 164271.650205,
+     "M": 161156.391829,
+     "N": 175036.760341,
+     "O": 218402.903808,
+     "P": 213569.886141,
+     "Q": 174476.304979,
+     "R": 160625.051031,
+     "S": 121575.141715
+    },
+    "9": {
+     "*": 146009.539772,
+     "B": 205548.823687,
+     "C": 170480.331034,
+     "D": 155377.150823,
+     "E": 201763.930333,
+     "F": 149044.733096,
+     "G": 140404.986151,
+     "H": 179622.304212,
+     "I": 135746.65587,
+     "J": 130083.873121,
+     "K": 147028.549521,
+     "L": 130527.870226,
+     "M": 128096.80411,
+     "N": 132434.874185,
+     "O": 162954.216172,
+     "P": 141220.193951,
+     "Q": 133497.55578,
+     "R": 131990.87708,
+     "S": 127317.989516
+    }
+   },
+   "age_ratio": {
+    "0": {
+     "Y_LT30": 0.698459,
+     "Y30-49": 0.98902,
+     "Y_GE50": 1.126462
+    },
+    "1": {
+     "Y_LT30": 0.53727,
+     "Y30-49": 0.95419,
+     "Y_GE50": 1.080065
+    },
+    "2": {
+     "Y_LT30": 0.675787,
+     "Y30-49": 0.965108,
+     "Y_GE50": 1.155759
+    },
+    "3": {
+     "Y_LT30": 0.698459,
+     "Y30-49": 0.98902,
+     "Y_GE50": 1.126462
+    },
+    "4": {
+     "Y_LT30": 0.774662,
+     "Y30-49": 0.963636,
+     "Y_GE50": 1.114894
+    },
+    "5": {
+     "Y_LT30": 0.899407,
+     "Y30-49": 0.979158,
+     "Y_GE50": 1.07483
+    },
+    "6": {
+     "Y_LT30": 0.791667,
+     "Y30-49": 0.973188,
+     "Y_GE50": 1.099592
+    },
+    "7": {
+     "Y_LT30": 0.842636,
+     "Y30-49": 0.990861,
+     "Y_GE50": 1.052862
+    },
+    "8": {
+     "Y_LT30": 0.783685,
+     "Y30-49": 0.992605,
+     "Y_GE50": 1.044297
+    },
+    "9": {
+     "Y_LT30": 0.937039,
+     "Y30-49": 0.996411,
+     "Y_GE50": 1.01984
+    }
+   }
+  },
+  "minimum_wage": 44946.2,
+  "salary_source": "salaries: those of Spain scaled by the ratio of the OECD average annual wages 2022 (MX / ES, national currency); minimum wage: OECD",
+  "salary_scale": 10
+ },
+ "fr_BE": {
+  "base": "fr_FR",
+  "country": "Belgium",
+  "place_names": {
+   "country": "Belgique"
+  },
+  "currency": "EUR",
+  "posting_suffix": "(H/F/X)",
+  "rome_diplomas": false,
+  "activity_code": "nace",
+  "salary_format": {
+   "template": "{min} € - {max} € brut/an",
+   "thousands": "."
+  },
+  "qualifications": {
+   "high": [
+    "Master",
+    "Master en {field}",
+    "Bachelier",
+    "Bachelier en {field}",
+    "Ingénieur civil",
+    "Doctorat"
+   ],
+   "mid": [
+    "Bachelier",
+    "Bachelier professionnalisant en {field}",
+    "Graduat en {field}",
+    "CESS technique de qualification"
+   ],
+   "low": [
+    "CESS",
+    "CE1D",
+    "Certificat de qualification en {field}",
+    "CESS professionnel en {field}"
+   ]
+  },
+  "benefits": {
+   "Chèques-repas": {
+    "requires": null,
+    "not_for": [
+     "Stage"
+    ]
+   },
+   "Éco-chèques": {
+    "requires": null,
+    "not_for": [
+     "Stage",
+     "Job étudiant"
+    ]
+   },
+   "Assurance groupe": {
+    "requires": null,
+    "not_for": [
+     "Stage",
+     "Job étudiant",
+     "Intérim"
+    ]
+   },
+   "Assurance hospitalisation": {
+    "requires": null,
+    "not_for": [
+     "Stage",
+     "Job étudiant"
+    ]
+   },
+   "13e mois": {
+    "requires": null,
+    "not_for": [
+     "Stage",
+     "Job étudiant"
+    ]
+   },
+   "Double pécule de vacances": {
+    "requires": null,
+    "not_for": [
+     "Stage",
+     "Job étudiant"
+    ]
+   },
+   "Télétravail": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Horaires flexibles": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Formation continue": {
+    "requires": null,
+    "not_for": []
+   },
+   "Intervention dans les frais de déplacement": {
+    "requires": null,
+    "not_for": []
+   },
+   "Bonus CCT 90": {
+    "requires": null,
+    "not_for": [
+     "Stage",
+     "Job étudiant"
+    ]
+   },
+   "Voiture de société et carte carburant": {
+    "requires": "executive",
+    "not_for": [
+     "Stage",
+     "Job étudiant"
+    ]
+   }
+  },
+  "job_portals": {
+   "all": [
+    "Le Forem",
+    "Actiris",
+    "StepStone",
+    "Jobat",
+    "Indeed",
+    "LinkedIn",
+    "Monster",
+    "Talent.com"
+   ]
+  },
+  "contracts": {
+   "CDI": {
+    "kind": "permanent",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "CDD": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Intérim": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Job étudiant": {
+    "kind": "other",
+    "salary_factor": 0.4,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Stage": {
+    "kind": "intern",
+    "salary_factor": 0.3,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Indépendant": {
+    "kind": "freelance",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": false
+   }
+  },
+  "contract_weights": {
+   "0": {
+    "CDI": 91.0,
+    "CDD": 0.0,
+    "Intérim": 0.0,
+    "Job étudiant": 5,
+    "Stage": 4,
+    "Indépendant": 0.0
+   },
+   "1": {
+    "CDI": 70.51,
+    "CDD": 3.24,
+    "Intérim": 3.24,
+    "Job étudiant": 5,
+    "Stage": 4,
+    "Indépendant": 14.0
+   },
+   "2": {
+    "CDI": 56.64,
+    "CDD": 12.38,
+    "Intérim": 12.38,
+    "Job étudiant": 5,
+    "Stage": 4,
+    "Indépendant": 9.6
+   },
+   "3": {
+    "CDI": 70.87,
+    "CDD": 7.26,
+    "Intérim": 7.26,
+    "Job étudiant": 5,
+    "Stage": 4,
+    "Indépendant": 5.61
+   },
+   "4": {
+    "CDI": 70.99,
+    "CDD": 9.11,
+    "Intérim": 9.11,
+    "Job étudiant": 5,
+    "Stage": 4,
+    "Indépendant": 1.79
+   },
+   "5": {
+    "CDI": 18.86,
+    "CDD": 31.54,
+    "Intérim": 31.54,
+    "Job étudiant": 5,
+    "Stage": 4,
+    "Indépendant": 9.05
+   },
+   "6": {
+    "CDI": 20.11,
+    "CDD": 23.44,
+    "Intérim": 23.44,
+    "Job étudiant": 5,
+    "Stage": 4,
+    "Indépendant": 24
+   },
+   "7": {
+    "CDI": 56.3,
+    "CDD": 10.55,
+    "Intérim": 10.55,
+    "Job étudiant": 5,
+    "Stage": 4,
+    "Indépendant": 13.61
+   },
+   "8": {
+    "CDI": 62.6,
+    "CDD": 12.63,
+    "Intérim": 12.63,
+    "Job étudiant": 5,
+    "Stage": 4,
+    "Indépendant": 3.14
+   },
+   "9": {
+    "CDI": 41.71,
+    "CDD": 23.96,
+    "Intérim": 23.96,
+    "Job étudiant": 5,
+    "Stage": 4,
+    "Indépendant": 1.37
+   }
+  },
+  "salary": {
+   "base": {
+    "0": {
+     "*": 57206,
+     "B": 62718,
+     "C": 60224,
+     "D": 71276,
+     "E": 61208,
+     "F": 54088,
+     "G": 54434,
+     "H": 61324,
+     "I": 48688,
+     "J": 56105,
+     "K": 57609,
+     "L": 61358,
+     "M": 61003,
+     "N": 57900,
+     "P": 56732,
+     "Q": 55779,
+     "R": 49162,
+     "S": 50496
+    },
+    "1": {
+     "*": 107936,
+     "B": 90649,
+     "C": 103047,
+     "D": 118163,
+     "E": 119902,
+     "G": 104448,
+     "H": 107112,
+     "I": 73637,
+     "J": 111995,
+     "L": 122057,
+     "M": 132494,
+     "N": 126578,
+     "P": 92973,
+     "Q": 94954,
+     "R": 91639,
+     "S": 98063
+    },
+    "2": {
+     "*": 70347,
+     "B": 73533,
+     "C": 76072,
+     "D": 86492,
+     "E": 75425,
+     "F": 70266,
+     "G": 76109,
+     "H": 72675,
+     "I": 64405,
+     "J": 74098,
+     "K": 76987,
+     "L": 85311,
+     "M": 87064,
+     "N": 82815,
+     "P": 63227,
+     "Q": 70350,
+     "R": 60416,
+     "S": 63621
+    },
+    "3": {
+     "*": 57206,
+     "B": 62718,
+     "C": 60224,
+     "D": 71276,
+     "E": 61208,
+     "F": 54088,
+     "G": 54434,
+     "H": 61324,
+     "I": 48688,
+     "J": 56105,
+     "K": 57609,
+     "L": 61358,
+     "M": 61003,
+     "N": 57900,
+     "P": 56732,
+     "Q": 55779,
+     "R": 49162,
+     "S": 50496
+    },
+    "4": {
+     "*": 48973,
+     "B": 51642,
+     "C": 50209,
+     "D": 58683,
+     "E": 54590,
+     "F": 47244,
+     "G": 49561,
+     "H": 44807,
+     "I": 42457,
+     "J": 52131,
+     "K": 52357,
+     "L": 55119,
+     "M": 56209,
+     "N": 46627,
+     "P": 50856,
+     "Q": 48763,
+     "R": 43495,
+     "S": 46920
+    },
+    "5": {
+     "*": 40357,
+     "C": 49834,
+     "G": 37569,
+     "H": 62327,
+     "I": 37204,
+     "J": 44192,
+     "M": 69850,
+     "N": 48645,
+     "P": 44391,
+     "Q": 41081,
+     "R": 41049,
+     "S": 37867
+    },
+    "6": {
+     "*": 38840,
+     "C": 46652,
+     "E": 40804,
+     "F": 48118,
+     "G": 44845,
+     "H": 45000,
+     "I": 36534,
+     "K": 38833,
+     "L": 52011,
+     "N": 38644,
+     "P": 41015,
+     "Q": 34314,
+     "R": 38752,
+     "S": 34010
+    },
+    "7": {
+     "*": 43999,
+     "C": 44447,
+     "E": 55115,
+     "F": 41291,
+     "G": 44959,
+     "H": 45752,
+     "J": 56331,
+     "L": 47046,
+     "M": 58011,
+     "N": 44576,
+     "Q": 42368,
+     "R": 38554
+    },
+    "8": {
+     "*": 44734,
+     "C": 46615,
+     "E": 46121,
+     "F": 45901,
+     "G": 42558,
+     "H": 42107,
+     "N": 41148,
+     "Q": 33036,
+     "R": 31231
+    },
+    "9": {
+     "*": 38840,
+     "C": 46652,
+     "E": 40804,
+     "F": 48118,
+     "G": 44845,
+     "H": 45000,
+     "I": 36534,
+     "K": 38833,
+     "L": 52011,
+     "N": 38644,
+     "P": 41015,
+     "Q": 34314,
+     "R": 38752,
+     "S": 34010
+    }
+   },
+   "age_ratio": {
+    "0": {
+     "Y_LT30": 0.695749,
+     "Y30-49": 0.945862,
+     "Y_GE50": 1.329651
+    },
+    "1": {
+     "Y_LT30": 1.0,
+     "Y30-49": 0.925437,
+     "Y_GE50": 1.087209
+    },
+    "2": {
+     "Y_LT30": 0.743315,
+     "Y30-49": 0.980639,
+     "Y_GE50": 1.240053
+    },
+    "3": {
+     "Y_LT30": 0.695749,
+     "Y30-49": 0.945862,
+     "Y_GE50": 1.329651
+    },
+    "4": {
+     "Y_LT30": 1.0,
+     "Y30-49": 0.917608,
+     "Y_GE50": 1.192739
+    },
+    "5": {
+     "Y_LT30": 0.659786,
+     "Y30-49": 0.916148,
+     "Y_GE50": 1.274773
+    },
+    "6": {
+     "Y_LT30": 0.659912,
+     "Y30-49": 0.875953,
+     "Y_GE50": 1.182673
+    },
+    "7": {
+     "Y_LT30": 0.664447,
+     "Y30-49": 0.928407,
+     "Y_GE50": 1.25121
+    },
+    "8": {
+     "Y_LT30": 0.633992,
+     "Y30-49": 0.923682,
+     "Y_GE50": 1.204162
+    },
+    "9": {
+     "Y_LT30": 0.659912,
+     "Y30-49": 0.875953,
+     "Y_GE50": 1.182673
+    }
+   }
+  },
+  "minimum_wage": 21616.55,
+  "salary_source": "salaries: Eurostat SES 2022 (© European Union), by ISCO-08 major group, NACE section and age; minimum wage: OECD; contract mix: Eurostat LFS 2025, aged 15-64, thousands (lfsa_eegais, lfsa_etgais, lfsa_epgais, lfsa_esgais)"
+ },
+ "fr_CA": {
+  "base": "fr_FR",
+  "country": "Canada",
+  "currency": "CAD",
+  "posting_suffix": null,
+  "rome_diplomas": false,
+  "activity_code": "nace",
+  "salary_format": {
+   "template": "{min} $ - {max} $ par année",
+   "thousands": " "
+  },
+  "experience_none": "Aucune expérience requise",
+  "experience_range": "{min} à {max} ans d'expérience",
+  "qualifications": {
+   "high": [
+    "Baccalauréat",
+    "Maîtrise",
+    "Baccalauréat en {field}",
+    "Maîtrise en {field}",
+    "Doctorat"
+   ],
+   "mid": [
+    "DEC (diplôme d'études collégiales)",
+    "DEC en {field}",
+    "AEC en {field}",
+    "Baccalauréat"
+   ],
+   "low": [
+    "DES (diplôme d'études secondaires)",
+    "DEP (diplôme d'études professionnelles)",
+    "DEP en {field}",
+    "ASP en {field}"
+   ]
+  },
+  "benefits": {
+   "Assurance collective": {
+    "requires": null,
+    "not_for": [
+     "Stage",
+     "Temporaire"
+    ]
+   },
+   "Régime de retraite": {
+    "requires": null,
+    "not_for": [
+     "Stage",
+     "Temporaire",
+     "Contractuel"
+    ]
+   },
+   "REER collectif": {
+    "requires": null,
+    "not_for": [
+     "Stage",
+     "Temporaire"
+    ]
+   },
+   "Programme d'aide aux employés": {
+    "requires": null,
+    "not_for": []
+   },
+   "Télétravail": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Horaires flexibles": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Formation continue": {
+    "requires": null,
+    "not_for": []
+   },
+   "Congés mobiles": {
+    "requires": null,
+    "not_for": [
+     "Stage"
+    ]
+   },
+   "Trois semaines de vacances": {
+    "requires": null,
+    "not_for": [
+     "Stage",
+     "Temporaire"
+    ]
+   },
+   "Allocation de transport": {
+    "requires": null,
+    "not_for": []
+   },
+   "Rabais employés": {
+    "requires": null,
+    "not_for": []
+   },
+   "Prime annuelle": {
+    "requires": null,
+    "not_for": [
+     "Stage"
+    ]
+   },
+   "Allocation automobile": {
+    "requires": "executive",
+    "not_for": [
+     "Stage"
+    ]
+   }
+  },
+  "job_portals": {
+   "all": [
+    "Guichet-Emplois",
+    "Québec emploi",
+    "Jobboom",
+    "Jobillico",
+    "Indeed",
+    "LinkedIn",
+    "Talent.com"
+   ]
+  },
+  "contracts": {
+   "Permanent": {
+    "kind": "permanent",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Temps partiel": {
+    "kind": "part_time",
+    "salary_factor": 0.5,
+    "max_experience": null,
+    "employee": true
+   },
+   "Temporaire": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Contractuel": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Stage": {
+    "kind": "intern",
+    "salary_factor": 0.4,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Travailleur autonome": {
+    "kind": "freelance",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": false
+   }
+  },
+  "contract_weights": {
+   "0": {
+    "Permanent": 58,
+    "Temps partiel": 15,
+    "Temporaire": 10,
+    "Contractuel": 8,
+    "Stage": 5,
+    "Travailleur autonome": 4
+   },
+   "1": {
+    "Permanent": 58,
+    "Temps partiel": 15,
+    "Temporaire": 10,
+    "Contractuel": 8,
+    "Stage": 5,
+    "Travailleur autonome": 4
+   },
+   "2": {
+    "Permanent": 58,
+    "Temps partiel": 15,
+    "Temporaire": 10,
+    "Contractuel": 8,
+    "Stage": 5,
+    "Travailleur autonome": 4
+   },
+   "3": {
+    "Permanent": 58,
+    "Temps partiel": 15,
+    "Temporaire": 10,
+    "Contractuel": 8,
+    "Stage": 5,
+    "Travailleur autonome": 4
+   },
+   "4": {
+    "Permanent": 58,
+    "Temps partiel": 15,
+    "Temporaire": 10,
+    "Contractuel": 8,
+    "Stage": 5,
+    "Travailleur autonome": 4
+   },
+   "5": {
+    "Permanent": 58,
+    "Temps partiel": 15,
+    "Temporaire": 10,
+    "Contractuel": 8,
+    "Stage": 5,
+    "Travailleur autonome": 4
+   },
+   "6": {
+    "Permanent": 58,
+    "Temps partiel": 15,
+    "Temporaire": 10,
+    "Contractuel": 8,
+    "Stage": 5,
+    "Travailleur autonome": 4
+   },
+   "7": {
+    "Permanent": 58,
+    "Temps partiel": 15,
+    "Temporaire": 10,
+    "Contractuel": 8,
+    "Stage": 5,
+    "Travailleur autonome": 4
+   },
+   "8": {
+    "Permanent": 58,
+    "Temps partiel": 15,
+    "Temporaire": 10,
+    "Contractuel": 8,
+    "Stage": 5,
+    "Travailleur autonome": 4
+   },
+   "9": {
+    "Permanent": 58,
+    "Temps partiel": 15,
+    "Temporaire": 10,
+    "Contractuel": 8,
+    "Stage": 5,
+    "Travailleur autonome": 4
+   }
+  },
+  "place_names": {
+   "country": "Canada"
+  },
+  "salary": {
+   "base": {
+    "0": {
+     "*": 75166.395747,
+     "B": 83989.910832,
+     "C": 81961.076561,
+     "D": 79580.067284,
+     "E": 77587.598911,
+     "F": 77413.425402,
+     "G": 76222.920764,
+     "H": 80713.152085,
+     "I": 69380.390086,
+     "J": 70101.966048,
+     "K": 80383.945014,
+     "L": 68855.955567,
+     "M": 71145.093103,
+     "N": 71830.303168,
+     "O": 70942.209676,
+     "P": 64178.152776,
+     "Q": 66095.97536,
+     "R": 79093.912657,
+     "S": 83492.272237
+    },
+    "1": {
+     "*": 144879.820893,
+     "B": 163391.976619,
+     "C": 173440.448244,
+     "D": 159554.417455,
+     "F": 133145.120029,
+     "G": 146066.497542,
+     "H": 111484.443194,
+     "I": 125387.699934,
+     "J": 148206.343499,
+     "K": 156869.083038,
+     "L": 116326.84952,
+     "M": 151395.058495,
+     "N": 155906.343756,
+     "O": 110942.782723,
+     "P": 95110.219431,
+     "Q": 105717.577478,
+     "R": 123667.018793,
+     "S": 105338.606548
+    },
+    "2": {
+     "*": 100308.628752,
+     "B": 220582.135127,
+     "C": 132626.427494,
+     "D": 134303.086759,
+     "E": 109132.143836,
+     "G": 129973.630984,
+     "H": 93843.155009,
+     "I": 84751.680681,
+     "J": 116250.289736,
+     "K": 173639.503682,
+     "L": 117907.809056,
+     "M": 112866.347291,
+     "N": 116131.622071,
+     "O": 82265.401701,
+     "P": 79606.863209,
+     "Q": 92244.969521,
+     "R": 90474.524521,
+     "S": 84192.794259
+    },
+    "3": {
+     "*": 75166.395747,
+     "B": 83989.910832,
+     "C": 81961.076561,
+     "D": 79580.067284,
+     "E": 77587.598911,
+     "F": 77413.425402,
+     "G": 76222.920764,
+     "H": 80713.152085,
+     "I": 69380.390086,
+     "J": 70101.966048,
+     "K": 80383.945014,
+     "L": 68855.955567,
+     "M": 71145.093103,
+     "N": 71830.303168,
+     "O": 70942.209676,
+     "P": 64178.152776,
+     "Q": 66095.97536,
+     "R": 79093.912657,
+     "S": 83492.272237
+    },
+    "4": {
+     "*": 56154.687432,
+     "C": 60945.415904,
+     "E": 54106.713215,
+     "F": 61823.939423,
+     "G": 52460.677863,
+     "H": 54489.512134,
+     "I": 61217.203137,
+     "J": 59421.876206,
+     "K": 65481.583095,
+     "L": 52487.473787,
+     "M": 57739.474957,
+     "N": 56527.916378,
+     "O": 54144.993107,
+     "P": 54162.219058,
+     "Q": 53588.02068,
+     "R": 60907.136012,
+     "S": 57936.6164
+    },
+    "5": {
+     "*": 55921.180091,
+     "C": 46722.522066,
+     "G": 53096.124069,
+     "H": 63571.416489,
+     "I": 56049.417729,
+     "J": 78052.699597,
+     "K": 67965.94808,
+     "L": 58528.04073,
+     "M": 50227.04617,
+     "N": 56583.422221,
+     "O": 67925.754193,
+     "P": 45599.007239,
+     "Q": 57454.289762,
+     "R": 59777.879201,
+     "S": 62045.962797
+    },
+    "6": {
+     "*": 50416.531635,
+     "C": 68672.212086,
+     "M": 55119.216356,
+     "N": 49444.222381,
+     "Q": 28235.24827,
+     "R": 81057.671112
+    },
+    "7": {
+     "*": 57978.724281,
+     "C": 58217.973606,
+     "E": 60288.915758,
+     "F": 60652.574731,
+     "G": 53440.643096,
+     "H": 58552.92266,
+     "I": 49111.187321,
+     "L": 57500.225633,
+     "N": 65929.45783,
+     "O": 52508.527728,
+     "P": 52929.606539,
+     "Q": 54508.65208,
+     "R": 72130.800319,
+     "S": 49989.710841
+    },
+    "8": {
+     "*": 59762.567244,
+     "B": 62616.333186,
+     "C": 60225.753936,
+     "E": 64023.119213,
+     "F": 65736.144376,
+     "G": 52812.852869,
+     "H": 61963.661029,
+     "I": 52347.752182,
+     "J": 70096.224064,
+     "M": 52322.870252,
+     "N": 59553.941833,
+     "Q": 32126.399282,
+     "S": 42793.091162
+    },
+    "9": {
+     "*": 48091.028202,
+     "C": 51379.270917,
+     "D": 37211.882922,
+     "E": 47612.529553,
+     "F": 40015.885004,
+     "G": 52349.666177,
+     "H": 57035.124946,
+     "I": 53310.491463,
+     "N": 48958.067754,
+     "Q": 43606.538865,
+     "S": 47939.822629
+    }
+   },
+   "age_ratio": {
+    "0": {
+     "Y_LT30": 0.74888,
+     "Y30-49": 1.025565,
+     "Y_GE50": 1.106361
+    },
+    "1": {
+     "Y_LT30": 0.591519,
+     "Y30-49": 0.944897,
+     "Y_GE50": 1.185983
+    },
+    "2": {
+     "Y_LT30": 0.626259,
+     "Y30-49": 0.969547,
+     "Y_GE50": 1.241165
+    },
+    "3": {
+     "Y_LT30": 0.74888,
+     "Y30-49": 1.025565,
+     "Y_GE50": 1.106361
+    },
+    "4": {
+     "Y_LT30": 0.799993,
+     "Y30-49": 1.043901,
+     "Y_GE50": 1.151062
+    },
+    "5": {
+     "Y_LT30": 0.875757,
+     "Y30-49": 1.006024,
+     "Y_GE50": 1.090666
+    },
+    "6": {
+     "Y_LT30": 0.912949,
+     "Y30-49": 1.012794,
+     "Y_GE50": 1.177062
+    },
+    "7": {
+     "Y_LT30": 0.75954,
+     "Y30-49": 1.064737,
+     "Y_GE50": 1.065364
+    },
+    "8": {
+     "Y_LT30": 0.798777,
+     "Y30-49": 1.018575,
+     "Y_GE50": 1.039969
+    },
+    "9": {
+     "Y_LT30": 0.903765,
+     "Y30-49": 1.005691,
+     "Y_GE50": 1.050903
+    }
+   }
+  },
+  "minimum_wage": 30347.2,
+  "salary_source": "salaries: those of France scaled by the ratio of the OECD average annual wages 2022 (CA / FR, national currency); minimum wage: OECD"
+ },
+ "fr_CH": {
+  "base": "fr_FR",
+  "country": "Switzerland",
+  "place_names": {
+   "country": "Suisse"
+  },
+  "currency": "CHF",
+  "rome_diplomas": false,
+  "activity_code": "nace",
+  "salary_format": {
+   "template": "CHF {min} - {max} brut/an",
+   "thousands": "'"
+  },
+  "qualifications": {
+   "high": [
+    "Master universitaire",
+    "Master HES",
+    "Bachelor HES",
+    "Master en {field}",
+    "Bachelor HES en {field}",
+    "Doctorat"
+   ],
+   "mid": [
+    "Brevet fédéral",
+    "Diplôme ES",
+    "Maturité professionnelle",
+    "Brevet fédéral en {field}",
+    "Diplôme ES en {field}"
+   ],
+   "low": [
+    "CFC",
+    "AFP",
+    "CFC en {field}",
+    "Scolarité obligatoire"
+   ]
+  },
+  "benefits": {
+   "Caisse de pension avantageuse": {
+    "requires": null,
+    "not_for": [
+     "Stage",
+     "Temporaire"
+    ]
+   },
+   "13e salaire": {
+    "requires": null,
+    "not_for": [
+     "Stage"
+    ]
+   },
+   "5 semaines de vacances": {
+    "requires": null,
+    "not_for": [
+     "Stage",
+     "Apprentissage"
+    ]
+   },
+   "Télétravail": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Horaires flexibles": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Formation continue": {
+    "requires": null,
+    "not_for": []
+   },
+   "Abonnement demi-tarif CFF": {
+    "requires": null,
+    "not_for": []
+   },
+   "Restaurant d'entreprise": {
+    "requires": null,
+    "not_for": []
+   },
+   "Rabais pour le personnel": {
+    "requires": null,
+    "not_for": []
+   },
+   "Bonus annuel": {
+    "requires": null,
+    "not_for": [
+     "Stage",
+     "Apprentissage"
+    ]
+   },
+   "Véhicule de service": {
+    "requires": "executive",
+    "not_for": [
+     "Stage",
+     "Apprentissage"
+    ]
+   }
+  },
+  "job_portals": {
+   "all": [
+    "jobs.ch",
+    "jobup.ch",
+    "JobScout24",
+    "Indeed",
+    "LinkedIn",
+    "Job-Room (ORP)"
+   ]
+  },
+  "contracts": {
+   "CDI": {
+    "kind": "permanent",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "CDD": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Temporaire": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Temps partiel": {
+    "kind": "part_time",
+    "salary_factor": 0.6,
+    "max_experience": null,
+    "employee": true
+   },
+   "Apprentissage": {
+    "kind": "apprentice",
+    "salary_factor": 0.2,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Stage": {
+    "kind": "intern",
+    "salary_factor": 0.35,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Indépendant": {
+    "kind": "freelance",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": false
+   }
+  },
+  "contract_weights": {
+   "0": {
+    "CDI": 39.33,
+    "CDD": 26.33,
+    "Temporaire": 26.33,
+    "Temps partiel": 0.0,
+    "Apprentissage": 5,
+    "Stage": 3,
+    "Indépendant": 0.0
+   },
+   "1": {
+    "CDI": 75.67,
+    "CDD": 3.27,
+    "Temporaire": 3.27,
+    "Temps partiel": 6.17,
+    "Apprentissage": 5,
+    "Stage": 3,
+    "Indépendant": 3.62
+   },
+   "2": {
+    "CDI": 53.0,
+    "CDD": 11.95,
+    "Temporaire": 11.95,
+    "Temps partiel": 13.12,
+    "Apprentissage": 5,
+    "Stage": 3,
+    "Indépendant": 1.99
+   },
+   "3": {
+    "CDI": 57.64,
+    "CDD": 11.11,
+    "Temporaire": 11.11,
+    "Temps partiel": 10.35,
+    "Apprentissage": 5,
+    "Stage": 3,
+    "Indépendant": 1.78
+   },
+   "4": {
+    "CDI": 56.24,
+    "CDD": 11.32,
+    "Temporaire": 11.32,
+    "Temps partiel": 12.25,
+    "Apprentissage": 5,
+    "Stage": 3,
+    "Indépendant": 0.88
+   },
+   "5": {
+    "CDI": 46.44,
+    "CDD": 14.37,
+    "Temporaire": 14.37,
+    "Temps partiel": 15.01,
+    "Apprentissage": 5,
+    "Stage": 3,
+    "Indépendant": 1.8
+   },
+   "6": {
+    "CDI": 32.92,
+    "CDD": 23.75,
+    "Temporaire": 23.75,
+    "Temps partiel": 5.58,
+    "Apprentissage": 5,
+    "Stage": 3,
+    "Indépendant": 6
+   },
+   "7": {
+    "CDI": 47.09,
+    "CDD": 19.45,
+    "Temporaire": 19.45,
+    "Temps partiel": 3.94,
+    "Apprentissage": 5,
+    "Stage": 3,
+    "Indépendant": 2.08
+   },
+   "8": {
+    "CDI": 73.38,
+    "CDD": 5.94,
+    "Temporaire": 5.94,
+    "Temps partiel": 5.4,
+    "Apprentissage": 5,
+    "Stage": 3,
+    "Indépendant": 1.34
+   },
+   "9": {
+    "CDI": 58.67,
+    "CDD": 8.59,
+    "Temporaire": 8.59,
+    "Temps partiel": 14.65,
+    "Apprentissage": 5,
+    "Stage": 3,
+    "Indépendant": 1.5
+   }
+  },
+  "salary": {
+   "base": {
+    "0": {
+     "*": 98763,
+     "B": 106421,
+     "C": 101200,
+     "D": 113562,
+     "E": 98074,
+     "F": 99100,
+     "G": 101114,
+     "H": 102740,
+     "I": 73992,
+     "J": 110427,
+     "K": 137345,
+     "L": 99534,
+     "M": 102056,
+     "N": 90299,
+     "O": 108319,
+     "P": 93262,
+     "Q": 83304,
+     "R": 86632,
+     "S": 92251
+    },
+    "1": {
+     "*": 153046,
+     "B": 139869,
+     "C": 160857,
+     "D": 164036,
+     "E": 138760,
+     "F": 132035,
+     "G": 152654,
+     "H": 128039,
+     "I": 92937,
+     "J": 161439,
+     "K": 220943,
+     "L": 147484,
+     "M": 185380,
+     "N": 131522,
+     "O": 140333,
+     "P": 129439,
+     "Q": 122580,
+     "R": 114740,
+     "S": 129480
+    },
+    "2": {
+     "*": 120464,
+     "B": 146670,
+     "C": 121026,
+     "D": 128681,
+     "E": 114057,
+     "F": 101964,
+     "G": 127906,
+     "H": 114010,
+     "I": 90067,
+     "J": 125460,
+     "K": 158683,
+     "L": 108446,
+     "M": 125198,
+     "N": 105282,
+     "O": 116424,
+     "P": 115040,
+     "Q": 110288,
+     "R": 97293,
+     "S": 107655
+    },
+    "3": {
+     "*": 98763,
+     "B": 106421,
+     "C": 101200,
+     "D": 113562,
+     "E": 98074,
+     "F": 99100,
+     "G": 101114,
+     "H": 102740,
+     "I": 73992,
+     "J": 110427,
+     "K": 137345,
+     "L": 99534,
+     "M": 102056,
+     "N": 90299,
+     "O": 108319,
+     "P": 93262,
+     "Q": 83304,
+     "R": 86632,
+     "S": 92251
+    },
+    "4": {
+     "*": 81809,
+     "B": 84350,
+     "C": 80405,
+     "D": 88912,
+     "E": 82330,
+     "F": 79024,
+     "G": 77245,
+     "H": 75561,
+     "I": 62679,
+     "J": 87215,
+     "K": 102760,
+     "L": 80754,
+     "M": 84995,
+     "N": 72071,
+     "O": 92692,
+     "P": 88098,
+     "Q": 79542,
+     "R": 73891,
+     "S": 82361
+    },
+    "5": {
+     "*": 66739,
+     "B": 83572,
+     "C": 70577,
+     "D": 90031,
+     "E": 84813,
+     "F": 78316,
+     "G": 65342,
+     "H": 73744,
+     "I": 59726,
+     "J": 88248,
+     "K": 124041,
+     "L": 73279,
+     "M": 74776,
+     "N": 64980,
+     "O": 87604,
+     "P": 77409,
+     "Q": 69483,
+     "R": 64866,
+     "S": 65011
+    },
+    "6": {
+     "*": 71444,
+     "C": 73620,
+     "E": 71890,
+     "F": 71865,
+     "G": 67141,
+     "I": 71595,
+     "M": 74952,
+     "N": 72107,
+     "O": 85313,
+     "P": 58609,
+     "Q": 77828,
+     "R": 57361,
+     "S": 71480
+    },
+    "7": {
+     "*": 77497,
+     "B": 81576,
+     "C": 77502,
+     "D": 90141,
+     "E": 85497,
+     "F": 77396,
+     "G": 74163,
+     "H": 84534,
+     "I": 65484,
+     "J": 83717,
+     "K": 113361,
+     "L": 78504,
+     "M": 84088,
+     "N": 77059,
+     "O": 88200,
+     "P": 83270,
+     "Q": 79037,
+     "R": 79658,
+     "S": 75061
+    },
+    "8": {
+     "*": 73779,
+     "B": 78675,
+     "C": 71764,
+     "D": 90148,
+     "E": 77589,
+     "F": 80605,
+     "G": 70414,
+     "H": 76106,
+     "I": 56415,
+     "J": 95865,
+     "K": 103285,
+     "L": 62264,
+     "M": 75744,
+     "N": 73278,
+     "O": 89313,
+     "P": 70342,
+     "Q": 65932,
+     "R": 64404,
+     "S": 61107
+    },
+    "9": {
+     "*": 63084,
+     "B": 75117,
+     "C": 66396,
+     "D": 79669,
+     "E": 72303,
+     "F": 72229,
+     "G": 63667,
+     "H": 64432,
+     "I": 55150,
+     "J": 60009,
+     "K": 66159,
+     "L": 65548,
+     "M": 67182,
+     "N": 58753,
+     "O": 71609,
+     "P": 63223,
+     "Q": 63466,
+     "R": 58011,
+     "S": 60242
+    }
+   },
+   "age_ratio": {
+    "0": {
+     "Y_LT30": 0.756619,
+     "Y30-49": 1.013588,
+     "Y_GE50": 1.124905
+    },
+    "1": {
+     "Y_LT30": 0.566843,
+     "Y30-49": 0.947016,
+     "Y_GE50": 1.131542
+    },
+    "2": {
+     "Y_LT30": 0.695162,
+     "Y30-49": 1.001029,
+     "Y_GE50": 1.1746
+    },
+    "3": {
+     "Y_LT30": 0.756619,
+     "Y30-49": 1.013588,
+     "Y_GE50": 1.124905
+    },
+    "4": {
+     "Y_LT30": 0.821181,
+     "Y30-49": 1.013189,
+     "Y_GE50": 1.083927
+    },
+    "5": {
+     "Y_LT30": 0.900208,
+     "Y30-49": 1.008466,
+     "Y_GE50": 1.061104
+    },
+    "6": {
+     "Y_LT30": 0.89757,
+     "Y30-49": 1.011478,
+     "Y_GE50": 1.105691
+    },
+    "7": {
+     "Y_LT30": 0.872524,
+     "Y30-49": 1.012517,
+     "Y_GE50": 1.083358
+    },
+    "8": {
+     "Y_LT30": 0.887922,
+     "Y30-49": 0.995663,
+     "Y_GE50": 1.05137
+    },
+    "9": {
+     "Y_LT30": 0.947023,
+     "Y30-49": 0.994103,
+     "Y_GE50": 1.030705
+    }
+   }
+  },
+  "minimum_wage": null,
+  "salary_source": "salaries: Eurostat SES 2022 (© European Union), by ISCO-08 major group, NACE section and age; minimum wage: OECD; contract mix: Eurostat LFS 2025, aged 15-64, thousands (lfsa_eegais, lfsa_etgais, lfsa_epgais, lfsa_esgais)"
  },
  "fr_FR": {
   "country": "France",
@@ -15437,6 +21592,508 @@
     "58.1"
    ]
   }
+ },
+ "it_CH": {
+  "base": "it_IT",
+  "country": "Switzerland",
+  "place_names": {
+   "country": "Svizzera"
+  },
+  "currency": "CHF",
+  "salary_format": {
+   "template": "CHF {min} - {max} lordi/anno",
+   "thousands": "'"
+  },
+  "qualifications": {
+   "high": [
+    "Master universitario",
+    "Master SUP",
+    "Bachelor SUP",
+    "Master in {field}",
+    "Bachelor SUP in {field}",
+    "Dottorato"
+   ],
+   "mid": [
+    "Attestato professionale federale",
+    "Diploma SSS",
+    "Maturità professionale",
+    "Attestato professionale federale in {field}",
+    "Diploma SSS in {field}"
+   ],
+   "low": [
+    "AFC",
+    "CFP",
+    "AFC in {field}",
+    "Scuola dell'obbligo"
+   ]
+  },
+  "benefits": {
+   "Cassa pensione vantaggiosa": {
+    "requires": null,
+    "not_for": [
+     "Stage",
+     "Lavoro temporaneo"
+    ]
+   },
+   "Tredicesima mensilità": {
+    "requires": null,
+    "not_for": [
+     "Stage"
+    ]
+   },
+   "5 settimane di vacanza": {
+    "requires": null,
+    "not_for": [
+     "Stage",
+     "Apprendistato"
+    ]
+   },
+   "Telelavoro": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Orario flessibile": {
+    "requires": "office",
+    "not_for": []
+   },
+   "Formazione continua": {
+    "requires": null,
+    "not_for": []
+   },
+   "Abbonamento metà-prezzo FFS": {
+    "requires": null,
+    "not_for": []
+   },
+   "Mensa aziendale": {
+    "requires": null,
+    "not_for": []
+   },
+   "Sconti per il personale": {
+    "requires": null,
+    "not_for": []
+   },
+   "Bonus annuale": {
+    "requires": null,
+    "not_for": [
+     "Stage",
+     "Apprendistato"
+    ]
+   },
+   "Auto aziendale": {
+    "requires": "executive",
+    "not_for": [
+     "Stage",
+     "Apprendistato"
+    ]
+   }
+  },
+  "job_portals": {
+   "all": [
+    "jobs.ch",
+    "JobScout24",
+    "Indeed",
+    "LinkedIn",
+    "Job-Room (URC)"
+   ]
+  },
+  "contracts": {
+   "Tempo indeterminato": {
+    "kind": "permanent",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Tempo determinato": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Lavoro temporaneo": {
+    "kind": "temporary",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": true
+   },
+   "Tempo parziale": {
+    "kind": "part_time",
+    "salary_factor": 0.6,
+    "max_experience": null,
+    "employee": true
+   },
+   "Apprendistato": {
+    "kind": "apprentice",
+    "salary_factor": 0.2,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Stage": {
+    "kind": "intern",
+    "salary_factor": 0.35,
+    "max_experience": 0,
+    "employee": true
+   },
+   "Indipendente": {
+    "kind": "freelance",
+    "salary_factor": 1,
+    "max_experience": null,
+    "employee": false
+   }
+  },
+  "contract_weights": {
+   "0": {
+    "Tempo indeterminato": 43.72,
+    "Tempo determinato": 26.33,
+    "Lavoro temporaneo": 21.94,
+    "Tempo parziale": 0.0,
+    "Apprendistato": 5,
+    "Stage": 3,
+    "Indipendente": 0.0
+   },
+   "1": {
+    "Tempo indeterminato": 75.66,
+    "Tempo determinato": 3.27,
+    "Lavoro temporaneo": 2.73,
+    "Tempo parziale": 6.73,
+    "Apprendistato": 5,
+    "Stage": 3,
+    "Indipendente": 3.62
+   },
+   "2": {
+    "Tempo indeterminato": 53.8,
+    "Tempo determinato": 11.95,
+    "Lavoro temporaneo": 9.96,
+    "Tempo parziale": 14.31,
+    "Apprendistato": 5,
+    "Stage": 3,
+    "Indipendente": 1.99
+   },
+   "3": {
+    "Tempo indeterminato": 58.55,
+    "Tempo determinato": 11.11,
+    "Lavoro temporaneo": 9.26,
+    "Tempo parziale": 11.3,
+    "Apprendistato": 5,
+    "Stage": 3,
+    "Indipendente": 1.78
+   },
+   "4": {
+    "Tempo indeterminato": 57.01,
+    "Tempo determinato": 11.32,
+    "Lavoro temporaneo": 9.43,
+    "Tempo parziale": 13.37,
+    "Apprendistato": 5,
+    "Stage": 3,
+    "Indipendente": 0.88
+   },
+   "5": {
+    "Tempo indeterminato": 47.47,
+    "Tempo determinato": 14.37,
+    "Lavoro temporaneo": 11.98,
+    "Tempo parziale": 16.37,
+    "Apprendistato": 5,
+    "Stage": 3,
+    "Indipendente": 1.8
+   },
+   "6": {
+    "Tempo indeterminato": 36.37,
+    "Tempo determinato": 23.75,
+    "Lavoro temporaneo": 19.79,
+    "Tempo parziale": 6.09,
+    "Apprendistato": 5,
+    "Stage": 3,
+    "Indipendente": 6
+   },
+   "7": {
+    "Tempo indeterminato": 49.97,
+    "Tempo determinato": 19.45,
+    "Lavoro temporaneo": 16.21,
+    "Tempo parziale": 4.29,
+    "Apprendistato": 5,
+    "Stage": 3,
+    "Indipendente": 2.08
+   },
+   "8": {
+    "Tempo indeterminato": 73.88,
+    "Tempo determinato": 5.94,
+    "Lavoro temporaneo": 4.95,
+    "Tempo parziale": 5.89,
+    "Apprendistato": 5,
+    "Stage": 3,
+    "Indipendente": 1.34
+   },
+   "9": {
+    "Tempo indeterminato": 58.77,
+    "Tempo determinato": 8.59,
+    "Lavoro temporaneo": 7.16,
+    "Tempo parziale": 15.98,
+    "Apprendistato": 5,
+    "Stage": 3,
+    "Indipendente": 1.5
+   }
+  },
+  "salary": {
+   "base": {
+    "0": {
+     "*": 98763,
+     "B": 106421,
+     "C": 101200,
+     "D": 113562,
+     "E": 98074,
+     "F": 99100,
+     "G": 101114,
+     "H": 102740,
+     "I": 73992,
+     "J": 110427,
+     "K": 137345,
+     "L": 99534,
+     "M": 102056,
+     "N": 90299,
+     "O": 108319,
+     "P": 93262,
+     "Q": 83304,
+     "R": 86632,
+     "S": 92251
+    },
+    "1": {
+     "*": 153046,
+     "B": 139869,
+     "C": 160857,
+     "D": 164036,
+     "E": 138760,
+     "F": 132035,
+     "G": 152654,
+     "H": 128039,
+     "I": 92937,
+     "J": 161439,
+     "K": 220943,
+     "L": 147484,
+     "M": 185380,
+     "N": 131522,
+     "O": 140333,
+     "P": 129439,
+     "Q": 122580,
+     "R": 114740,
+     "S": 129480
+    },
+    "2": {
+     "*": 120464,
+     "B": 146670,
+     "C": 121026,
+     "D": 128681,
+     "E": 114057,
+     "F": 101964,
+     "G": 127906,
+     "H": 114010,
+     "I": 90067,
+     "J": 125460,
+     "K": 158683,
+     "L": 108446,
+     "M": 125198,
+     "N": 105282,
+     "O": 116424,
+     "P": 115040,
+     "Q": 110288,
+     "R": 97293,
+     "S": 107655
+    },
+    "3": {
+     "*": 98763,
+     "B": 106421,
+     "C": 101200,
+     "D": 113562,
+     "E": 98074,
+     "F": 99100,
+     "G": 101114,
+     "H": 102740,
+     "I": 73992,
+     "J": 110427,
+     "K": 137345,
+     "L": 99534,
+     "M": 102056,
+     "N": 90299,
+     "O": 108319,
+     "P": 93262,
+     "Q": 83304,
+     "R": 86632,
+     "S": 92251
+    },
+    "4": {
+     "*": 81809,
+     "B": 84350,
+     "C": 80405,
+     "D": 88912,
+     "E": 82330,
+     "F": 79024,
+     "G": 77245,
+     "H": 75561,
+     "I": 62679,
+     "J": 87215,
+     "K": 102760,
+     "L": 80754,
+     "M": 84995,
+     "N": 72071,
+     "O": 92692,
+     "P": 88098,
+     "Q": 79542,
+     "R": 73891,
+     "S": 82361
+    },
+    "5": {
+     "*": 66739,
+     "B": 83572,
+     "C": 70577,
+     "D": 90031,
+     "E": 84813,
+     "F": 78316,
+     "G": 65342,
+     "H": 73744,
+     "I": 59726,
+     "J": 88248,
+     "K": 124041,
+     "L": 73279,
+     "M": 74776,
+     "N": 64980,
+     "O": 87604,
+     "P": 77409,
+     "Q": 69483,
+     "R": 64866,
+     "S": 65011
+    },
+    "6": {
+     "*": 71444,
+     "C": 73620,
+     "E": 71890,
+     "F": 71865,
+     "G": 67141,
+     "I": 71595,
+     "M": 74952,
+     "N": 72107,
+     "O": 85313,
+     "P": 58609,
+     "Q": 77828,
+     "R": 57361,
+     "S": 71480
+    },
+    "7": {
+     "*": 77497,
+     "B": 81576,
+     "C": 77502,
+     "D": 90141,
+     "E": 85497,
+     "F": 77396,
+     "G": 74163,
+     "H": 84534,
+     "I": 65484,
+     "J": 83717,
+     "K": 113361,
+     "L": 78504,
+     "M": 84088,
+     "N": 77059,
+     "O": 88200,
+     "P": 83270,
+     "Q": 79037,
+     "R": 79658,
+     "S": 75061
+    },
+    "8": {
+     "*": 73779,
+     "B": 78675,
+     "C": 71764,
+     "D": 90148,
+     "E": 77589,
+     "F": 80605,
+     "G": 70414,
+     "H": 76106,
+     "I": 56415,
+     "J": 95865,
+     "K": 103285,
+     "L": 62264,
+     "M": 75744,
+     "N": 73278,
+     "O": 89313,
+     "P": 70342,
+     "Q": 65932,
+     "R": 64404,
+     "S": 61107
+    },
+    "9": {
+     "*": 63084,
+     "B": 75117,
+     "C": 66396,
+     "D": 79669,
+     "E": 72303,
+     "F": 72229,
+     "G": 63667,
+     "H": 64432,
+     "I": 55150,
+     "J": 60009,
+     "K": 66159,
+     "L": 65548,
+     "M": 67182,
+     "N": 58753,
+     "O": 71609,
+     "P": 63223,
+     "Q": 63466,
+     "R": 58011,
+     "S": 60242
+    }
+   },
+   "age_ratio": {
+    "0": {
+     "Y_LT30": 0.756619,
+     "Y30-49": 1.013588,
+     "Y_GE50": 1.124905
+    },
+    "1": {
+     "Y_LT30": 0.566843,
+     "Y30-49": 0.947016,
+     "Y_GE50": 1.131542
+    },
+    "2": {
+     "Y_LT30": 0.695162,
+     "Y30-49": 1.001029,
+     "Y_GE50": 1.1746
+    },
+    "3": {
+     "Y_LT30": 0.756619,
+     "Y30-49": 1.013588,
+     "Y_GE50": 1.124905
+    },
+    "4": {
+     "Y_LT30": 0.821181,
+     "Y30-49": 1.013189,
+     "Y_GE50": 1.083927
+    },
+    "5": {
+     "Y_LT30": 0.900208,
+     "Y30-49": 1.008466,
+     "Y_GE50": 1.061104
+    },
+    "6": {
+     "Y_LT30": 0.89757,
+     "Y30-49": 1.011478,
+     "Y_GE50": 1.105691
+    },
+    "7": {
+     "Y_LT30": 0.872524,
+     "Y30-49": 1.012517,
+     "Y_GE50": 1.083358
+    },
+    "8": {
+     "Y_LT30": 0.887922,
+     "Y30-49": 0.995663,
+     "Y_GE50": 1.05137
+    },
+    "9": {
+     "Y_LT30": 0.947023,
+     "Y30-49": 0.994103,
+     "Y_GE50": 1.030705
+    }
+   }
+  },
+  "minimum_wage": null,
+  "salary_source": "salaries: Eurostat SES 2022 (© European Union), by ISCO-08 major group, NACE section and age; minimum wage: OECD; contract mix: Eurostat LFS 2025, aged 15-64, thousands (lfsa_eegais, lfsa_etgais, lfsa_epgais, lfsa_esgais)"
  },
  "it_IT": {
   "country": "Italy",

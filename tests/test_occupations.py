@@ -275,8 +275,9 @@ class HiringCompanyTests:
             self.assertEqual(posting["company_sector"], sector)
 
     def test_company_abroad_is_made_up(self):
-        posting = self.fake.job_occupation_posting(country="Belgium")
-        self.assertEqual(posting["location"]["country"], "Belgium")
+        # No real companies outside the countries of the locales with conditions of their own.
+        posting = self.fake.job_occupation_posting(country="Portugal")
+        self.assertEqual(posting["location"]["country"], "Portugal")
         self.assertIsNone(posting["company"]["website"])
         self.assertEqual(posting["company"]["city"], posting["location"]["city"])
 
@@ -536,7 +537,7 @@ class TestNoSeasonalContract(unittest.TestCase):
 
 class TestUsConditionsElsewhere(unittest.TestCase):
     def test_other_locales_get_the_us_conditions(self):
-        for locale in ("en_GB", "nl_NL"):
+        for locale in ("en_IN", "nl_NL"):
             provider = JobsProvider(Faker(locale))
             self.assertEqual(provider._local_conditions()["country"], "United States", msg=locale)
             posting = provider.job_occupation_posting()

@@ -207,7 +207,7 @@ class TestJobsProvider(unittest.TestCase):
 class TestOtherLocalesUseUsConditions(unittest.TestCase):
     def test_locales_without_conditions(self):
         us = JobsProvider(Faker("en_US"))._local_conditions()
-        for locale in ("en_GB", "nl_NL", "ja_JP"):
+        for locale in ("en_IN", "nl_NL", "ja_JP"):
             fake = Faker(locale)
             fake.add_provider(JobsProvider)
             provider = JobsProvider(fake)
@@ -215,9 +215,7 @@ class TestOtherLocalesUseUsConditions(unittest.TestCase):
             self.assertIn(fake.job_title(), provider.job_titles)
             posting = fake.job_posting()
             self.assertEqual(posting["salary_currency"], "USD", msg=locale)
-            # en_GB: jobs and companies in the United Kingdom (US conditions).
-            country = "United Kingdom" if locale == "en_GB" else "United States"
-            self.assertEqual(posting["location"]["country"], country, msg=locale)
+            self.assertEqual(posting["location"]["country"], "United States", msg=locale)
 
 
 if __name__ == "__main__":

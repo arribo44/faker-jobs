@@ -5,9 +5,11 @@ Company Dataset" (7+ million companies, from LinkedIn company pages; CC BY 4.0):
 
     DATAS/7millionscompanies/companies_sorted.csv   (~1 GB, not published)
 
-For the six countries of the locales (United States, United Kingdom,
-France, Germany, Spain, Italy) and each of the 35 ROME activity sectors
-(LinkedIn industry → sector, see INDUSTRY_SECTORS):
+For the countries of the locales with posting conditions of their own
+(United States, United Kingdom, France, Germany, Spain, Italy, Belgium,
+Switzerland, Austria, Luxembourg, Ireland, Canada, Mexico, Chile, Colombia,
+Australia, New Zealand) and each of the 35 ROME activity sectors (LinkedIn
+industry → sector, see INDUSTRY_SECTORS):
 
 - `weights`: the share of jobs in each company size class. LinkedIn lists
   few small companies, so the shares are those of official statistics
@@ -16,9 +18,10 @@ France, Germany, Spain, Italy) and each of the 35 ROME activity sectors
   in the NACE section of the sector, split between the LinkedIn classes of
   each group as LinkedIn splits them: the number of companies of the class
   times its typical size (TYPICAL_SIZES). Sectors without official figures
-  (agriculture and public administration in Europe...) keep the LinkedIn
-  shares; sectors with fewer than MIN_SECTOR_COMPANIES companies take the
-  country's LinkedIn split.
+  (agriculture and public administration in Europe...) and countries
+  without them (Mexico, Chile, Colombia, Australia) keep the LinkedIn
+  shares; sectors with fewer than MIN_SECTOR_COMPANIES
+  companies take the country's LinkedIn split.
 - `companies`: up to PER_CLASS real companies per size class of 11
   employees or more, with a name, website, founding year, headquarters city
   (an index into the country's cities of cities.json.gz when GeoNames knows
@@ -29,8 +32,9 @@ France, Germany, Spain, Italy) and each of the 35 ROME activity sectors
   Withee, Asda in "West Yorkshire"). For
   10,001+ employees, the largest ones (by LinkedIn employee estimate), so
   that the best-known groups are there (IBM, Walmart, Apple...); else drawn
-  at random (fixed seed: the build is reproducible). Rows without website
-  or city are left out: many are noise. Companies of 1-10 employees are left
+  at random (a fixed seed per country: the build is reproducible, and
+  adding a country leaves the others unchanged). Rows without website or
+  city, or whose city is in another country, are left out: many are noise. Companies of 1-10 employees are left
   out too (many are one-person businesses named after their owner): the
   provider makes them up.
 - `counts`: the number of companies of each size class, so that the provider
@@ -57,8 +61,10 @@ import os
 import random
 import re
 import sys
+import time
 import unicodedata
 import urllib.parse
+import urllib.error
 import urllib.request
 import zipfile
 from collections import Counter, defaultdict
@@ -76,6 +82,7 @@ HEADQUARTERS_PATH = os.path.join(ROOT, "DATAS", "wikidata", "headquarters.json")
 SPARQL_URL = "https://query.wikidata.org/sparql"
 USER_AGENT = "faker-jobs data build (https://github.com/arribo44/faker-jobs)"
 HEADQUARTERS_BATCH = 200
+QUERY_ATTEMPTS = 2
 # A Wikidata headquarters is the GeoNames city of its name, or the nearest
 # one, within this distance (a business district: La Défense -> Courbevoie).
 MATCH_KM = 10
@@ -88,11 +95,11 @@ PER_CLASS = 10
 MIN_SECTOR_COMPANIES = 200
 
 # Dataset country → country name of cities.json.gz.
-COUNTRIES = {"united states": "United States", "united kingdom": "United Kingdom", "france": "France",
-             "germany": "Germany",
-             "spain": "Spain", "italy": "Italy"}
 COUNTRY_CODES = {"United States": "US", "United Kingdom": "GB", "France": "FR", "Germany": "DE", "Spain": "ES",
-                 "Italy": "IT"}
+                 "Italy": "IT", "Belgium": "BE", "Switzerland": "CH", "Austria": "AT", "Luxembourg": "LU",
+                 "Ireland": "IE", "Canada": "CA", "Mexico": "MX", "Chile": "CL", "Colombia": "CO",
+                 "Australia": "AU", "New Zealand": "NZ"}
+COUNTRIES = {country.lower(): country for country in COUNTRY_CODES}
 # Headquarters of large groups that neither LinkedIn nor Wikidata (by
 # LinkedIn ID) place in their city: (country, dataset name) -> city of
 # cities.json.gz. Hand-made.
@@ -310,7 +317,7 @@ def city_index(cities, geonames=None):
         rows = cities["countries"][country]["cities"]
         names = {}
         for i, row in enumerate(rows):
-            for name in {row[0], row[4] if len(row) > 4 else None} - {None}:
+            for name in {row[0], *(row[4].values() if len(row) > 4 else ())}:
                 names.setdefault(fold(name), i)
         for i, row in enumerate(rows):
             # "Frankfurt" for "Frankfurt am Main", "Halle" for "Halle (Saale)".
@@ -353,8 +360,25 @@ def query_headquarters(ids):
              'SERVICE wikibase:label { bd:serviceParam wikibase:language "en". } }')
     request = urllib.request.Request(SPARQL_URL, data=urllib.parse.urlencode({"query": query}).encode(),
                                      headers={"User-Agent": USER_AGENT, "Accept": "text/csv"})
-    with urllib.request.urlopen(request, timeout=120) as response:
-        rows = list(csv.DictReader(response.read().decode("utf-8").splitlines()))
+    for attempt in range(QUERY_ATTEMPTS):
+        try:
+            with urllib.request.urlopen(request, timeout=120) as response:
+                rows = list(csv.DictReader(response.read().decode("utf-8").splitlines()))
+            break
+        except urllib.error.HTTPError as error:
+            # The query service often times out (504) or throttles (429): wait and
+            # retry, then query each half of the batch on its own.
+            if error.code not in (429, 500, 502, 503, 504):
+                raise
+            if attempt == QUERY_ATTEMPTS - 1:
+                if len(ids) < 2:
+                    raise
+                half = len(ids) // 2
+                found = query_headquarters(ids[:half])
+                for key, entries in query_headquarters(ids[half:]).items():
+                    found[key].extend(entries)
+                return found
+            time.sleep(10 * (attempt + 1))
     found = defaultdict(list)
     for row in rows:
         point = re.match(r"Point\(([-\d.eE]+) ([-\d.eE]+)\)", row["coord"])
@@ -379,13 +403,17 @@ def headquarters(ids, fetch=False):
             batch = missing[start:start + HEADQUARTERS_BATCH]
             found = query_headquarters(batch)
             cache.update({i: found.get(i, []) for i in batch})
+            save_headquarters(cache)  # after each batch: a failed run keeps what it found
             print(f"Wikidata: {min(start + HEADQUARTERS_BATCH, len(missing))}/{len(missing)} companies")
-        os.makedirs(os.path.dirname(HEADQUARTERS_PATH), exist_ok=True)
-        with open(HEADQUARTERS_PATH, "w", encoding="utf-8") as f:
-            json.dump({"source": "Wikidata (CC0): P4264 LinkedIn company ID -> P159 headquarters location",
-                       "headquarters": dict(sorted(cache.items()))}, f, ensure_ascii=False, indent=0)
-            f.write("\n")
     return cache
+
+
+def save_headquarters(cache):
+    os.makedirs(os.path.dirname(HEADQUARTERS_PATH), exist_ok=True)
+    with open(HEADQUARTERS_PATH, "w", encoding="utf-8") as f:
+        json.dump({"source": "Wikidata (CC0): P4264 LinkedIn company ID -> P159 headquarters location",
+                   "headquarters": dict(sorted(cache.items()))}, f, ensure_ascii=False, indent=0)
+        f.write("\n")
 
 
 def not_a_city(name, country, regions):
@@ -448,7 +476,7 @@ def read(path, cities):
     regions {country: folded region names of the localities}).
 
     Samples are reservoirs of PER_CLASS rows, so a single pass over the file is enough."""
-    rng = random.Random(SEED)
+    rngs = {country: country_random(country) for country in COUNTRIES.values()}
     counts = defaultdict(lambda: defaultdict(Counter))
     seen = Counter()
     samples = defaultdict(list)
@@ -467,6 +495,9 @@ def read(path, cities):
             # Rows without website are often noise ("ecole maternelle" in renewables, in Germany).
             if klass == 0 or not valid_name(name) or not row["domain"] or row["locality"].count(",") < 2:
                 continue
+            # A locality in another country ("moscow, moscow city, russia" for a Swiss company) is noise.
+            if fold(row["locality"].rsplit(",", 1)[1]) != fold(row["country"]):
+                continue
             key = (country, sector, klass)
             seen[key] += 1
             if klass == len(SIZE_CLASSES) - 1:
@@ -479,7 +510,7 @@ def read(path, cities):
             elif len(samples[key]) < PER_CLASS:
                 samples[key].append(row)
             else:
-                j = rng.randrange(seen[key])
+                j = rngs[country].randrange(seen[key])
                 if j < PER_CLASS:
                     samples[key][j] = row
     largest = len(SIZE_CLASSES) - 1
@@ -487,6 +518,12 @@ def read(path, cities):
         if key[2] == largest:
             samples[key] = [row for _, _, row in rows]
     return counts, samples, regions
+
+
+def country_random(country):
+    """The random generator of a country's samples: its own, so that adding a
+    country leaves the companies of the others unchanged."""
+    return random.Random(f"{SEED}:{country}")
 
 
 def employee_estimate(row):
@@ -553,7 +590,6 @@ def build(path, fetch=False):
     with open(SIZES_PATH, encoding="utf-8") as f:
         official = json.load(f)
     sections = sector_sections()
-    rng = random.Random(SEED)
     industries = []
     countries = {}
     for country in sorted(COUNTRIES.values()):
@@ -561,12 +597,14 @@ def build(path, fetch=False):
         for counter in counts[country].values():
             total.update(counter)
         weights, companies, class_counts = {}, {}, {}
-        sizes = official[country]
+        # Countries without official figures keep the LinkedIn shares.
+        rng = country_random(country)
+        sizes = official.get(country)
         country_shares = shares(total)
         for sector in sorted(counts[country], key=int):
             counter = counts[country][sector]
             linkedin = shares(counter if counter.total() >= MIN_SECTOR_COMPANIES else total)
-            employees = sizes["sections"].get(sections[sector])
+            employees = sizes["sections"].get(sections[sector]) if sizes else None
             weights[sector] = (calibrate(linkedin, sizes["groups"], employees, country_shares) if employees
                                else linkedin)
             rows = []
@@ -576,11 +614,13 @@ def build(path, fetch=False):
                                         found.get(linkedin_id(row)) or []) for row in picked]
             companies[sector] = rows
             class_counts[sector] = [counter[k] for k in range(len(SIZE_CLASSES))]
-        every = [sum(values[i] for values in sizes["sections"].values()) for i in range(len(sizes["groups"]))]
-        countries[country] = {"weights_all": calibrate(country_shares, sizes["groups"], every, country_shares),
-                              "weights": weights, "counts": class_counts, "companies": companies,
-                              "official_sizes": {"source": sizes["source"], "groups": sizes["groups"],
-                                                 "sections": sorted(sizes["sections"])}}
+        countries[country] = {"weights_all": country_shares, "weights": weights, "counts": class_counts,
+                              "companies": companies, "official_sizes": None}
+        if sizes:
+            every = [sum(values[i] for values in sizes["sections"].values()) for i in range(len(sizes["groups"]))]
+            countries[country]["weights_all"] = calibrate(country_shares, sizes["groups"], every, country_shares)
+            countries[country]["official_sizes"] = {"source": sizes["source"], "groups": sizes["groups"],
+                                                    "sections": sorted(sizes["sections"])}
     industries_sorted = sorted(industries)
     remap = [industries_sorted.index(name) for name in industries]
     for entry in countries.values():

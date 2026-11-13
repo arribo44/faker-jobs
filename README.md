@@ -8,29 +8,66 @@ directory (France Travail) in French, and the **2,045 [ESCO](https://esco.ec.eur
 occupations** mapped to them in English, German, Spanish and Italian, with **~14,000 job titles**,
 **35 activity sectors**, skills, knowledge and soft skills. Posting
 conditions (contracts, diplomas, salaries from official earnings, benefits,
-job boards) are those of France, Germany, Spain, Italy and the United States.
+job boards) are those of **17 countries**: France, Germany, Spain, Italy,
+the United States, and Belgium, Switzerland, Canada, Austria, Luxembourg,
+Mexico, Chile, Colombia, the United Kingdom, Ireland, Australia and New
+Zealand for their Faker locales (`fr_BE`, `de_CH`, `es_MX`, `en_GB`...).
 
 Job locations are the **~29,700 cities** of 15,000 inhabitants or more of
 [GeoNames](https://www.geonames.org/) in 244 countries, picked in proportion
-to their population, with their local names in France, Germany, Spain and
-Italy. Hiring companies are **~10,000 real companies** of the United States,
-the United Kingdom, France, Germany, Spain and Italy from the [People Data Labs
+to their population, with their local names in the countries of the
+locales ('München', 'Anvers', 'Genf'). Hiring companies are **real
+companies** of these 17 countries from the [People Data Labs
 company dataset](https://docs.peopledatalabs.com/docs/free-company-dataset)
 (LinkedIn pages), by activity sector and size class, from small businesses
 to large groups.
 
 ---
 
-## 🌍 Languages
+## 🌍 Languages and countries
 
-Everything follows the locale: **French** (ROME 4.0) in French locales
-(`fr_FR`, `fr_CA`, `fr_BE`...), **German**, **Spanish** or **Italian** (ESCO)
-in those locales (`de_DE`, `de_AT`, `es_ES`, `es_MX`, `it_IT`...), with the
-conditions of France, Germany, Spain or Italy; **English** (ESCO) with the
-**US** conditions in every other one (`en_US`, `en_GB`, `nl_NL`...).
+Everything follows the locale. The **language** gives the occupations:
+**French** (ROME 4.0) in French locales (`fr_FR`, `fr_BE`, `fr_CA`...),
+**German**, **Spanish** or **Italian** (ESCO) in those locales (`de_DE`,
+`de_AT`, `es_MX`, `it_CH`...), **English** (ESCO) in every other one
+(`en_US`, `en_GB`, `nl_NL`, `ja_JP`...).
 
-Companies of a posting are in the country of the job (the United Kingdom
-for `en_GB`, whose jobs are in the UK with US conditions) and the activity
+The **country** gives the posting conditions: currency, contracts, salaries
+from official earnings, minimum wage, diplomas, benefits, job boards, the
+gender mark of the titles, the place of the job and its companies:
+
+| Locales | Country | Salaries | Example (a posting of the locale) |
+|---|---|---|---|
+| `fr_FR` | France | Eurostat SES | Conducteur de bus (H/F), CDI, 26 500 € - 33 000 € brut/an |
+| `fr_BE` | Belgium | Eurostat SES | Ingénieur CVC (H/F/X), Intérim, CESS, 24.000 € - 30.000 € brut/an, Saint-Ghislain, Le Forem, Éco-chèques |
+| `fr_CH` | Switzerland | Eurostat SES (CHF) | Ingénieur CVC (H/F), Temporaire, CFC, CHF 57'500 - 77'500 brut/an, Sierre, jobs.ch, 13e salaire |
+| `de_CH` | Switzerland | Eurostat SES (CHF) | Fachkraft Schutz- und Sicherheit (m/w/d), Befristet, EFZ, CHF 54'500 - 63'500 brutto/Jahr, 13. Monatslohn |
+| `it_CH` | Switzerland | Eurostat SES (CHF) | agente di sicurezza (m/f), Lavoro temporaneo, AFC, CHF 54'500 - 63'500 lordi/anno, Tredicesima mensilità |
+| `fr_CA` (`fr_QC`) | Canada | France × OECD | Ingénieur / Ingénieure CVC, Temps partiel, DES, 20 000 $ - 25 000 $ par année, Assurance collective |
+| `de_DE` | Germany | Eurostat SES | Busfahrer (m/w/d), Unbefristet, 29.500 € - 34.000 € brutto/Jahr |
+| `de_AT` | Austria | Eurostat SES | Befristet, Pflichtschulabschluss, 27.000 € - 31.500 € brutto/Jahr, Wien, karriere.at, Klimaticket |
+| `de_LU` | Luxembourg | Eurostat SES | Zeitarbeit, DAP, 33.000 € - 38.500 € brutto/Jahr, Düdelingen, ADEM, Essensgutscheine |
+| `es_ES` | Spain | Eurostat SES | Indefinido, 20.500 € - 26.000 € brutos/año |
+| `es_MX` | Mexico | Spain × OECD | guarda de seguridad, Tiempo determinado, Secundaria, $135,000 - $160,000 MXN brutos al año, OCC Mundial |
+| `es_CL` | Chile | Spain × OECD | Plazo fijo, Enseñanza media completa, $10.000.000 - $13.000.000 brutos anuales, Laborum |
+| `es_CO` | Colombia | Spain × OECD | Término fijo, Bachiller, $24.500.000 - $29.000.000 anuales, Medellín, Prima extralegal |
+| `it_IT` | Italy | Eurostat SES | Tempo indeterminato, RAL 26.000 € - 30.000 € |
+| `en_US` | United States | BLS OEWS | Full-time, 401(k) matching, $58,000 - $71,000 a year |
+| `en_GB` | United Kingdom | US × OECD | corporate security guard, Part-time, GCSEs, £10,000 - £12,000 per annum, Workplace pension |
+| `en_IE` | Ireland | Eurostat SES | Fixed-term contract, Leaving Certificate, €30,000 - €38,000 per annum, Dublin, IrishJobs.ie |
+| `en_CA` | Canada | US × OECD | Permanent part-time, Secondary school diploma, $18,000 - $22,000 a year, Ottawa, Dental coverage |
+| `en_AU` | Australia | US × OECD | Part time, Year 12, $23,000 - $29,500 + super, Brisbane, SEEK, Above-award salary |
+| `en_NZ` | New Zealand | US × OECD | Part time, NCEA Level 2, $20,500 - $26,000 per annum, Wellington, KiwiSaver employer contribution |
+
+"Eurostat SES": the country's own earnings and contract mix (Eurostat
+Structure of Earnings Survey 2022 and Labour Force Survey); "France ×
+OECD": those of the country of the language, scaled by the ratio of the
+OECD average wages of the two countries (see [Salaries](#-occupations-rome--esco)).
+The other locales of a language take the conditions of its country
+(`es_AR`: Spain, `fr_DZ`: France), and the others those of the United
+States (`en_IN`, `nl_NL`, `ja_JP`...).
+
+Companies of a posting are in the country of the job and the activity
 sector of the job. Contact names and phone numbers always come from the
 Faker locale (`fr_FR` -> "Luc Renaud", "04 97 52 87 61").
 
@@ -158,7 +195,7 @@ Companies are real companies of the locale's country from the People Data
 Labs company dataset, or companies made up by the Faker locale, picked as
 the hiring companies of the postings (see
 [Occupations](#-occupations-rome--esco)); `job_companies` lists the real
-ones of the country (2,257 in the United States: IBM, Apple, Walmart,
+ones of the country (2,256 in the United States: IBM, Apple, Walmart,
 Microsoft...), `job_sectors` is the list of the 35 activity sectors (as
 `job_activity_sectors`). `job_company_size()` picks a size
 class by the share of jobs in the companies of each class in the locale's
@@ -206,8 +243,8 @@ fake.job_company_profile(sector="Santé")   # as the hiring companies of the pos
 |---|---|---|
 | `job_title()`, `job_role()`, `job_role_record()`... | ESCO occupations, in English | ROME (fr) or ESCO (de, es, it) occupations, in the language |
 | conditions (`job_qualification()`, `job_salary_range()`, `job_work_type()`...) | US | the country's |
-| `job_location()` | the United States by default (the United Kingdom for `en_GB`) | the locale's country by default, with local names (Deutschland, München, Sevilla, Roma...) |
-| `job_company()`, `job_company_profile()`, `job_companies` | companies of the United States (United Kingdom for `en_GB`), LinkedIn industry | companies of the country, NAF (fr) or NACE (de, es, it) activity |
+| `job_location()` | the locale's country by default (the United States without conditions of its own) | the locale's country by default, with local names (Deutschland, München, Sevilla, Roma, Anvers...) |
+| `job_company()`, `job_company_profile()`, `job_companies` | companies of the country, LinkedIn industry | companies of the country, NAF (France) or NACE (other countries) activity |
 
 Countries other than the locale's keep their English
 name (`country="Belgium"`); the local name of the locale's country is
@@ -326,9 +363,11 @@ million companies from their LinkedIn pages, CC BY 4.0), built by
   jobs in the companies of each class, in the sector and country, from
   **official statistics** of employment by enterprise size
   (`scripts/fetch_business_sizes.py`): Eurostat structural business
-  statistics for France, Germany, Spain and Italy (persons employed by NACE
+  statistics for France, Germany, Spain, Italy, Belgium, Austria,
+  Luxembourg, Ireland and Switzerland (persons employed by NACE
   section and size group 2-9, 10-49, 50-249, 250+), the Census Statistics
-  of US Businesses 2022 and the UK business population estimates 2026. Each
+  of US Businesses 2022, the UK business population estimates 2026 and the
+  OECD business statistics for Canada and New Zealand (1-9 and 10+ only). Each
   official size group gets its share, split between the LinkedIn classes it
   holds as LinkedIn splits them (number of companies × typical size), as
   LinkedIn lists few small companies. About 1 posting in 10 is in a company
@@ -336,11 +375,12 @@ million companies from their LinkedIn pages, CC BY 4.0), built by
   Germany, 1 in 4 in Italy; 44% (United States) to 69% (Italy) in companies of up to 250
   employees (a third or less before the official shares). Building works
   hire in small companies, energy in large groups. Sectors without official
-  figures (agriculture and public administration in Europe) keep the
-  LinkedIn shares; French mining, water supply and waste, confidential,
+  figures (agriculture and public administration in Europe) and countries
+  without them (Mexico, Chile, Colombia, Australia: only 4-8% of their
+  postings in companies of up to 10 employees) keep the LinkedIn shares; French mining, water supply and waste, confidential,
   take the split of the European Union.
 - Then a **real company** of that sector and class: up to 10 per class,
-  sector and country (~10,000 in all, 250 KB), with its name, website,
+  sector and country (~23,000 in all, 540 KB), with its name, website,
   founding year, headquarters city (and US state) and number of employees.
   The headquarters are those of [Wikidata](https://www.wikidata.org/) when
   it knows the company (by its LinkedIn ID) in the same country, as LinkedIn
@@ -352,7 +392,8 @@ million companies from their LinkedIn pages, CC BY 4.0), built by
   named after their owner): they are made up by the Faker locale, as the
   companies of a class with fewer than 10 companies in the dataset at
   random (so that no large group gets every job of its class) and those of
-  the jobs outside these six countries. Made-up companies are in the city
+  the jobs outside the countries of the locales with conditions of their
+  own. Made-up companies are in the city
   of the job, with a made-up CEO.
 - Companies of up to 500 employees hire in their headquarters city when it
   is a city of `job_location()`; larger ones anywhere in the country.
@@ -423,23 +464,40 @@ Lavoro, ZipRecruiter...) and a city of the country:
 | `it_IT` | conducente di autocarri (m/f), Tempo indeterminato, "Anche prima esperienza", RAL 26.000 € - 30.000 € |
 | `en_US` | boatbuilder, Full-time, "4-7 years of experience", $58,000 - $71,000 a year |
 
-The US conditions also serve the other locales that use the English data
-(`en_GB`, `nl_NL`, `ja_JP`...): USD salaries, US job boards and a place in
-the United States by default (in the United Kingdom, with British
-companies, for `en_GB`).
+The other countries of [Languages and countries](#-languages-and-countries)
+get their own conditions in the same way (Job étudiant, Lehre, Honorarios,
+Casual...; Chèques-repas, Halbtax-Abo, Vales de despensa, KiwiSaver...; Le
+Forem, jobs.ch, OCC Mundial, SEEK...). Where ROME sheets list French
+diplomas (CAP, BTS...), Belgian, Swiss and Canadian postings ask for local
+ones (CESS, CFC, DEC...); their companies get the NACE class of their NAF
+activity ('86.10'). The US conditions also serve the locales without
+conditions of their own that use the English data (`en_IN`, `nl_NL`,
+`ja_JP`...): USD salaries, US job boards and a place in the United States
+by default.
 
 **Salaries follow the occupation.** The occupation's ISCO-08 major group
 (`isco_group`, from ESCO) gives its mean gross annual earnings in the
 country: [Eurostat SES 2022](https://ec.europa.eu/eurostat/web/microdata/structure-of-earnings-survey)
 by major group and NACE section of the company (that of its NAF / NACE
 activity, else that of the occupation's sector; France, Germany,
-Spain, Italy), [BLS OEWS](https://www.bls.gov/oes/) by SOC major group (United
-States). That mean is then adjusted:
+Spain, Italy, Belgium, Switzerland in CHF, Austria, Luxembourg, Ireland),
+[BLS OEWS](https://www.bls.gov/oes/) by SOC major group (United
+States). Countries without such a survey (Canada, Mexico, Chile, Colombia,
+the United Kingdom, Australia, New Zealand) take the earnings of the
+country of their language (France, Spain or the United States) times the
+ratio of the [OECD average annual wages](https://www.oecd.org/en/data/indicators/average-wages.html)
+of the two countries in national currency, the same year (2022 with
+Eurostat, 2025 with BLS): a Mexican salary is the Spanish one × 7.3, in
+MXN. Amounts are rounded to 500 or 1,000 (10 times more in MXN, 1,000 times
+in CLP and COP). That mean is then adjusted:
 - to the experience asked, by the ratio of the matching age band (under
   30, 30-49, 50 and over) to the group's mean;
 - to the contract: about 30% of a full-time salary for an internship, 55%
   for an apprenticeship, half for part-time;
-- and kept above the minimum wage for a full-time employee.
+- and kept above the minimum wage for a full-time employee (the OECD
+  statutory minimum wage of the year of the earnings outside France,
+  Germany, Spain, Italy and the United States; none in Austria and
+  Switzerland, where collective agreements set the wages).
 
 The experience asked and the default diploma follow the skill level of the
 group (managers and professionals, technicians, other jobs). The default
@@ -456,7 +514,7 @@ more than a junior; but the figures are 2022 (Eurostat) or latest-year
 of posting contracts (hand-made, e.g. 55% CDI, 20% CDD, 12% Intérim in
 France), adapted to the occupation's ISCO major group with the
 [Eurostat Labour Force Survey](https://ec.europa.eu/eurostat/web/lfs) 2025
-(France, Germany, Spain, Italy): the weight of the temporary contracts is
+(the countries of the Eurostat earnings): the weight of the temporary contracts is
 multiplied by the ratio of the group's share of temporary employees to the
 national share, the same for part-time (Teilzeit) and self-employed
 (freelance) workers, capped at three times the national mix; the permanent
@@ -467,7 +525,8 @@ seasonal recruitment projects (`seasonal`, BMO 2026): 95% of the fruit
 picker postings, 1% of the software developer ones, about 30% of all
 French postings, as in the BMO survey (hiring plans, which count every
 seasonal hire), so the CDI is only about 40% of them. The United States
-keep the national mix for every occupation.
+and the countries with OECD-scaled earnings keep the national mix for
+every occupation.
 
 Benefit rules, job boards, default diplomas and their fields of study are
 hand-made and **illustrative** (`scripts/posting_conditions.py`).
@@ -652,7 +711,8 @@ The cities come from GeoNames:
 
 ```
 DATAS/geonames/cities15000.zip, countryInfo.txt   GeoNames dump (download.geonames.org/export/dump/)
-DATAS/geonames/alt_{FR,DE,ES,IT}.zip              alternatenames/{FR,DE,ES,IT}.zip: local and English names
+DATAS/geonames/alt_<code>.zip                     alternatenames/<code>.zip of FR, DE, ES, IT, BE, CH, AT, LU,
+                                                  CA, MX, CL, CO: local and English names
 scripts/
   build_cities.py [--download]  -> faker_jobs/data/cities.json.gz (~500 KB)
 ```
@@ -677,14 +737,18 @@ DATAS/salaries/eurostat_ses2022.json         Eurostat SES 2022 earnings, cached 
 DATAS/salaries/bls_oews.json                 BLS OEWS mean wages, cached by fetch_salaries.py
 DATAS/salaries/eurostat_lfs.json             Eurostat LFS 2025 temporary, part-time, self-employed workers
                                              by ISCO group, cached by fetch_salaries.py
+DATAS/salaries/oecd_wages.json               OECD average annual wages and minimum wages, national currency,
+                                             cached by fetch_salaries.py
 scripts/
   fetch_esco.py [language]      ESCO web-service API -> the caches above (~2,000 requests each, resumable)
-  fetch_salaries.py             Eurostat and BLS APIs -> the salary and labour caches above
+  fetch_salaries.py             Eurostat, BLS and OECD APIs -> the salary and labour caches above
   fetch_activities.py [--download]   census + matrix -> isco_naf.json; EU Vocabularies SPARQL -> labels.json
-  posting_conditions.py         local contracts, benefits, job boards, diplomas by locale
+  posting_conditions.py         local contracts, benefits, job boards, diplomas by locale and country
   rome_labels.py                ROME sectors, domains and soft skills in English, German, Spanish, Italian
   build_occupations.py          -> faker_jobs/data/occupations_{de_DE,en_US,es_ES,fr_FR,it_IT}.json.gz (gzipped)
-                                   and faker_jobs/data/conditions.json (posting conditions, plain JSON)
+                                   and faker_jobs/data/conditions.json (posting conditions of the 20
+                                   locales, plain JSON; a country locale only holds what differs
+                                   from its language's: `base`)
                                    (with the ROME code of each sector, the key of companies.json.gz)
 ```
 
@@ -696,12 +760,14 @@ DATAS/business_sizes/us_state_naics_detailedsizes_2022.xlsx, us_naicssector_larg
                                              Census SUSB 2022 (census.gov, no API: --download)
 DATAS/business_sizes/BPE_2026_detailed_tables.xlsx   UK business population estimates 2026 (gov.uk)
 DATAS/business_sizes/sizes.json              employment by size group and NACE section, by fetch_business_sizes.py
+                                             (Eurostat, Census, UK and OECD SDBS figures)
 DATAS/wikidata/headquarters.json             Wikidata headquarters of the companies (by LinkedIn ID), cached by
                                              build_companies.py --fetch-headquarters
 scripts/
-  fetch_business_sizes.py [--download]   Eurostat API (sbs_sc_ovw) + the spreadsheets above -> sizes.json
+  fetch_business_sizes.py [--download]   Eurostat (sbs_sc_ovw) and OECD SDBS APIs + the spreadsheets above
+                                         -> sizes.json
   build_companies.py [csv] [--fetch-headquarters]
-                                -> faker_jobs/data/companies.json.gz (~250 KB; after build_cities.py,
+                                -> faker_jobs/data/companies.json.gz (~540 KB; after build_cities.py,
                                    build_occupations.py and fetch_business_sizes.py; --fetch-headquarters
                                    queries Wikidata for the companies missing from the cache)
 ```
