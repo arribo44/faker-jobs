@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Job ids from a template: `job_id("JOB-{year}-######")` returns a string, with `#` a random digit, `?` an uppercase letter, `*` either, `{year}`, `{month}`, `{day}`, `{date}` (format specs: `{date:%y%m%d}`), `{country}` (ISO code of the country of the job), `{locale}` and `{n}` (the posting's number). `job_posting()`, `job_occupation_posting()`, `job_dataset()` and `make_dataset()` take `id_template=` (the posting's date and country; in datasets `{n}` numbers the postings from 1 across the locales and the ids are unique), `python -m faker_jobs export` `--id-template`. Without a template, ids stay 15 or 16-digit numbers and the output is unchanged.
+
+### Changed
+- `job_id` of `JobPosting`, `OccupationPosting` and `PostingRow` (and `repost_of`) is typed `int | str`; `job_id()` is overloaded (`int` without a template, `str` with one).
+
 ---
 
 ## [0.12.0] - 2026-11-13

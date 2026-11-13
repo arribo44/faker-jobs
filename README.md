@@ -640,6 +640,28 @@ fake.job_posting_date()                 # a date within the last two years
 fake.job_posting_date(start_date="-30d")   # anything Faker's date_between() accepts
 ```
 
+Job ids are 15 or 16-digit numbers by default; a template gives them your
+own format (a string):
+
+```python
+fake.job_id("JOB-{year}-######")        # 'JOB-2026-417776'
+fake.job_id("{country}-{date:%y%m}-****")   # 'FR-2611-NG5B'
+fake.job_id("REQ{n:05d}", n=42)         # 'REQ00042'
+fake.job_posting(id_template="{country}-{date:%Y%m%d}-###")["job_id"]   # 'JP-20250124-907'
+```
+
+| In the template | Gives |
+| --- | --- |
+| `#` / `?` / `*` | a random digit / uppercase letter / either |
+| `{year}`, `{month}`, `{day}`, `{date}` | the posting date (`date=`, default today; in postings, their date), with format specs: `{month:02d}`, `{date:%y%m%d}` |
+| `{country}` | the ISO code of the country of the job (`country=`, default the locale's): `FR` |
+| `{locale}` | the Faker locale: `fr_FR` |
+| `{n}` | the posting's number (`n=`; from 1 in datasets): `{n:06d}` |
+
+Other characters are kept. `job_posting()`, `job_occupation_posting()`,
+`job_dataset()` and `make_dataset()` take `id_template=`; in datasets the
+ids are unique (a template with too few random characters raises an error).
+
 `job_posting()` builds a posting on a ROME / ESCO
 [occupation](#-occupations-rome--esco), in the language of the Faker locale
 (every trade, picked by demand), with the keys of `job_role_record()`:
@@ -792,6 +814,7 @@ From the command line:
 python -m faker_jobs export out/ --locale fr_FR --postings 10000 --companies 800 --seed 42
 python -m faker_jobs export out/ --locale fr_FR:0.6 --locale de_DE:0.4 --format jsonl \
     --start-date 2025-01-01 --end-date 2026-10-31
+python -m faker_jobs export out/ --id-template "JOB-{year}-{n:06d}"   # job ids from a template
 ```
 
 10,000 postings take a few seconds.

@@ -115,6 +115,24 @@ class DatasetOptionsTests(unittest.TestCase):
         data = make().job_dataset(postings=50, repost_rate=0)
         self.assertFalse(any(row["repost_of"] for row in data.postings))
 
+    def test_id_template(self):
+        data = make().job_dataset(postings=300, start_date=START, end_date=END, id_template="JOB-{year}-{n:06d}")
+        self.assertEqual([row["job_id"] for row in data.postings[:2]],
+                         [f"JOB-{data.postings[0]['posted_date'][:4]}-000001",
+                          f"JOB-{data.postings[1]['posted_date'][:4]}-000002"])
+        reposts = [row for row in data.postings if row["repost_of"]]
+        self.assertTrue(reposts)
+        self.assertTrue(all(isinstance(row["repost_of"], str) for row in reposts))
+        mixed = make_dataset({"fr_FR": 0.5, "de_DE": 0.5}, postings=100, seed=1, id_template="{country}{n:04d}")
+        self.assertEqual([mixed.postings[i]["job_id"] for i in (0, 49, 50, 99)],
+                         ["FR0001", "FR0050", "DE0051", "DE0100"])
+        few = make().job_dataset(postings=100, id_template="{country}-##")
+        self.assertEqual(len({row["job_id"] for row in few.postings}), 100)  # unique, drawn again when used
+        with self.assertRaises(ValueError):
+            make().job_dataset(postings=50, id_template="JOB-#")
+        with self.assertRaises(ValueError):
+            make().job_dataset(postings=5, id_template="")
+
     def test_several_locales(self):
         data = make_dataset({"fr_FR": 0.6, "pl_PL": 0.4}, postings=500, companies=100, seed=1)
         counts = collections.Counter(row["locale"] for row in data.postings)
@@ -152,6 +170,13 @@ class ExportCommandTests(unittest.TestCase):
         self.assertIn("Demo (fr_FR)", output.getvalue())
         self.assertIn("Demo (pl_PL)", output.getvalue())
         self.assertNotIn("Demo (en_US)", output.getvalue())
+
+    def test_export_id_template(self):
+        with tempfile.TemporaryDirectory() as directory, redirect_stdout(io.StringIO()):
+            main(["export", directory, "--postings", "20", "--seed", "4", "--id-template", "REQ-{n:03d}"])
+            with open(os.path.join(directory, "postings.csv"), encoding="utf-8", newline="") as f:
+                ids = [row["job_id"] for row in csv.DictReader(f)]
+        self.assertEqual(ids[:3], ["REQ-001", "REQ-002", "REQ-003"])
 
     def test_export_errors(self):
         with tempfile.TemporaryDirectory() as directory, redirect_stdout(io.StringIO()):

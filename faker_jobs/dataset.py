@@ -25,6 +25,10 @@ period, as two tables linked by `company_id` (`JobsProvider.job_dataset()`,
   'expired'. A share `repost_rate` of the postings are published again on
   another job board a few days later (`repost_of`: the first one's
   `job_id`), as job boards do: a test case for deduplication.
+- Job ids: numbers by default, else from `id_template` (see
+  `JobsProvider.job_id`) with the publication date, the country and `{n}`,
+  the posting's number from 1 (across the locales of `make_dataset`);
+  unique in the dataset.
 
 Reproducible with `Faker.seed()` (or the `seed` of `make_dataset`).
 """
@@ -54,6 +58,8 @@ SEASONAL_MONTHS = range(3, 10)
 MAX_REPOST_DELAY = 14
 # Companies of up to this many employees hire in their own city.
 SINGLE_SITE_EMPLOYEES = 500
+# Draws of a templated job id before giving up on finding one not used yet.
+ID_ATTEMPTS = 100
 
 
 class CompanyRow(TypedDict):
@@ -77,7 +83,7 @@ class CompanyRow(TypedDict):
 class PostingRow(TypedDict):
     """A row of `JobDataset.postings`, flat (lists joined with '; ')."""
 
-    job_id: int
+    job_id: int | str
     company_id: str
     locale: str
     job_title: str
@@ -102,7 +108,7 @@ class PostingRow(TypedDict):
     posted_date: str
     closed_date: str | None
     status: str
-    repost_of: int | None
+    repost_of: int | str | None
     skills: str
     benefits: str
     contact_person: str
@@ -204,13 +210,22 @@ def _shares(total: int, weights: Mapping[str, float]) -> dict[str, int]:
     return {key: counts.get(key, 0) for key in weights}
 
 
+class _Ids:
+    """The job ids of a dataset (of all its locales) and the number of the next posting."""
+
+    def __init__(self) -> None:
+        self.used: set[int | str] = set()
+        self.next = 1
+
+
 class _Builder:
     """The employers and postings of one provider (one locale)."""
 
     def __init__(self, provider: JobsProvider, locale: str, prefix: str, start: _datetime.date,
-                 end: _datetime.date) -> None:
+                 end: _datetime.date, id_template: str | None = None, ids: _Ids | None = None) -> None:
         self.provider, self.locale, self.prefix = provider, locale, prefix
         self.start, self.end = start, end
+        self.id_template, self.ids = id_template, ids if ids is not None else _Ids()
         self.rng = provider.generator.random
         self.conditions = provider._local_conditions()
         self.country_name = (self.conditions.get("place_names") or {}).get("country", self.conditions["country"])
@@ -298,7 +313,7 @@ class _Builder:
         closed, status = self.lifecycle(posted)
         location = posting["location"]
         return {
-            "job_id": posting["job_id"], "company_id": company_id, "locale": self.locale,
+            "job_id": self.job_id(posting["job_id"], posted), "company_id": company_id, "locale": self.locale,
             "job_title": posting["job_title"], "occupation_code": occupation["code"],
             "occupation": occupation["title"], "isco_code": occupation["isco_code"],
             "isco_group": occupation["isco_group"], "sector": occupation["sector"], "seniority": posting["seniority"],
@@ -313,13 +328,28 @@ class _Builder:
             "contact": posting["contact"],
         }
 
+    def job_id(self, default: int | str, posted: _datetime.date) -> int | str:
+        """The job id of the next posting: `default`, or one from the template not used yet."""
+        n, self.ids.next = self.ids.next, self.ids.next + 1
+        if self.id_template is None:
+            self.ids.used.add(default)
+            return default
+        for _ in range(ID_ATTEMPTS):
+            job_id = self.provider.job_id(self.id_template, posted, self.conditions["country"], n)
+            if job_id not in self.ids.used:
+                self.ids.used.add(job_id)
+                return job_id
+        raise ValueError(f"job id template {self.id_template!r} gives too few distinct ids for the dataset "
+                         "(add random characters #, ? or *, or {n})")
+
     def repost(self, row: PostingRow) -> PostingRow:
         """The same posting published again on another job board a few days later."""
         portals = [portal for portal in self.conditions["job_portals"]["all"] if portal != row["job_portal"]]
         posted = min(_datetime.date.fromisoformat(row["posted_date"])
                      + _datetime.timedelta(days=self.rng.randint(1, MAX_REPOST_DELAY)), self.end)
         closed, status = self.lifecycle(posted)
-        return {**row, "job_id": self.provider.job_id(), "job_portal": self.rng.choice(portals or [row["job_portal"]]),
+        job_id = self.job_id(self.provider.job_id(), posted)
+        return {**row, "job_id": job_id, "job_portal": self.rng.choice(portals or [row["job_portal"]]),
                 "posted_date": posted.isoformat(), "closed_date": closed, "status": status,
                 "repost_of": row["job_id"]}
 
@@ -327,10 +357,11 @@ class _Builder:
 def build_dataset(
     provider: JobsProvider, postings: int, companies: int | None = None,
     start_date: _datetime.date | str = "-2y", end_date: _datetime.date | str = "today",
-    repost_rate: float = 0.08, prefix: str = "",
+    repost_rate: float = 0.08, prefix: str = "", id_template: str | None = None, ids: _Ids | None = None,
 ) -> JobDataset:
     """The dataset of `JobsProvider.job_dataset()` (see the module docstring);
-    `prefix` starts the company ids (one per locale in `make_dataset`)."""
+    `prefix` starts the company ids (one per locale in `make_dataset`), `ids`
+    are the job ids already used (by the other locales of `make_dataset`)."""
     from faker_jobs import _generator_locale
 
     for name, value in (("postings", postings), ("companies", companies)):
@@ -341,7 +372,9 @@ def build_dataset(
     start, end = _parse_date(start_date), _parse_date(end_date)
     if start > end:
         raise ValueError(f"start_date {start} is after end_date {end}")
-    builder = _Builder(provider, _generator_locale(provider.generator) or "", prefix, start, end)
+    if id_template is not None and (not isinstance(id_template, str) or not id_template):
+        raise ValueError(f"id_template must be a non-empty string, got {id_template!r}")
+    builder = _Builder(provider, _generator_locale(provider.generator) or "", prefix, start, end, id_template, ids)
     if companies is None:
         companies = max(1, postings // 10)
     builder.build_pool(companies if postings else 0)
@@ -357,13 +390,14 @@ def build_dataset(
 def make_dataset(
     locales: str | Mapping[str, float] = "en_US", postings: int = 1000, companies: int | None = None,
     start_date: _datetime.date | str = "-2y", end_date: _datetime.date | str = "today",
-    repost_rate: float = 0.08, seed: int | None = None,
+    repost_rate: float = 0.08, seed: int | None = None, id_template: str | None = None,
 ) -> JobDataset:
     """A dataset of one locale ('fr_FR') or of several, with the share of the
     postings of each ({'fr_FR': 0.6, 'de_DE': 0.4}): each locale's postings
     in its country and language, and as many of the companies; company ids
     start with the locale when there are several ('fr_FR-C00001'). `seed`
-    makes it reproducible."""
+    makes it reproducible; `id_template` gives the job ids from a template
+    (see `JobsProvider.job_id`), unique and numbered (`{n}`) across the locales."""
     from faker import Faker
 
     from faker_jobs import JobsProvider
@@ -374,6 +408,7 @@ def make_dataset(
     posting_counts = _shares(postings, weights)
     company_counts = _shares(companies, weights) if companies is not None else None
     datasets = []
+    ids = _Ids()
     for i, locale in enumerate(weights):
         fake = Faker(locale)
         if seed is not None:
@@ -381,5 +416,5 @@ def make_dataset(
         provider = JobsProvider(fake)
         datasets.append(build_dataset(
             provider, posting_counts[locale], company_counts[locale] if company_counts else None, start_date,
-            end_date, repost_rate, prefix=f"{locale}-" if len(weights) > 1 else ""))
+            end_date, repost_rate, prefix=f"{locale}-" if len(weights) > 1 else "", id_template=id_template, ids=ids))
     return JobDataset.concat(datasets)
