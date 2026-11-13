@@ -29,7 +29,7 @@ class CompaniesDataTests(unittest.TestCase):
         self.assertEqual(set(data["countries"]),
                          {"United States", "United Kingdom", "France", "Germany", "Spain", "Italy", "Belgium",
                           "Switzerland", "Austria", "Luxembourg", "Ireland", "Canada", "Mexico", "Chile",
-                          "Colombia", "Australia", "New Zealand"})
+                          "Colombia", "Australia", "New Zealand", "Portugal", "The Netherlands", "Poland", "Brazil"})
         codes = set(_load_conditions()["fr_FR"]["sector_codes"].values())
         self.assertEqual(len(codes), 35)
         for country, entry in data["countries"].items():

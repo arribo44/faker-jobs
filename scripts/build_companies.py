@@ -8,7 +8,8 @@ Company Dataset" (7+ million companies, from LinkedIn company pages; CC BY 4.0):
 For the countries of the locales with posting conditions of their own
 (United States, United Kingdom, France, Germany, Spain, Italy, Belgium,
 Switzerland, Austria, Luxembourg, Ireland, Canada, Mexico, Chile, Colombia,
-Australia, New Zealand) and each of the 35 ROME activity sectors (LinkedIn
+Australia, New Zealand, Portugal, the Netherlands, Poland, Brazil) and
+each of the 35 ROME activity sectors (LinkedIn
 industry → sector, see INDUSTRY_SECTORS):
 
 - `weights`: the share of jobs in each company size class. LinkedIn lists
@@ -19,8 +20,8 @@ industry → sector, see INDUSTRY_SECTORS):
   each group as LinkedIn splits them: the number of companies of the class
   times its typical size (TYPICAL_SIZES). Sectors without official figures
   (agriculture and public administration in Europe...) and countries
-  without them (Mexico, Chile, Colombia, Australia) keep the LinkedIn
-  shares; sectors with fewer than MIN_SECTOR_COMPANIES
+  without them (Mexico, Chile, Colombia, Australia, Brazil) keep the
+  LinkedIn shares; sectors with fewer than MIN_SECTOR_COMPANIES
   companies take the country's LinkedIn split.
 - `companies`: up to PER_CLASS real companies per size class of 11
   employees or more, with a name, website, founding year, headquarters city
@@ -94,12 +95,13 @@ SEED = 20261111
 PER_CLASS = 10
 MIN_SECTOR_COMPANIES = 200
 
-# Dataset country → country name of cities.json.gz.
 COUNTRY_CODES = {"United States": "US", "United Kingdom": "GB", "France": "FR", "Germany": "DE", "Spain": "ES",
                  "Italy": "IT", "Belgium": "BE", "Switzerland": "CH", "Austria": "AT", "Luxembourg": "LU",
                  "Ireland": "IE", "Canada": "CA", "Mexico": "MX", "Chile": "CL", "Colombia": "CO",
-                 "Australia": "AU", "New Zealand": "NZ"}
-COUNTRIES = {country.lower(): country for country in COUNTRY_CODES}
+                 "Australia": "AU", "New Zealand": "NZ", "Portugal": "PT", "The Netherlands": "NL", "Poland": "PL",
+                 "Brazil": "BR"}
+# Dataset country → country name of cities.json.gz.
+COUNTRIES = {country.lower(): country for country in COUNTRY_CODES} | {"netherlands": "The Netherlands"}
 # Headquarters of large groups that neither LinkedIn nor Wikidata (by
 # LinkedIn ID) place in their city: (country, dataset name) -> city of
 # cities.json.gz. Hand-made.

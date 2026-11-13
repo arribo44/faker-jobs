@@ -7,7 +7,7 @@ import unittest
 
 from faker import Faker
 
-from faker_jobs import JobsProvider
+from faker_jobs import JobsProvider, _country_name
 
 
 def make(locale, provider=JobsProvider):
@@ -22,6 +22,8 @@ class LocalizedTests:
     locale = ""
     country = ""
     currency_sign = "€"
+    # Occupation names also English ones (loanwords: sommelier, manager...).
+    english_overlap = 25
 
     def setUp(self):
         Faker.seed(20261106)
@@ -32,7 +34,7 @@ class LocalizedTests:
     def test_titles_and_roles_are_occupations(self):
         titles, roles = set(self.provider.job_titles), set(self.provider.job_roles)
         self.assertGreater(len(roles), 1900)
-        self.assertLess(len(roles & set(self.english.job_roles)), 25)   # loanwords only (sommelier)
+        self.assertLess(len(roles & set(self.english.job_roles)), self.english_overlap)
         for _ in range(30):
             title = self.fake.job_title()
             self.assertIn(title, titles)
@@ -85,8 +87,11 @@ class LocalizedTests:
 
     def test_location_in_the_country(self):
         self.assertEqual(self.fake.job_location()["country"], self.country)
-        # A country without conditions in the language keeps its English name.
-        self.assertEqual(self.fake.job_location(country="Portugal")["country"], "Portugal")
+        # Another country by its name in the language (Wikidata labels), its English one too.
+        language = self.provider._language
+        brazil = _country_name("Brazil", language)
+        self.assertEqual(self.fake.job_location(country="Brazil")["country"], brazil)
+        self.assertEqual(self.fake.job_location(country=brazil)["country"], brazil)
 
     def test_companies_in_activity_sectors(self):
         self.assertEqual(self.provider.job_sectors, self.provider.job_activity_sectors)
@@ -132,6 +137,19 @@ class TestSpanishLocalized(LocalizedTests, unittest.TestCase):
     locale, country = "es_ES", "España"
 
 
+class TestPortugueseLocalized(LocalizedTests, unittest.TestCase):
+    locale, country = "pt_PT", "Portugal"
+
+
+class TestDutchLocalized(LocalizedTests, unittest.TestCase):
+    locale, country = "nl_NL", "Nederland"
+    english_overlap = 120   # Dutch ESCO keeps many English titles (manager, consultant...)
+
+
+class TestPolishLocalized(LocalizedTests, unittest.TestCase):
+    locale, country, currency_sign = "pl_PL", "Polska", "zł"
+
+
 class TestItalianLocalized(LocalizedTests, unittest.TestCase):
     locale, country = "it_IT", "Italia"
 
@@ -143,9 +161,9 @@ class TestItalianLocalized(LocalizedTests, unittest.TestCase):
         self.assertEqual(self.fake.job_location(country="Italy")["country"], "Italia")
         self.assertEqual(self.fake.job_location(country="italia")["country"], "Italia")
         self.assertEqual(self.fake.job_occupation_posting()["location"]["country"], "Italia")
-        # Other countries keep their English names, and so do their cities.
-        self.assertEqual(self.fake.job_location(country="Germany")["country"], "Germany")
-        german = {self.fake.job_location(country="Germany")["city"] for _ in range(300)}
+        # Other countries by their Italian name (no Italian name of their cities: English).
+        self.assertEqual(self.fake.job_location(country="Germany")["country"], "Germania")
+        german = {self.fake.job_location(country="Germania")["city"] for _ in range(300)}
         self.assertIn("Munich", german)
         self.assertNotIn("München", german)
 

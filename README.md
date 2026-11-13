@@ -5,7 +5,8 @@
 Jobs come from **occupation directories**, covering every trade, not only
 office jobs: the **1,923 job sheets** of the French [ROME 4.0](https://www.francetravail.org/opendata/repertoire-operationnel-des-meti.html)
 directory (France Travail) in French, and the **2,045 [ESCO](https://esco.ec.europa.eu/)
-occupations** mapped to them in English, German, Spanish and Italian, with **~14,000 job titles**,
+occupations** mapped to them in English, German, Spanish, Italian, Portuguese, Dutch and Polish, with
+**~14,000 job titles** in each language,
 **35 activity sectors**, skills, knowledge and soft skills. Posting
 conditions (contracts, diplomas, salaries from official earnings, benefits,
 job boards) are those of **17 countries**: France, Germany, Spain, Italy,
@@ -28,9 +29,11 @@ to large groups.
 
 Everything follows the locale. The **language** gives the occupations:
 **French** (ROME 4.0) in French locales (`fr_FR`, `fr_BE`, `fr_CA`...),
-**German**, **Spanish** or **Italian** (ESCO) in those locales (`de_DE`,
-`de_AT`, `es_MX`, `it_CH`...), **English** (ESCO) in every other one
-(`en_US`, `en_GB`, `nl_NL`, `ja_JP`...).
+**German**, **Spanish**, **Italian**, **Portuguese**, **Dutch** or
+**Polish** (ESCO) in those locales (`de_DE`, `de_AT`, `es_MX`, `it_CH`,
+`pt_BR`, `nl_BE`, `pl_PL`...), **English** (ESCO) in every other one
+(`en_US`, `en_GB`, `ja_JP`, `sv_SE`...). Brazilian postings use the
+European Portuguese of ESCO.
 
 The **country** gives the posting conditions: currency, contracts, salaries
 from official earnings, minimum wage, diplomas, benefits, job boards, the
@@ -52,6 +55,11 @@ gender mark of the titles, the place of the job and its companies:
 | `es_CL` | Chile | Spain × OECD | Plazo fijo, Enseñanza media completa, $10.000.000 - $13.000.000 brutos anuales, Laborum |
 | `es_CO` | Colombia | Spain × OECD | Término fijo, Bachiller, $24.500.000 - $29.000.000 anuales, Medellín, Prima extralegal |
 | `it_IT` | Italy | Eurostat SES | Tempo indeterminato, RAL 26.000 € - 30.000 € |
+| `pt_PT` | Portugal | Eurostat SES | Guarda (M/F), Trabalho temporário, 9.º ano, 14.000 € - 17.500 € brutos/ano, Ovar, Subsídio de alimentação |
+| `pt_BR` | Brazil | ILOSTAT | Guarda, Meio período, Ensino fundamental, R$ 13.000 - R$ 16.000 por ano, Sine, Vale-refeição |
+| `nl_NL` | Netherlands | Eurostat SES | beveiliger (m/v/x), Uitzendwerk, VMBO, € 25.000 - € 30.500 bruto per jaar, Leerdam, 13e maand |
+| `nl_BE` | Belgium | Eurostat SES | beveiliger (m/v/x), Interim, € 30.000 - € 35.000 bruto per jaar, Kortenberg, VDAB, Ecocheques |
+| `pl_PL` | Poland | Eurostat SES | pracownik ochrony osób i mienia (k/m), Umowa zlecenie, 38 500 - 48 000 zł brutto rocznie, Wieluń |
 | `en_US` | United States | BLS OEWS | Full-time, 401(k) matching, $58,000 - $71,000 a year |
 | `en_GB` | United Kingdom | US × OECD | corporate security guard, Part-time, GCSEs, £10,000 - £12,000 per annum, Workplace pension |
 | `en_IE` | Ireland | Eurostat SES | Fixed-term contract, Leaving Certificate, €30,000 - €38,000 per annum, Dublin, IrishJobs.ie |
@@ -105,6 +113,14 @@ locale's conditions. Hiring companies are made up by the Faker locale
 outside the 17 countries with real ones, with the size shares of the
 country of the language. These are **orders of magnitude**: the earnings
 of broad groups, 2022 to 2026 depending on the source.
+
+In the countries of several languages, the jobs of a locale are in the
+regions of its language: `fr_CA` in Quebec and New Brunswick (Montréal,
+Québec, Moncton), `fr_BE` in Wallonia and Brussels, `nl_BE` in Flanders
+and Brussels, `fr_CH`, `de_CH` and `it_CH` in the cantons of their
+language (`en_CA`: the whole of Canada). A French posting in Belgium
+(`fr_FR` with `country="Belgium"`) takes the Belgian French conditions,
+regions included.
 
 Companies of a posting are in the country of the job and the activity
 sector of the job. Contact names and phone numbers always come from the
@@ -285,9 +301,12 @@ fake.job_company_profile(sector="Santé")   # as the hiring companies of the pos
 | `job_location()` | the locale's country by default (the United States for `en`) | the locale's country by default, with local names (Deutschland, München, Sevilla, Roma, Anvers...) |
 | `job_company()`, `job_company_profile()`, `job_companies` | companies of the country, LinkedIn industry | companies of the country, NAF (France) or NACE (other countries) activity |
 
-Countries other than the locale's keep their English
-name (`country="Belgium"`); the local name of the locale's country is
-accepted too (`country="Deutschland"`).
+Other countries are named in the language of the locale (Wikidata
+labels: "Allemagne", "Germania", "Niemcy"; English in English locales),
+their cities by their English name outside the countries of the language
+("Munich" in a French posting); `country=` takes the English name, the ISO
+code or the name in the language (`country="Deutschland"`,
+`country="Allemagne"`).
 
 ### 🧰 Occupations (ROME / ESCO)
 
@@ -440,8 +459,8 @@ million companies from their LinkedIn pages, CC BY 4.0), built by
   LinkedIn industry in English locales; elsewhere an activity of the
   sector (`company_naf`, and its label as `industry`): a sub-class of the
   French NAF rév. 2 in French locales ('86.10Z'), a class of NACE Rev. 2 in
-  German, Spanish and Italian ones ('86.10', also the class of WZ 2008,
-  CNAE-2009 and ATECO 2007), one that employs the occupation and fits the
+  the other countries and languages ('86.10', also the class of WZ 2008,
+  CNAE-2009, ATECO 2007, CAE, SBI and PKD), one that employs the occupation and fits the
   LinkedIn industry of a real company (Air France: air transport, not
   passenger water transport; see below).
 
@@ -749,10 +768,12 @@ The cities come from GeoNames:
 
 ```
 DATAS/geonames/cities15000.zip, countryInfo.txt   GeoNames dump (download.geonames.org/export/dump/)
-DATAS/geonames/alt_<code>.zip                     alternatenames/<code>.zip of FR, DE, ES, IT, BE, CH, AT, LU,
-                                                  CA, MX, CL, CO: local and English names
+DATAS/geonames/alt_<code>.zip                     alternatenames/<code>.zip of FR, DE, ES, IT, PT, NL, PL, BE,
+                                                  CH, AT, LU, CA, MX, CL, CO, BR: local and English names
+DATAS/wikidata/country_names.json                 country names in fr, de, es, it, pt, nl, pl (Wikidata labels)
 scripts/
-  build_cities.py [--download]  -> faker_jobs/data/cities.json.gz (~500 KB)
+  build_cities.py [--download] [--fetch-country-names]
+                                -> faker_jobs/data/cities.json.gz (~500 KB)
 ```
 
 Occupations have their own sources and scripts:
@@ -761,7 +782,8 @@ Occupations have their own sources and scripts:
 DATAS/metiers/rome-4-0-métiers-×-secteurs-d-activité.xlsx   ROME 4.0 v62 (France Travail)
 DATAS/esco/EURESmapping_occs_FR_v1.0.9.csv   ROME 4.0 -> ESCO 1.0.9 crosswalk (ESCO portal, France)
 DATAS/esco/esco_occupations_v1.0.9.json      English ESCO data, cached by fetch_esco.py
-DATAS/esco/esco_occupations_v1.0.9_{de,es,it}.json   same in German, Spanish, Italian
+DATAS/esco/esco_occupations_v1.0.9_{de,es,it,pt,nl,pl}.json   same in German, Spanish, Italian, Portuguese,
+                                             Dutch, Polish
 DATAS/bmo/Base-open-data-BMO-2026.xlsx       BMO 2026 recruitment projects (France Travail, data.gouv.fr)
 DATAS/bmo/Dares_FAP2021_Table_passage_ROME.xlsx   FAP 2021 -> ROME table (DARES; its site blocks
                                              scripts: download it in a browser or from the Web Archive)
@@ -786,7 +808,7 @@ scripts/
   fetch_activities.py [--download]   census + matrix -> isco_naf.json; EU Vocabularies SPARQL -> labels.json
   posting_conditions.py         local contracts, benefits, job boards, diplomas by locale and country
   rome_labels.py                ROME sectors, domains and soft skills in English, German, Spanish, Italian
-  build_occupations.py          -> faker_jobs/data/occupations_{de_DE,en_US,es_ES,fr_FR,it_IT}.json.gz (gzipped)
+  build_occupations.py          -> faker_jobs/data/occupations_{de_DE,en_US,es_ES,fr_FR,it_IT,nl_NL,pl_PL,pt_PT}.json.gz
                                    and faker_jobs/data/conditions.json (posting conditions of the 20
                                    locales, plain JSON; a country locale only holds what differs
                                    from its language's: `base`)
@@ -853,7 +875,7 @@ Occupation data:
 - BMO 2026 © France Travail, FAP 2021 → ROME table © DARES, NAF rév. 2,
   2022 census and PCS 2020 × ISCO-08 matrix © INSEE:
   [Licence Ouverte / Etalab 2.0](https://www.etalab.gouv.fr/licence-ouverte-open-licence/).
-- NACE Rev. 2 labels in German, Spanish and Italian: [EU Vocabularies](https://op.europa.eu/en/web/eu-vocabularies)
+- NACE Rev. 2 labels in German, Spanish, Italian, Portuguese, Dutch and Polish: [EU Vocabularies](https://op.europa.eu/en/web/eu-vocabularies)
   © European Union, reused under Commission Decision 2011/833/EU.
 - Earnings and labour figures: Eurostat SES 2022 and LFS 2025 © European
   Union (reuse authorised, source acknowledged); BLS OEWS, U.S. Bureau of Labor Statistics (public domain).
@@ -862,7 +884,7 @@ Occupation data:
   Statistics of US Businesses 2022, U.S. Census Bureau (public domain);
   Business population estimates 2026, Department for Business and Trade,
   [Open Government Licence v3.0](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/).
-- English, German, Spanish and Italian labels of the 35 ROME activity
+- English, German, Spanish, Italian, Portuguese, Dutch and Polish labels of the 35 ROME activity
   sectors, 14 domains and 16 soft skills are translated by this project.
 
 Cities: [GeoNames](https://www.geonames.org/), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).

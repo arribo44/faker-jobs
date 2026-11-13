@@ -378,12 +378,17 @@ FIELDS_OF_STUDY = {
 #   keep both forms, as in Spanish).
 # - `rome_diplomas`: False where the French diplomas that ROME sheets list
 #   (CAP, BTS...) do not exist: the local default diplomas instead.
+# - `regions`: GeoNames admin1 codes (cities.json.gz) of the regions of the
+#   language in a country of several (Quebec for fr_CA, Flanders for
+#   nl_BE): the jobs of the locale's country are in them by default.
 # - `activity_code`: "nace" gives the companies the NACE Rev. 2 class of
 #   their NAF activity ('86.10' for '86.10Z') outside France.
 COUNTRY_CONDITIONS = {
     "fr_BE": {
         "base": "fr_FR",
         "country": "Belgium",
+        # Wallonia and Brussels.
+        "regions": ["WAL", "BRU"],
         "place_names": {"country": "Belgique"},
         "currency": "EUR",
         "earnings": {"eurostat": "BE"},
@@ -428,6 +433,8 @@ COUNTRY_CONDITIONS = {
     "fr_CH": {
         "base": "fr_FR",
         "country": "Switzerland",
+        # The French-speaking cantons (and the bilingual Fribourg and Valais).
+        "regions": ["GE", "VD", "NE", "JU", "FR", "VS"],
         "place_names": {"country": "Suisse"},
         "currency": "CHF",
         "earnings": {"eurostat": "CH"},
@@ -470,6 +477,8 @@ COUNTRY_CONDITIONS = {
     "fr_CA": {
         "base": "fr_FR",
         "country": "Canada",
+        # Quebec and New Brunswick.
+        "regions": ["10", "04"],
         "currency": "CAD",
         "earnings": {"oecd": "CA"},
         "posting_suffix": None,
@@ -556,6 +565,9 @@ COUNTRY_CONDITIONS = {
     "de_CH": {
         "base": "de_DE",
         "country": "Switzerland",
+        # The German-speaking cantons (and the bilingual Bern, Fribourg, Valais, Graubünden).
+        "regions": ["ZH", "BE", "LU", "UR", "SZ", "OW", "NW", "GL", "ZG", "FR", "SO", "BS", "BL", "SH", "AR", "AI",
+                    "SG", "GR", "AG", "TG", "VS"],
         "place_names": {"country": "Schweiz"},
         "currency": "CHF",
         "earnings": {"eurostat": "CH"},
@@ -633,6 +645,8 @@ COUNTRY_CONDITIONS = {
     "it_CH": {
         "base": "it_IT",
         "country": "Switzerland",
+        # Ticino (Graubünden's Italian valleys have no city of 15,000 inhabitants).
+        "regions": ["TI"],
         "place_names": {"country": "Svizzera"},
         "currency": "CHF",
         "earnings": {"eurostat": "CH"},
@@ -1174,3 +1188,354 @@ GENERIC_CONDITIONS = {
         "job_portals": {"all": INTERNATIONAL_PORTALS},
     },
 }
+
+
+# Occupation locales of Portuguese, Dutch and Polish (ESCO), as CONDITIONS.
+CONDITIONS.update({
+    "pt_PT": {
+        "country": "Portugal",
+        "currency": "EUR",
+        "contracts": {
+            "Contrato sem termo": {"weight": 50, "kind": "permanent"},
+            "Contrato a termo certo": {"weight": 22, "kind": "temporary"},
+            "Trabalho temporário": {"weight": 10, "kind": "temporary"},
+            "Part-time": {"weight": 6, "kind": "part_time", "salary_factor": 0.5},
+            "Estágio profissional": {"weight": 6, "kind": "intern", "salary_factor": 0.5, "max_experience": 0},
+            "Prestação de serviços": {"weight": 6, "kind": "freelance", "employee": False},
+        },
+        "salary_format": {"template": "{min} € - {max} € brutos/ano", "thousands": "."},
+        # Salário mínimo nacional 2022: 705 € × 14 payments.
+        "minimum_wage": 9_870,
+        "experience_none": "Sem experiência",
+        "experience_range": "{min} a {max} anos de experiência",
+        "qualifications": {
+            "high": ["Licenciatura", "Mestrado", "Licenciatura em {field}", "Mestrado em {field}", "Doutoramento"],
+            "mid": ["CTeSP", "Curso profissional (nível 4)", "CTeSP em {field}", "Licenciatura"],
+            "low": ["9.º ano", "12.º ano", "Ensino secundário", "Curso profissional em {field}"],
+        },
+        "benefits": {
+            "Subsídio de alimentação": {"requires": None, "not_for": []},
+            "Seguro de saúde": {"requires": None, "not_for": ["Estágio profissional", "Trabalho temporário"]},
+            "Prémio de desempenho": {"requires": None, "not_for": ["Estágio profissional"]},
+            "Teletrabalho": {"requires": "office", "not_for": []},
+            "Horário flexível": {"requires": "office", "not_for": []},
+            "Formação contínua": {"requires": None, "not_for": []},
+            "Cartão refeição": {"requires": None, "not_for": []},
+            "Seguro de vida": {"requires": None, "not_for": ["Estágio profissional", "Trabalho temporário"]},
+            "Plano de pensões": {"requires": None,
+                                 "not_for": ["Estágio profissional", "Trabalho temporário", "Contrato a termo certo"]},
+            "Dia de aniversário livre": {"requires": None, "not_for": []},
+            "Descontos para colaboradores": {"requires": None, "not_for": []},
+            "Viatura da empresa": {"requires": "executive", "not_for": ["Estágio profissional", "Part-time"]},
+        },
+        "job_portals": {
+            "all": ["Net-Empregos", "SAPO Emprego", "Indeed", "LinkedIn", "ITJobs", "IEFP", "Expresso Emprego"],
+        },
+    },
+    "nl_NL": {
+        "country": "The Netherlands",
+        "place_names": {"country": "Nederland"},
+        "currency": "EUR",
+        "contracts": {
+            "Vast contract": {"weight": 50, "kind": "permanent"},
+            "Tijdelijk contract": {"weight": 22, "kind": "temporary"},
+            "Uitzendwerk": {"weight": 10, "kind": "temporary"},
+            "Parttime": {"weight": 8, "kind": "part_time", "salary_factor": 0.6},
+            "Stage": {"weight": 4, "kind": "intern", "salary_factor": 0.25, "max_experience": 0},
+            "BBL-leerbaan": {"weight": 2, "kind": "apprentice", "salary_factor": 0.5, "max_experience": 0},
+            "Freelance (zzp)": {"weight": 4, "kind": "freelance", "employee": False},
+        },
+        "salary_format": {"template": "€ {min} - € {max} bruto per jaar", "thousands": "."},
+        # Wettelijk minimumloon 2022, about 1,741 € a month (21 and over), without holiday pay.
+        "minimum_wage": 20_890,
+        "experience_none": "Geen ervaring vereist",
+        "experience_range": "{min} tot {max} jaar ervaring",
+        "qualifications": {
+            "high": ["WO-master", "HBO-bachelor", "WO-master {field}", "HBO-bachelor {field}", "Promotie (PhD)"],
+            "mid": ["MBO niveau 4", "Associate degree", "MBO niveau 4 {field}", "HBO-bachelor"],
+            "low": ["VMBO", "Havo", "MBO niveau 2", "MBO niveau 2 {field}"],
+        },
+        "benefits": {
+            "Goede pensioenregeling": {"requires": None, "not_for": ["Stage", "Uitzendwerk"]},
+            "13e maand": {"requires": None, "not_for": ["Stage"]},
+            "Reiskostenvergoeding": {"requires": None, "not_for": []},
+            "Thuiswerkvergoeding": {"requires": "office", "not_for": []},
+            "Flexibele werktijden": {"requires": "office", "not_for": []},
+            "Opleidingsbudget": {"requires": None, "not_for": []},
+            "Fietsplan": {"requires": None, "not_for": ["Stage", "Uitzendwerk"]},
+            "Winstdeling": {"requires": None, "not_for": ["Stage", "BBL-leerbaan"]},
+            "Extra vakantiedagen": {"requires": None, "not_for": ["Stage"]},
+            "Personeelskorting": {"requires": None, "not_for": []},
+            "Leaseauto": {"requires": "executive", "not_for": ["Stage", "BBL-leerbaan", "Parttime"]},
+        },
+        "job_portals": {
+            "all": ["Indeed", "LinkedIn", "Nationale Vacaturebank", "werk.nl", "Monsterboard", "Jobbird",
+                    "Intermediair"],
+        },
+    },
+    "pl_PL": {
+        "country": "Poland",
+        "place_names": {"country": "Polska"},
+        "currency": "PLN",
+        "contracts": {
+            "Umowa o pracę na czas nieokreślony": {"weight": 50, "kind": "permanent"},
+            "Umowa o pracę na czas określony": {"weight": 18, "kind": "temporary"},
+            "Umowa zlecenie": {"weight": 10, "kind": "other"},
+            "Praca tymczasowa": {"weight": 6, "kind": "temporary"},
+            "Staż": {"weight": 5, "kind": "intern", "salary_factor": 0.4, "max_experience": 0},
+            "Kontrakt B2B": {"weight": 11, "kind": "freelance", "employee": False},
+        },
+        "salary_format": {"template": "{min} - {max} zł brutto rocznie", "thousands": " "},
+        # Płaca minimalna 2022: 3,010 zł a month.
+        "minimum_wage": 36_120,
+        "experience_none": "Bez doświadczenia",
+        "experience_range": "{min}-{max} lat doświadczenia",
+        "qualifications": {
+            "high": ["Wykształcenie wyższe magisterskie", "Studia magisterskie: {field}", "Licencjat", "Inżynier",
+                     "Studia I stopnia: {field}", "Doktorat"],
+            "mid": ["Technik", "Technik: {field}", "Szkoła policealna: {field}", "Licencjat"],
+            "low": ["Wykształcenie średnie", "Wykształcenie zawodowe", "Szkoła branżowa: {field}",
+                    "Wykształcenie podstawowe"],
+        },
+        "benefits": {
+            "Prywatna opieka medyczna": {"requires": None, "not_for": ["Staż"]},
+            "Karta sportowa": {"requires": None, "not_for": []},
+            "Ubezpieczenie na życie": {"requires": None, "not_for": ["Staż", "Praca tymczasowa"]},
+            "PPK": {"requires": None, "not_for": ["Staż", "Umowa zlecenie"]},
+            "Premia roczna": {"requires": None, "not_for": ["Staż"]},
+            "Praca zdalna": {"requires": "office", "not_for": []},
+            "Elastyczne godziny pracy": {"requires": "office", "not_for": []},
+            "Szkolenia": {"requires": None, "not_for": []},
+            "Dofinansowanie do posiłków": {"requires": None, "not_for": []},
+            "Zniżki pracownicze": {"requires": None, "not_for": []},
+            "Paczki świąteczne": {"requires": None, "not_for": []},
+            "Samochód służbowy": {"requires": "executive", "not_for": ["Staż"]},
+        },
+        "job_portals": {
+            "all": ["Pracuj.pl", "OLX Praca", "Indeed", "LinkedIn", "Just Join IT", "No Fluff Jobs",
+                    "praca.gov.pl"],
+        },
+    },
+})
+
+FIELDS_OF_STUDY.update({
+    "pt_PT": {
+        "100": "Metalomecânica", "101": "Turismo", "102": "Hotelaria e Restauração", "103": "Gestão",
+        "104": "Eletrónica", "105": "Ciências", "106": "Química", "107": "Madeira e Mobiliário",
+        "108": "Energia", "109": "Serviço Social", "110": "Direito ou Contabilidade",
+        "111": "Administração Pública", "112": "Ciências da Educação", "113": "Logística e Transportes",
+        "79": "Agronomia", "80": "Ambiente", "81": "Manutenção Industrial", "82": "Património Cultural",
+        "83": "Indústrias Alimentares", "84": "Engenharia Industrial", "85": "Saúde", "86": "Estética e Cabeleireiro",
+        "87": "Artes do Espetáculo", "88": "Comércio", "89": "Artes Gráficas", "90": "Têxtil e Moda",
+        "91": "Finanças", "92": "Gestão Imobiliária", "93": "Desporto", "94": "Marketing e Comunicação",
+        "95": "Mecânica Automóvel", "96": "Informática", "97": "Jornalismo", "98": "Arquitetura ou Engenharia",
+        "99": "Construção Civil",
+    },
+    "nl_NL": {
+        "100": "Werktuigbouwkunde", "101": "Toerisme", "102": "Horeca", "103": "Bedrijfskunde",
+        "104": "Elektrotechniek", "105": "Natuurwetenschappen", "106": "Chemie", "107": "Houttechniek",
+        "108": "Energietechniek", "109": "Social Work", "110": "Rechten of Accountancy",
+        "111": "Bestuurskunde", "112": "Pedagogiek", "113": "Logistiek", "79": "Landbouw", "80": "Milieukunde",
+        "81": "Facilitair Management", "82": "Erfgoedstudies", "83": "Voedingsmiddelentechnologie",
+        "84": "Industriële Techniek", "85": "Zorg en Welzijn", "86": "Uiterlijke Verzorging",
+        "87": "Kunst en Media", "88": "Commerciële Economie", "89": "Grafische Techniek", "90": "Mode en Textiel",
+        "91": "Finance", "92": "Vastgoed", "93": "Sport en Bewegen", "94": "Marketing en Communicatie",
+        "95": "Autotechniek", "96": "Informatica", "97": "Journalistiek", "98": "Bouwkunde of Engineering",
+        "99": "Civiele Techniek",
+    },
+    "pl_PL": {
+        "100": "mechanika", "101": "turystyka", "102": "hotelarstwo i gastronomia", "103": "zarządzanie",
+        "104": "elektronika", "105": "nauki przyrodnicze", "106": "chemia", "107": "technologia drewna",
+        "108": "energetyka", "109": "praca socjalna", "110": "prawo lub rachunkowość",
+        "111": "administracja", "112": "pedagogika", "113": "logistyka", "79": "rolnictwo",
+        "80": "ochrona środowiska", "81": "utrzymanie ruchu", "82": "ochrona dóbr kultury",
+        "83": "technologia żywności", "84": "inżynieria produkcji", "85": "ochrona zdrowia", "86": "kosmetologia",
+        "87": "sztuka i media", "88": "handel", "89": "poligrafia", "90": "włókiennictwo i moda",
+        "91": "finanse", "92": "gospodarka nieruchomościami", "93": "wychowanie fizyczne",
+        "94": "marketing i komunikacja", "95": "mechanika pojazdowa", "96": "informatyka",
+        "97": "dziennikarstwo", "98": "architektura lub inżynieria", "99": "budownictwo",
+    },
+})
+
+COUNTRY_CONDITIONS.update({
+    "pt_BR": {
+        "base": "pt_PT",
+        "country": "Brazil",
+        "place_names": {"country": "Brasil"},
+        "currency": "BRL",
+        # ILOSTAT earnings of Brazil (countries.json), no LFS contract mix.
+        "earnings": {"economy": "Brazil"},
+        "posting_suffix": None,
+        "contracts": {
+            "CLT (efetivo)": {"weight": 58, "kind": "permanent"},
+            "Temporário": {"weight": 10, "kind": "temporary"},
+            "Meio período": {"weight": 8, "kind": "part_time", "salary_factor": 0.5},
+            "Estágio": {"weight": 7, "kind": "intern", "salary_factor": 0.35, "max_experience": 0},
+            "Jovem Aprendiz": {"weight": 5, "kind": "apprentice", "salary_factor": 0.4, "max_experience": 0},
+            "PJ (pessoa jurídica)": {"weight": 12, "kind": "freelance", "employee": False},
+        },
+        "salary_format": {"template": "R$ {min} - R$ {max} por ano", "thousands": "."},
+        "experience_none": "Sem experiência",
+        "experience_range": "De {min} a {max} anos de experiência",
+        "qualifications": {
+            "high": ["Ensino superior completo", "Pós-graduação", "Graduação em {field}", "MBA em {field}",
+                     "Mestrado"],
+            "mid": ["Curso técnico", "Tecnólogo em {field}", "Técnico em {field}", "Ensino superior completo"],
+            "low": ["Ensino fundamental", "Ensino médio completo", "Curso técnico em {field}"],
+        },
+        "benefits": {
+            "Vale-refeição": {"requires": None, "not_for": []},
+            "Vale-alimentação": {"requires": None, "not_for": []},
+            "Vale-transporte": {"requires": None, "not_for": []},
+            "Plano de saúde": {"requires": None, "not_for": ["Estágio", "Temporário"]},
+            "Plano odontológico": {"requires": None, "not_for": ["Estágio", "Temporário"]},
+            "Seguro de vida": {"requires": None, "not_for": ["Estágio", "Jovem Aprendiz"]},
+            "PLR (participação nos lucros)": {"requires": None, "not_for": ["Estágio", "Jovem Aprendiz"]},
+            "Home office": {"requires": "office", "not_for": []},
+            "Horário flexível": {"requires": "office", "not_for": []},
+            "Auxílio educação": {"requires": None, "not_for": ["Temporário"]},
+            "Auxílio academia": {"requires": None, "not_for": []},
+            "Carro da empresa": {"requires": "executive", "not_for": ["Estágio", "Jovem Aprendiz"]},
+        },
+        "job_portals": {
+            "all": ["Catho", "Gupy", "InfoJobs", "Vagas.com", "Indeed", "LinkedIn", "Sine"],
+        },
+    },
+    "nl_BE": {
+        "base": "nl_NL",
+        "country": "Belgium",
+        # Flanders and Brussels.
+        "regions": ["VLG", "BRU"],
+        "place_names": {"country": "België"},
+        "currency": "EUR",
+        "earnings": {"eurostat": "BE"},
+        "contracts": {
+            "Vast contract": {"weight": 55, "kind": "permanent"},
+            "Contract bepaalde duur": {"weight": 14, "kind": "temporary"},
+            "Interim": {"weight": 14, "kind": "temporary"},
+            "Studentenjob": {"weight": 5, "kind": "other", "salary_factor": 0.4, "max_experience": 0},
+            "Stage": {"weight": 4, "kind": "intern", "salary_factor": 0.3, "max_experience": 0},
+            "Zelfstandige": {"weight": 8, "kind": "freelance", "employee": False},
+        },
+        "qualifications": {
+            "high": ["Master", "Master {field}", "Professionele bachelor", "Bachelor {field}", "Doctoraat"],
+            "mid": ["Professionele bachelor", "Graduaat {field}", "Diploma secundair onderwijs (TSO)"],
+            "low": ["Diploma secundair onderwijs", "BSO-diploma", "Getuigschrift {field}"],
+        },
+        "benefits": {
+            "Maaltijdcheques": {"requires": None, "not_for": ["Stage"]},
+            "Ecocheques": {"requires": None, "not_for": ["Stage", "Studentenjob"]},
+            "Groepsverzekering": {"requires": None, "not_for": ["Stage", "Studentenjob", "Interim"]},
+            "Hospitalisatieverzekering": {"requires": None, "not_for": ["Stage", "Studentenjob"]},
+            "13e maand": {"requires": None, "not_for": ["Stage", "Studentenjob"]},
+            "Dubbel vakantiegeld": {"requires": None, "not_for": ["Stage", "Studentenjob"]},
+            "Telewerk": {"requires": "office", "not_for": []},
+            "Glijdende werkuren": {"requires": "office", "not_for": []},
+            "Opleidingen": {"requires": None, "not_for": []},
+            "Fietsvergoeding": {"requires": None, "not_for": []},
+            "Cao 90-bonus": {"requires": None, "not_for": ["Stage", "Studentenjob"]},
+            "Bedrijfswagen met tankkaart": {"requires": "executive", "not_for": ["Stage", "Studentenjob"]},
+        },
+        "job_portals": {
+            "all": ["VDAB", "Jobat", "StepStone", "Indeed", "LinkedIn", "Talent.com"],
+        },
+    },
+})
+
+GENERIC_CONDITIONS.update({
+    "pt": {
+        "contracts": {
+            "Efetivo": {"weight": 62, "kind": "permanent"},
+            "Part-time": {"weight": 13, "kind": "part_time", "salary_factor": 0.5},
+            "Contrato a termo": {"weight": 12, "kind": "temporary"},
+            "Temporário": {"weight": 5, "kind": "temporary"},
+            "Estágio": {"weight": 4, "kind": "intern", "salary_factor": 0.35, "max_experience": 0},
+            "Freelancer": {"weight": 4, "kind": "freelance", "employee": False},
+        },
+        "salary_format": {"template": "{min} - {max} {currency} brutos por ano", "thousands": "."},
+        "qualifications": {
+            "high": ["Licenciatura", "Mestrado", "Licenciatura em {field}", "Mestrado em {field}", "Doutoramento"],
+            "mid": ["Curso técnico superior", "Curso técnico em {field}", "Licenciatura", "Certificação profissional"],
+            "low": ["Ensino secundário", "Formação profissional", "Formação profissional em {field}"],
+        },
+        "benefits": {
+            "Seguro de saúde": {"requires": None, "not_for": ["Estágio", "Temporário"]},
+            "Férias pagas": {"requires": None, "not_for": []},
+            "Prémio de desempenho": {"requires": None, "not_for": ["Estágio"]},
+            "Teletrabalho": {"requires": "office", "not_for": []},
+            "Horário flexível": {"requires": "office", "not_for": []},
+            "Formação contínua": {"requires": None, "not_for": []},
+            "Subsídio de refeição": {"requires": None, "not_for": []},
+            "Subsídio de transporte": {"requires": None, "not_for": []},
+            "Seguro de vida": {"requires": None, "not_for": ["Estágio", "Temporário"]},
+            "Plano de pensões": {"requires": None, "not_for": ["Estágio", "Temporário", "Contrato a termo"]},
+            "Viatura da empresa": {"requires": "executive", "not_for": ["Estágio", "Part-time"]},
+            "Descontos para colaboradores": {"requires": None, "not_for": []},
+        },
+        "job_portals": {"all": INTERNATIONAL_PORTALS},
+    },
+    "nl": {
+        "contracts": {
+            "Vast contract": {"weight": 62, "kind": "permanent"},
+            "Parttime": {"weight": 13, "kind": "part_time", "salary_factor": 0.5},
+            "Tijdelijk contract": {"weight": 12, "kind": "temporary"},
+            "Uitzendwerk": {"weight": 5, "kind": "temporary"},
+            "Stage": {"weight": 4, "kind": "intern", "salary_factor": 0.35, "max_experience": 0},
+            "Freelance": {"weight": 4, "kind": "freelance", "employee": False},
+        },
+        "salary_format": {"template": "{currency} {min} - {max} bruto per jaar", "thousands": "."},
+        "qualifications": {
+            "high": ["Master", "Bachelor", "Master {field}", "Bachelor {field}", "Doctoraat"],
+            "mid": ["Hoger technisch diploma", "Technisch diploma {field}", "Bachelor", "Beroepscertificaat"],
+            "low": ["Diploma middelbare school", "Beroepsopleiding", "Beroepsopleiding {field}"],
+        },
+        "benefits": {
+            "Ziektekostenverzekering": {"requires": None, "not_for": ["Stage", "Uitzendwerk"]},
+            "Betaald verlof": {"requires": None, "not_for": []},
+            "Prestatiebonus": {"requires": None, "not_for": ["Stage"]},
+            "Thuiswerken": {"requires": "office", "not_for": []},
+            "Flexibele werktijden": {"requires": "office", "not_for": []},
+            "Opleidingsmogelijkheden": {"requires": None, "not_for": []},
+            "Maaltijdvergoeding": {"requires": None, "not_for": []},
+            "Reiskostenvergoeding": {"requires": None, "not_for": []},
+            "Levensverzekering": {"requires": None, "not_for": ["Stage", "Uitzendwerk"]},
+            "Pensioenregeling": {"requires": None, "not_for": ["Stage", "Uitzendwerk", "Tijdelijk contract"]},
+            "Auto van de zaak": {"requires": "executive", "not_for": ["Stage", "Parttime"]},
+            "Personeelskorting": {"requires": None, "not_for": []},
+        },
+        "job_portals": {"all": INTERNATIONAL_PORTALS},
+    },
+    "pl": {
+        "contracts": {
+            "Umowa na czas nieokreślony": {"weight": 62, "kind": "permanent"},
+            "Część etatu": {"weight": 13, "kind": "part_time", "salary_factor": 0.5},
+            "Umowa na czas określony": {"weight": 12, "kind": "temporary"},
+            "Praca tymczasowa": {"weight": 5, "kind": "temporary"},
+            "Staż": {"weight": 4, "kind": "intern", "salary_factor": 0.35, "max_experience": 0},
+            "Freelance": {"weight": 4, "kind": "freelance", "employee": False},
+        },
+        "salary_format": {"template": "{min} - {max} {currency} brutto rocznie", "thousands": " "},
+        "qualifications": {
+            "high": ["Wykształcenie wyższe magisterskie", "Licencjat", "Studia magisterskie: {field}",
+                     "Studia I stopnia: {field}", "Doktorat"],
+            "mid": ["Wykształcenie policealne", "Technik: {field}", "Licencjat", "Certyfikat zawodowy"],
+            "low": ["Wykształcenie średnie", "Kurs zawodowy", "Kurs zawodowy: {field}"],
+        },
+        "benefits": {
+            "Ubezpieczenie zdrowotne": {"requires": None, "not_for": ["Staż", "Praca tymczasowa"]},
+            "Płatny urlop": {"requires": None, "not_for": []},
+            "Premia uznaniowa": {"requires": None, "not_for": ["Staż"]},
+            "Praca zdalna": {"requires": "office", "not_for": []},
+            "Elastyczne godziny pracy": {"requires": "office", "not_for": []},
+            "Szkolenia": {"requires": None, "not_for": []},
+            "Dodatek na posiłki": {"requires": None, "not_for": []},
+            "Dodatek na dojazdy": {"requires": None, "not_for": []},
+            "Ubezpieczenie na życie": {"requires": None, "not_for": ["Staż", "Praca tymczasowa"]},
+            "Program emerytalny": {"requires": None,
+                                   "not_for": ["Staż", "Praca tymczasowa", "Umowa na czas określony"]},
+            "Samochód służbowy": {"requires": "executive", "not_for": ["Staż", "Część etatu"]},
+            "Zniżki pracownicze": {"requires": None, "not_for": []},
+        },
+        "job_portals": {"all": INTERNATIONAL_PORTALS},
+    },
+})

@@ -10,7 +10,7 @@ import unittest
 from faker import Faker
 from faker.config import AVAILABLE_LOCALES
 
-from faker_jobs import JobsProvider, _conditions_locale, _load_companies, _load_conditions
+from faker_jobs import JobsProvider, _conditions_locale, _load_cities, _load_companies, _load_conditions
 
 # Faker locale -> (country of job_countries, its local name, currency, occupation locale).
 COUNTRIES = {
@@ -29,6 +29,8 @@ COUNTRIES = {
     "en_CA": ("Canada", "Canada", "CAD", "en_US"),
     "en_AU": ("Australia", "Australia", "AUD", "en_US"),
     "en_NZ": ("New Zealand", "New Zealand", "NZD", "en_US"),
+    "pt_BR": ("Brazil", "Brasil", "BRL", "pt_PT"),
+    "nl_BE": ("Belgium", "België", "EUR", "nl_NL"),
 }
 
 
@@ -167,8 +169,8 @@ class FrenchSpeakingCountriesTests(unittest.TestCase):
     def test_local_city_names(self):
         fake, _ = make("fr_BE")
         cities = {fake.job_location()["city"] for _ in range(300)}
-        self.assertTrue({"Bruxelles", "Anvers"} <= cities)
-        self.assertFalse(cities & {"Brussels", "Antwerp", "Antwerpen"})
+        self.assertTrue({"Bruxelles", "Liège"} <= cities)
+        self.assertFalse(cities & {"Brussels", "Liege", "Luik"})
         fake, _ = make("fr_CA")
         self.assertIn("Montréal", {fake.job_location()["city"] for _ in range(300)})
 
@@ -180,6 +182,31 @@ class FrenchSpeakingCountriesTests(unittest.TestCase):
         self.assertIsNone(_conditions_locale(None))
 
 
+class LanguageRegionsTests(unittest.TestCase):
+    def test_jobs_in_the_regions_of_the_language(self):
+        Faker.seed(12)
+        cities = _load_cities()
+        for locale, country, regions in (("fr_CA", "canada", {"10", "04"}), ("nl_BE", "belgium", {"VLG", "BRU"}),
+                                         ("fr_BE", "belgium", {"WAL", "BRU"}), ("it_CH", "switzerland", {"TI"}),
+                                         ("fr_CH", "switzerland", {"GE", "VD", "NE", "JU", "FR", "VS"})):
+            entry = cities[country]
+            region_of = {(row[1], row[2]): region
+                         for row, region in zip(entry["cities"], entry["regions"], strict=True)}
+            fake, _ = make(locale)
+            for _ in range(60):
+                location = fake.job_posting()["location"]
+                self.assertIn(region_of[(location["latitude"], location["longitude"])], regions, (locale, location))
+        # English-speaking Canada: the whole country.
+        fake, _ = make("en_CA")
+        self.assertIn("Toronto", {fake.job_location()["city"] for _ in range(100)})
+        # A French posting in Belgium takes the conditions of fr_BE, with its regions; an English one
+        # (no conditions of its own there) the whole country.
+        fake, _ = make("fr_FR")
+        self.assertNotIn("Anvers", {fake.job_location(country="Belgium")["city"] for _ in range(300)})
+        fake, _ = make("en_US")
+        self.assertIn("Antwerp", {fake.job_location(country="Belgium")["city"] for _ in range(300)})
+
+
 class SwissLocalesTests(unittest.TestCase):
     def test_city_names_in_each_language(self):
         Faker.seed(11)
@@ -187,10 +214,12 @@ class SwissLocalesTests(unittest.TestCase):
         for locale in ("fr_CH", "de_CH", "it_CH"):
             fake, _ = make(locale)
             names[locale] = {fake.job_location()["city"] for _ in range(300)}
+        # Each locale in the cantons of its language, with its names of the cities.
         self.assertIn("Genève", names["fr_CH"])
-        self.assertIn("Genf", names["de_CH"])
-        self.assertIn("Ginevra", names["it_CH"])
         self.assertIn("Zürich", names["de_CH"])
+        self.assertIn("Sitten", names["de_CH"])  # Sion, bilingual Valais
+        self.assertIn("Lugano", names["it_CH"])
+        self.assertNotIn("Zurich", names["fr_CH"])
 
     def test_same_salaries_in_every_language(self):
         conditions = _load_conditions()

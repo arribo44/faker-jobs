@@ -5,7 +5,7 @@ mapped to a ROME 4.0 job title, in one language, and cache it in
 DATAS/esco/esco_occupations_v1.0.9.json (English) or
 DATAS/esco/esco_occupations_v1.0.9_<language>.json (read by build_occupations.py).
 
-Usage: fetch_esco.py [language]   (en, de, es or it; default en)
+Usage: fetch_esco.py [language]   (en, de, es, it, pt, nl or pl; default en)
 
 Input: DATAS/esco/EURESmapping_occs_FR_v1.0.9.csv, the official ROME 4.0 →
 ESCO 1.0.9 crosswalk published by France Travail on the ESCO portal:
@@ -28,7 +28,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ESCO_DIR = os.path.join(ROOT, "DATAS", "esco")
 MAPPING_PATH = os.path.join(ESCO_DIR, "EURESmapping_occs_FR_v1.0.9.csv")
 CACHE_PATH = os.path.join(ESCO_DIR, "esco_occupations_v1.0.9.json")
-LANGUAGES = ("en", "de", "es", "it")
+LANGUAGES = ("en", "de", "es", "it", "pt", "nl", "pl")
 
 
 def cache_path(language="en"):

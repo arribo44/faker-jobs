@@ -1,8 +1,8 @@
 """
 The full text of a job posting (`JobsProvider.job_posting_text()`), in
-French, English, German, Spanish or Italian: a headline, an introduction of
-the company, the job, the missions, the profile asked, the conditions and
-how to apply.
+French, English, German, Spanish, Italian, Portuguese, Dutch or Polish: a
+headline, an introduction of the company, the job, the missions, the
+profile asked, the conditions and how to apply.
 
 The wording is hand-made; every fact comes from the posting (occupation,
 company, conditions, contact). Each section has a few phrasings, picked with
@@ -244,6 +244,140 @@ TEXTS: dict[str, dict[str, Any]] = {
         "thousands": ".",
         "and": " e ",
     },
+    "pt": {
+        "intro": [
+            "{company} está a recrutar em {city}.",
+            "Para reforçar a sua equipa em {city}, {company} está a recrutar.",
+            "Procura um novo desafio? {company} está a recrutar em {city}.",
+        ],
+        "intro_sector": [
+            "{company} ({sector}, {size} colaboradores) está a recrutar em {city}.",
+            "Com {size} colaboradores no setor {sector}, {company} reforça a sua equipa em {city}.",
+            "Junte-se a {company} ({sector}, {size} colaboradores) em {city}.",
+        ],
+        "industry": "Atividade: {industry}.",
+        "job": ["A função", "Descrição da função", "Sobre a função"],
+        "no_description": ["Irá exercer a profissão de {title}, na área {domain}."],
+        "transitions": {
+            "ecological": "Esta profissão contribui para a transição ecológica.",
+            "digital": "Esta profissão está no centro da transição digital.",
+            "demographic": "Esta profissão responde às necessidades do envelhecimento da população.",
+        },
+        "missions": ["Principais responsabilidades", "O que irá fazer", "No dia a dia"],
+        "missions_lead": ["As suas principais tarefas:", "Irá:", ""],
+        "profile": ["Perfil", "O que procuramos", "Requisitos"],
+        "qualification": "Habilitações: {value}",
+        "experience": "Experiência: {value}",
+        "knowledge": "Conhecimentos: {value}",
+        "soft_skills": "Competências pessoais: {value}",
+        "regulated": "Profissão regulamentada: diploma ou cédula profissional obrigatórios",
+        "offer": ["O que oferecemos", "A nossa oferta", "Condições"],
+        "contract": "Contrato: {value}",
+        "salary": "Remuneração: {value}",
+        "location": "Local de trabalho: {city}, {country}",
+        "benefits": "Benefícios: {value}",
+        "apply": ["Como candidatar-se", "Candidaturas", "Interessado/a?"],
+        "apply_text": [
+            "Envie a sua candidatura a {contact_person}, tel. {contact}, com a referência {job_id}.",
+            "Contacte {contact_person} através do {contact}, referência da oferta: {job_id}.",
+        ],
+        "posted": "Oferta publicada a {date} em {portal}.",
+        "date": "{day} de {month} de {year}",
+        "months": ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto",
+                   "setembro", "outubro", "novembro", "dezembro"],
+        "thousands": ".",
+        "and": " e ",
+    },
+    "nl": {
+        "intro": [
+            "{company} zoekt nieuwe collega's in {city}.",
+            "{company} breidt het team in {city} uit.",
+            "Op zoek naar een nieuwe uitdaging? {company} zoekt versterking in {city}.",
+        ],
+        "intro_sector": [
+            "{company} ({sector}, {size} medewerkers) zoekt nieuwe collega's in {city}.",
+            "Met {size} medewerkers in {sector} breidt {company} het team in {city} uit.",
+            "Kom werken bij {company} ({sector}, {size} medewerkers) in {city}.",
+        ],
+        "industry": "Activiteit: {industry}.",
+        "job": ["De functie", "Functieomschrijving", "Over de functie"],
+        "no_description": ["Je werkt als {title}, in het domein {domain}."],
+        "transitions": {
+            "ecological": "Dit beroep draagt bij aan de ecologische transitie.",
+            "digital": "Dit beroep staat centraal in de digitale transitie.",
+            "demographic": "Dit beroep speelt in op de behoeften van een vergrijzende bevolking.",
+        },
+        "missions": ["Wat ga je doen?", "Taken en verantwoordelijkheden", "Je dagelijkse werk"],
+        "missions_lead": ["Je belangrijkste taken:", "Je gaat:", ""],
+        "profile": ["Wie zoeken wij?", "Functie-eisen", "Jouw profiel"],
+        "qualification": "Opleiding: {value}",
+        "experience": "Ervaring: {value}",
+        "knowledge": "Kennis van: {value}",
+        "soft_skills": "Competenties: {value}",
+        "regulated": "Gereglementeerd beroep: diploma of erkenning verplicht",
+        "offer": ["Wat bieden wij?", "Ons aanbod", "Arbeidsvoorwaarden"],
+        "contract": "Dienstverband: {value}",
+        "salary": "Salaris: {value}",
+        "location": "Standplaats: {city}, {country}",
+        "benefits": "Extra's: {value}",
+        "apply": ["Solliciteren", "Interesse?", "Hoe solliciteren?"],
+        "apply_text": [
+            "Stuur je sollicitatie naar {contact_person}, tel. {contact}, onder vermelding van referentie {job_id}.",
+            "Neem contact op met {contact_person} via {contact}, vacaturenummer {job_id}.",
+        ],
+        "posted": "Vacature geplaatst op {date} op {portal}.",
+        "date": "{day} {month} {year}",
+        "months": ["januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus",
+                   "september", "oktober", "november", "december"],
+        "thousands": ".",
+        "and": " en ",
+    },
+    "pl": {
+        "intro": [
+            "{company} rekrutuje w miejscowości {city}.",
+            "{company} poszerza zespół w miejscowości {city}.",
+            "Szukasz nowego wyzwania? {company} rekrutuje w miejscowości {city}.",
+        ],
+        "intro_sector": [
+            "{company} (branża: {sector}, {size} pracowników) rekrutuje w miejscowości {city}.",
+            "Firma {company}, zatrudniająca {size} pracowników w branży {sector}, poszerza zespół "
+            "w miejscowości {city}.",
+            "Dołącz do {company} (branża: {sector}, {size} pracowników) w miejscowości {city}.",
+        ],
+        "industry": "Działalność: {industry}.",
+        "job": ["Stanowisko", "Opis stanowiska", "O stanowisku"],
+        "no_description": ["Będziesz pracować w zawodzie: {title}, w obszarze: {domain}."],
+        "transitions": {
+            "ecological": "Ten zawód wspiera transformację ekologiczną.",
+            "digital": "Ten zawód jest w centrum transformacji cyfrowej.",
+            "demographic": "Ten zawód odpowiada na potrzeby starzejącego się społeczeństwa.",
+        },
+        "missions": ["Zakres obowiązków", "Twoje zadania", "Na co dzień"],
+        "missions_lead": ["Twoje główne zadania:", "Będziesz:", ""],
+        "profile": ["Wymagania", "Kogo szukamy", "Twój profil"],
+        "qualification": "Wykształcenie: {value}",
+        "experience": "Doświadczenie: {value}",
+        "knowledge": "Wiedza: {value}",
+        "soft_skills": "Umiejętności miękkie: {value}",
+        "regulated": "Zawód regulowany: wymagany dyplom lub uprawnienia",
+        "offer": ["Oferujemy", "Nasza oferta", "Warunki zatrudnienia"],
+        "contract": "Rodzaj umowy: {value}",
+        "salary": "Wynagrodzenie: {value}",
+        "location": "Miejsce pracy: {city}, {country}",
+        "benefits": "Benefity: {value}",
+        "apply": ["Jak aplikować", "Aplikuj", "Zainteresowany/a?"],
+        "apply_text": [
+            "Wyślij swoją aplikację do: {contact_person}, tel. {contact}, z numerem referencyjnym {job_id}.",
+            "Skontaktuj się z: {contact_person}, tel. {contact}, numer oferty: {job_id}.",
+        ],
+        "posted": "Ogłoszenie opublikowane {date} w serwisie {portal}.",
+        "date": "{day} {month} {year}",
+        # Genitive, as in dates ("13 listopada 2026").
+        "months": ["stycznia", "lutego", "marca", "kwietnia", "maja", "czerwca", "lipca", "sierpnia",
+                   "września", "października", "listopada", "grudnia"],
+        "thousands": "\u00a0",   # no-break space
+        "and": " i ",
+    },
 }
 
 
@@ -266,7 +400,7 @@ def render_posting(
     posting: Mapping[str, Any], language: str, rng: random.Random, markdown: bool = False
 ) -> str:
     """The text of an `OccupationPosting` or a `JobPosting` in `language`
-    ('fr', 'en', 'de', 'es', 'it'), plain or in Markdown."""
+    ('fr', 'en', 'de', 'es', 'it', 'pt', 'nl', 'pl'), plain or in Markdown."""
     texts = TEXTS[language]
     occupation = posting["occupation"]
     company = posting["company"]
