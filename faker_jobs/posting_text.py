@@ -1,7 +1,7 @@
 """
 The full text of a job posting (`JobsProvider.job_posting_text()`), in
-French, English, German, Spanish, Italian, Portuguese, Dutch or Polish: a
-headline, an introduction of the company, the job, the missions, the
+French, English, German, Spanish, Italian, Portuguese, Dutch, Polish,
+Swedish, Czech, Romanian, Greek or Arabic: a headline, an introduction of the company, the job, the missions, the
 profile asked, the conditions and how to apply.
 
 The wording is hand-made; every fact comes from the posting (occupation,
@@ -12,6 +12,7 @@ name or the job title, which the data does not give.
 """
 import datetime as _datetime
 import random
+import unicodedata
 from collections.abc import Mapping
 from typing import Any
 
@@ -396,7 +397,244 @@ TEXTS: dict[str, dict[str, Any]] = {
         "thousands": "\u00a0",   # no-break space
         "and": " i ",
     },
+    "sv": {
+        "intro": [
+            "{company} söker medarbetare i {city}.",
+            "{company} växer och förstärker teamet i {city}.",
+            "Söker du en ny utmaning? {company} rekryterar i {city}.",
+        ],
+        "intro_sector": [
+            "{company} ({sector}, {size} anställda) söker medarbetare i {city}.",
+            "Med {size} anställda inom {sector} förstärker {company} teamet i {city}.",
+            "Bli en del av {company} ({sector}, {size} anställda) i {city}.",
+        ],
+        "industry": "Verksamhet: {industry}.",
+        "job": ["Om tjänsten", "Tjänstebeskrivning", "Rollen"],
+        "no_description": ["Du kommer att arbeta som {title}, inom området {domain}."],
+        "transitions": {
+            "ecological": "Yrket bidrar till den gröna omställningen.",
+            "digital": "Yrket står i centrum för den digitala omställningen.",
+            "demographic": "Yrket möter behoven hos en åldrande befolkning.",
+        },
+        "missions": ["Arbetsuppgifter", "Dina uppgifter", "I vardagen"],
+        "missions_lead": ["Dina huvudsakliga uppgifter:", "Du kommer att:", ""],
+        "profile": ["Kvalifikationer", "Vem vi söker", "Din profil"],
+        "qualification": "Utbildning: {value}",
+        "experience": "Erfarenhet: {value}",
+        "knowledge": "Kunskaper: {value}",
+        "soft_skills": "Personliga egenskaper: {value}",
+        "regulated": "Reglerat yrke: examen eller legitimation krävs",
+        "offer": ["Vi erbjuder", "Vårt erbjudande", "Anställningsvillkor"],
+        "contract": "Anställningsform: {value}",
+        "salary": "Lön: {value}",
+        "location": "Arbetsort: {city}, {country}",
+        "remote": {"hybrid": "Hybridarbete: delvis distansarbete", "remote": "Helt på distans"},
+        "benefits": "Förmåner: {value}",
+        "apply": ["Ansökan", "Så söker du", "Intresserad?"],
+        "apply_text": [
+            "Skicka din ansökan till {contact_person}, tel. {contact}, och ange referens {job_id}.",
+            "Kontakta {contact_person} på {contact}, annonsreferens: {job_id}.",
+        ],
+        "posted": "Publicerad {date} på {portal}.",
+        "date": "{day} {month} {year}",
+        "months": ["januari", "februari", "mars", "april", "maj", "juni", "juli", "augusti", "september",
+                   "oktober", "november", "december"],
+        "thousands": " ",   # no-break space
+        "and": " och ",
+    },
+    "cs": {
+        "intro": [
+            "{company} hledá nové kolegy do lokality {city}.",
+            "{company} rozšiřuje tým v lokalitě {city}.",
+            "Hledáte novou výzvu? {company} přijímá zaměstnance v lokalitě {city}.",
+        ],
+        "intro_sector": [
+            "{company} (obor: {sector}, {size} zaměstnanců) hledá nové kolegy do lokality {city}.",
+            "Společnost {company} s {size} zaměstnanci v oboru {sector} rozšiřuje tým v lokalitě {city}.",
+            "Přidejte se ke {company} (obor: {sector}, {size} zaměstnanců) v lokalitě {city}.",
+        ],
+        "industry": "Činnost: {industry}.",
+        "job": ["Pozice", "Popis pozice", "O pozici"],
+        "no_description": ["Budete pracovat jako {title}, v oblasti {domain}."],
+        "transitions": {
+            "ecological": "Tato profese přispívá k ekologické transformaci.",
+            "digital": "Tato profese je v centru digitální transformace.",
+            "demographic": "Tato profese odpovídá na potřeby stárnoucí populace.",
+        },
+        "missions": ["Náplň práce", "Vaše úkoly", "Co vás čeká"],
+        "missions_lead": ["Vaše hlavní úkoly:", "Budete:", ""],
+        "profile": ["Požadavky", "Koho hledáme", "Váš profil"],
+        "qualification": "Vzdělání: {value}",
+        "experience": "Praxe: {value}",
+        "knowledge": "Znalosti: {value}",
+        "soft_skills": "Osobnostní předpoklady: {value}",
+        "regulated": "Regulovaná profese: vyžaduje se diplom nebo oprávnění",
+        "offer": ["Nabízíme", "Naše nabídka", "Pracovní podmínky"],
+        "contract": "Typ úvazku: {value}",
+        "salary": "Mzda: {value}",
+        "location": "Místo výkonu práce: {city}, {country}",
+        "remote": {"hybrid": "Hybridní práce: částečně home office", "remote": "Plně vzdálená práce"},
+        "benefits": "Benefity: {value}",
+        "apply": ["Jak se přihlásit", "Odpovědět na inzerát", "Máte zájem?"],
+        "apply_text": [
+            "Pošlete svůj životopis na: {contact_person}, tel. {contact}, s referenčním číslem {job_id}.",
+            "Kontaktujte: {contact_person}, tel. {contact}, číslo nabídky: {job_id}.",
+        ],
+        "posted": "Inzerát zveřejněn {date} na {portal}.",
+        "date": "{day}. {month} {year}",
+        "months": ["ledna", "února", "března", "dubna", "května", "června", "července", "srpna", "září", "října",
+                   "listopadu", "prosince"],
+        "thousands": " ",   # no-break space
+        "and": " a ",
+    },
+    "ro": {
+        "intro": [
+            "{company} angajează în {city}.",
+            "{company} își extinde echipa din {city}.",
+            "Cauți o nouă provocare? {company} angajează în {city}.",
+        ],
+        "intro_sector": [
+            "{company} ({sector}, {size} angajați) angajează în {city}.",
+            "Cu {size} angajați în domeniul {sector}, {company} își extinde echipa din {city}.",
+            "Alătură-te {company} ({sector}, {size} angajați) în {city}.",
+        ],
+        "industry": "Activitate: {industry}.",
+        "job": ["Postul", "Descrierea postului", "Despre post"],
+        "no_description": ["Vei lucra ca {title}, în domeniul {domain}."],
+        "transitions": {
+            "ecological": "Această meserie contribuie la tranziția ecologică.",
+            "digital": "Această meserie se află în centrul tranziției digitale.",
+            "demographic": "Această meserie răspunde nevoilor unei populații îmbătrânite.",
+        },
+        "missions": ["Responsabilități", "Ce vei face", "Activitatea zilnică"],
+        "missions_lead": ["Principalele tale sarcini:", "Vei:", ""],
+        "profile": ["Cerințe", "Pe cine căutăm", "Profilul tău"],
+        "qualification": "Studii: {value}",
+        "experience": "Experiență: {value}",
+        "knowledge": "Cunoștințe: {value}",
+        "soft_skills": "Competențe personale: {value}",
+        "regulated": "Profesie reglementată: diplomă sau aviz de liberă practică obligatorii",
+        "offer": ["Ce oferim", "Oferta noastră", "Condiții"],
+        "contract": "Tip de contract: {value}",
+        "salary": "Salariu: {value}",
+        "location": "Locul de muncă: {city}, {country}",
+        "remote": {"hybrid": "Regim hibrid: parțial de acasă", "remote": "Lucru 100% de la distanță"},
+        "benefits": "Beneficii: {value}",
+        "apply": ["Cum aplici", "Aplică", "Te interesează?"],
+        "apply_text": [
+            "Trimite CV-ul către {contact_person}, tel. {contact}, cu referința {job_id}.",
+            "Contactează-l/o pe {contact_person} la {contact}, referința anunțului: {job_id}.",
+        ],
+        "posted": "Anunț publicat pe {date} pe {portal}.",
+        "date": "{day} {month} {year}",
+        "months": ["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie",
+                   "octombrie", "noiembrie", "decembrie"],
+        "thousands": ".",
+        "and": " și ",
+    },
+    "el": {
+        "intro": [
+            "Η {company} προσλαμβάνει στην περιοχή {city}.",
+            "Η {company} ενισχύει την ομάδα της στην περιοχή {city}.",
+            "Αναζητάτε μια νέα πρόκληση; Η {company} προσλαμβάνει στην περιοχή {city}.",
+        ],
+        "intro_sector": [
+            "Η {company} ({sector}, {size} εργαζόμενοι) προσλαμβάνει στην περιοχή {city}.",
+            "Με {size} εργαζομένους στον κλάδο {sector}, η {company} ενισχύει την ομάδα της στην περιοχή {city}.",
+            "Γίνετε μέλος της {company} ({sector}, {size} εργαζόμενοι) στην περιοχή {city}.",
+        ],
+        "industry": "Δραστηριότητα: {industry}.",
+        "job": ["Η θέση", "Περιγραφή θέσης", "Σχετικά με τη θέση"],
+        "no_description": ["Θα εργαστείτε ως {title}, στον τομέα {domain}."],
+        "transitions": {
+            "ecological": "Το επάγγελμα συμβάλλει στην πράσινη μετάβαση.",
+            "digital": "Το επάγγελμα βρίσκεται στο επίκεντρο του ψηφιακού μετασχηματισμού.",
+            "demographic": "Το επάγγελμα ανταποκρίνεται στις ανάγκες ενός γηράσκοντος πληθυσμού.",
+        },
+        "missions": ["Αρμοδιότητες", "Τι θα κάνετε", "Καθημερινά"],
+        "missions_lead": ["Οι κύριες αρμοδιότητές σας:", "Θα:", ""],
+        "profile": ["Απαιτούμενα προσόντα", "Ποιον αναζητούμε", "Το προφίλ σας"],
+        "qualification": "Σπουδές: {value}",
+        "experience": "Προϋπηρεσία: {value}",
+        "knowledge": "Γνώσεις: {value}",
+        "soft_skills": "Δεξιότητες: {value}",
+        "regulated": "Νομοθετικά κατοχυρωμένο επάγγελμα: απαιτείται πτυχίο ή άδεια άσκησης επαγγέλματος",
+        "offer": ["Προσφέρουμε", "Η προσφορά μας", "Όροι εργασίας"],
+        "contract": "Σχέση εργασίας: {value}",
+        "salary": "Αποδοχές: {value}",
+        "location": "Τόπος εργασίας: {city}, {country}",
+        "remote": {"hybrid": "Υβριδική εργασία: εν μέρει τηλεργασία", "remote": "Πλήρης τηλεργασία"},
+        "benefits": "Παροχές: {value}",
+        "apply": ["Αιτήσεις", "Πώς να υποβάλετε αίτηση", "Ενδιαφέρεστε;"],
+        "apply_text": [
+            "Στείλτε το βιογραφικό σας στον/στην {contact_person}, τηλ. {contact}, με κωδικό αγγελίας {job_id}.",
+            "Επικοινωνήστε με τον/την {contact_person} στο {contact}, κωδικός αγγελίας: {job_id}.",
+        ],
+        "posted": "Η αγγελία δημοσιεύθηκε στις {date} στο {portal}.",
+        "date": "{day} {month} {year}",
+        "months": ["Ιανουαρίου", "Φεβρουαρίου", "Μαρτίου", "Απριλίου", "Μαΐου", "Ιουνίου", "Ιουλίου", "Αυγούστου",
+                   "Σεπτεμβρίου", "Οκτωβρίου", "Νοεμβρίου", "Δεκεμβρίου"],
+        "thousands": ".",
+        "and": " και ",
+    },
+    "ar": {
+        "intro": [
+            "تعلن {company} عن توفر وظيفة شاغرة في {city}.",
+            "تعزز {company} فريق عملها في {city}.",
+            "هل تبحث عن تحدٍّ جديد؟ تعلن {company} عن وظيفة شاغرة في {city}.",
+        ],
+        "intro_sector": [
+            "تعلن {company} ({sector}، {size} موظف) عن توفر وظيفة شاغرة في {city}.",
+            "تعزز {company}، التي تضم {size} موظف في قطاع {sector}، فريق عملها في {city}.",
+            "انضم إلى {company} ({sector}، {size} موظف) في {city}.",
+        ],
+        "industry": "النشاط: {industry}.",
+        "job": ["الوظيفة", "الوصف الوظيفي", "عن الوظيفة"],
+        "no_description": ["ستعمل في مهنة {title}، في مجال {domain}."],
+        "transitions": {
+            "ecological": "تسهم هذه المهنة في التحول البيئي.",
+            "digital": "هذه المهنة في صميم التحول الرقمي.",
+            "demographic": "تلبي هذه المهنة احتياجات مجتمع يتقدم في العمر.",
+        },
+        "missions": ["المهام والمسؤوليات", "ما ستقوم به", "عملك اليومي"],
+        "missions_lead": ["مهامك الرئيسية:", "ستقوم بما يلي:", ""],
+        "profile": ["المتطلبات", "من نبحث عنه", "ملفك المهني"],
+        "qualification": "المؤهل العلمي: {value}",
+        "experience": "الخبرة: {value}",
+        "knowledge": "المعارف: {value}",
+        "soft_skills": "المهارات الشخصية: {value}",
+        "regulated": "مهنة منظمة: يشترط الحصول على شهادة أو ترخيص مزاولة المهنة",
+        "offer": ["ما نقدمه", "عرضنا", "شروط العمل"],
+        "contract": "نوع العقد: {value}",
+        "salary": "الراتب: {value}",
+        "location": "مكان العمل: {city}، {country}",
+        "remote": {"hybrid": "عمل مرن: جزئيًا عن بعد", "remote": "عمل عن بعد بالكامل"},
+        "benefits": "المزايا: {value}",
+        "apply": ["طريقة التقديم", "التقديم", "مهتم؟"],
+        "apply_text": [
+            "أرسل سيرتك الذاتية إلى {contact_person}، هاتف {contact}، مع ذكر الرقم المرجعي {job_id}.",
+            "تواصل مع {contact_person} على الرقم {contact}، الرقم المرجعي للوظيفة: {job_id}.",
+        ],
+        "posted": "نُشر الإعلان في {date} على {portal}.",
+        "date": "{day} {month} {year}",
+        "months": ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر",
+                   "نوفمبر", "ديسمبر"],
+        "thousands": ",",
+        "and": " و",
+        "comma": "، ",
+        "list_separator": "؛ ",
+        "lower_soft_skills": False,
+    },
 }
+
+
+def _upper(text: str) -> str:
+    """Upper case, without the Greek stress accents capitals drop ('Όροι' -> 'ΟΡΟΙ')."""
+    upper = text.upper()
+    if any("\u0370" <= char <= "\u03ff" for char in upper):
+        upper = unicodedata.normalize("NFC", "".join(char for char in unicodedata.normalize("NFD", upper)
+                                                     if char != "\u0301"))
+    return upper
 
 
 def _capitalize(text: str) -> str:
@@ -407,7 +645,8 @@ def _join(items: list[str], texts: Mapping[str, Any]) -> str:
     """'a, b and c'; 'a; b; c' when an item has a comma of its own."""
     if any("," in item for item in items):
         return str(texts.get("list_separator", "; ")).join(items)
-    return items[0] if len(items) == 1 else ", ".join(items[:-1]) + texts["and"] + items[-1]
+    comma = str(texts.get("comma", ", "))
+    return items[0] if len(items) == 1 else comma.join(items[:-1]) + texts["and"] + items[-1]
 
 
 def _date(texts: Mapping[str, Any], date: _datetime.date) -> str:
@@ -418,7 +657,7 @@ def render_posting(
     posting: Mapping[str, Any], language: str, rng: random.Random, markdown: bool = False
 ) -> str:
     """The text of an `OccupationPosting` or a `JobPosting` in `language`
-    ('fr', 'en', 'de', 'es', 'it', 'pt', 'nl', 'pl'), plain or in Markdown."""
+    ('fr', 'en', 'de', 'es', 'it', 'pt', 'nl', 'pl', 'sv', 'cs', 'ro', 'el', 'ar'), plain or in Markdown."""
     texts = TEXTS[language]
     occupation = posting["occupation"]
     company = posting["company"]
@@ -450,7 +689,7 @@ def render_posting(
         return str(texts[key].format(value=value, **values))
 
     def heading(key: str) -> str:
-        return f"## {pick(key)}" if markdown else pick(key).upper()
+        return f"## {pick(key)}" if markdown else _upper(pick(key))
 
     def bullets(items: list[str]) -> list[str]:
         return [f"- {_capitalize(item)}" for item in items]

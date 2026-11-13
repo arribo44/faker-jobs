@@ -73,7 +73,8 @@ from rome_labels import DOMAINS, SECTORS, SOFT_SKILLS  # noqa: E402
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROME_PATH = os.path.join(ROOT, "DATAS", "metiers", "rome-4-0-métiers-×-secteurs-d-activité.xlsx")
 OUTPUT_DIR = os.path.join(ROOT, "faker_jobs", "data")
-LOCALES = ("de_DE", "en_US", "es_ES", "fr_FR", "it_IT", "nl_NL", "pl_PL", "pt_PT")
+LOCALES = ("ar_SA", "cs_CZ", "de_DE", "el_GR", "en_US", "es_ES", "fr_FR", "it_IT", "nl_NL", "pl_PL", "pt_PT", "ro_RO",
+           "sv_SE")
 
 BMO_PATH = os.path.join(ROOT, "DATAS", "bmo", "Base-open-data-BMO-2026.xlsx")
 FAP_ROME_PATH = os.path.join(ROOT, "DATAS", "bmo", "Dares_FAP2021_Table_passage_ROME.xlsx")
@@ -94,7 +95,10 @@ SECTORS_EN, DOMAINS_EN, SOFT_SKILLS_EN = SECTORS["en"], DOMAINS["en"], SOFT_SKIL
 
 # Locales built from ESCO -> ESCO language.
 ESCO_LOCALES = {"en_US": "en", "de_DE": "de", "es_ES": "es", "it_IT": "it", "pt_PT": "pt", "nl_NL": "nl",
-                "pl_PL": "pl"}
+                "pl_PL": "pl", "sv_SE": "sv", "cs_CZ": "cs", "ro_RO": "ro", "el_GR": "el", "ar_SA": "ar"}
+# Occupation locales whose earnings are those of their country in countries.json
+# (ILOSTAT): built once the economies of the others are known.
+WORLD_LOCALES = {"ar_SA": "Saudi Arabia"}
 
 # How job titles name both genders, by language ('rome': "Conducteur /
 # Conductrice de bus"; 'esco': "Busfahrer/Busfahrerin", two full forms), and
@@ -109,6 +113,12 @@ GENDER = {
     "pt": {"titles": "esco", "posting_suffix": "(M/F)"},
     "nl": {"titles": "esco", "posting_suffix": "(m/v/x)"},
     "pl": {"titles": "esco", "posting_suffix": "(k/m)"},
+    "sv": {"titles": "esco", "posting_suffix": None},
+    "cs": {"titles": "esco", "posting_suffix": "(m/ž)"},
+    "ro": {"titles": "esco", "posting_suffix": "(m/f)"},
+    "el": {"titles": "esco", "posting_suffix": "(Α/Γ)"},
+    # Arabic titles keep both forms ("مطور برمجيات / مطورة برمجيات").
+    "ar": {"titles": "esco", "posting_suffix": None},
 }
 
 
@@ -344,14 +354,15 @@ ROME_ATTRIBUTES = ("qualifications", "executive", "regulated", "riasec", "transi
 
 # Countries of the Eurostat earnings, by locale (en_US: BLS earnings).
 EUROSTAT_COUNTRIES = {"fr_FR": "FR", "de_DE": "DE", "es_ES": "ES", "it_IT": "IT", "pt_PT": "PT", "nl_NL": "NL",
-                      "pl_PL": "PL"}
+                      "pl_PL": "PL", "sv_SE": "SE", "cs_CZ": "CZ", "ro_RO": "RO", "el_GR": "EL"}
 # The countries whose mean age ratios stand for the United States (the BLS has none).
 AGE_RATIO_COUNTRIES = ("FR", "DE", "ES", "IT")
 # Locales whose companies get a NACE Rev. 2 class (their national
 # classifications, WZ 2008, CNAE-2009 and ATECO 2007, share its classes),
 # and the country of their employment figures.
 NACE_LOCALES = {"de_DE": "Germany", "es_ES": "Spain", "it_IT": "Italy", "pt_PT": "Portugal",
-                "nl_NL": "The Netherlands", "pl_PL": "Poland"}
+                "nl_NL": "The Netherlands", "pl_PL": "Poland", "sv_SE": "Sweden", "cs_CZ": "Czechia",
+                "ro_RO": "Romania", "el_GR": "Greece"}
 # ISCO-08 major groups the earnings survey does not cover (agriculture,
 # armed forces), and the group whose earnings they take instead.
 ISCO_FALLBACK = {"6": "9", "0": "3"}
@@ -380,7 +391,7 @@ SALARY_SOURCES = {
 SES_YEAR = "2022"
 # Country code of the earnings of each occupation locale (OECD average wages).
 BASE_COUNTRY_CODES = {"fr_FR": "FR", "de_DE": "DE", "es_ES": "ES", "it_IT": "IT", "en_US": "US", "pt_PT": "PT",
-                      "nl_NL": "NL", "pl_PL": "PL"}
+                      "nl_NL": "NL", "pl_PL": "PL", "sv_SE": "SE", "cs_CZ": "CZ", "ro_RO": "RO", "el_GR": "EL"}
 
 # NACE Rev. 2 section of each NAF / NACE division (first two digits).
 NACE_SECTIONS = [
@@ -954,17 +965,29 @@ def build_occupations():
     built = {"fr_FR": build_fr(sectors, jobs, weights, seasonal, naf, isco,
                                salary_table("fr_FR", eurostat, bls), lfs, employment["France"], isco_naf)}
     for locale in ESCO_LOCALES:
+        if locale in WORLD_LOCALES:
+            continue
         source = SALARY_SOURCES["bls"].format(year=bls["year"]) if locale == "en_US" else SALARY_SOURCES["eurostat"]
         country = NACE_LOCALES.get(locale)
         nace = (nace_labels[ESCO_LOCALES[locale]], employment[country], isco_naf) if country else None
         built[locale] = build_esco(locale, jobs, weights, seasonal, naf, salary_table(locale, eurostat, bls),
                                    source, lfs, nace)
+    world = None
+    if WORLD_LOCALES:
+        world = economies({name: entry["conditions"] for name, entry in built.items()}, *world_sources())
+    for locale, country in WORLD_LOCALES.items():
+        economy = world[country]
+        salary = {"base": economy["salary"]["base"], "age_ratio": built["en_US"]["conditions"]["salary"]["age_ratio"]}
+        built[locale] = build_esco(locale, jobs, weights, seasonal, naf, salary, economy["salary_source"], lfs)
+        built[locale]["conditions"]["minimum_wage"] = economy["minimum_wage"]
+        built[locale]["conditions"]["salary_source"] = economy["salary_source"]
+        if "salary_scale" in economy:
+            built[locale]["conditions"]["salary_scale"] = economy["salary_scale"]
     with open(fetch_salaries.OECD_PATH, encoding="utf-8") as f:
         oecd = json.load(f)
     # No occupation data of their own: only posting conditions. Those whose
     # earnings come from countries.json last, once the others are known.
     ordered = sorted(COUNTRY_CONDITIONS.items(), key=lambda item: "economy" in item[1]["earnings"])
-    world = None
     for locale, local in ordered:
         if "economy" in local["earnings"] and world is None:
             known = {name: entry["conditions"] for name, entry in built.items()}
@@ -1139,9 +1162,12 @@ def economies(conditions, ilo, gdp, info, eurostat):
                            "salary_source": f"{SALARY_SOURCES['eurostat']}; minimum wage: ILOSTAT"}
     groups = sorted(SKILL_LEVELS)
     surveyed, ratios, structures = {}, [], {group: [] for group in groups}
+    # The countries of the occupation locales built from countries.json (Saudi
+    # Arabia) count in the medians of the ILOSTAT figures, as before they had a locale.
+    known = set(result) - set(WORLD_LOCALES.values())
     for iso3, (country, currency, _alpha2) in info.items():
         found, series = ilo["earnings"].get(iso3), gdp.get(iso3)
-        if country in result or not found or not series or in_currency(1, found["currency"], currency) is None:
+        if country in known or not found or not series or in_currency(1, found["currency"], currency) is None:
             continue
         year = gdp_year(series, found["year"])
         monthly = {group: in_currency(value, found["currency"], currency) for group, value in found["monthly"].items()}

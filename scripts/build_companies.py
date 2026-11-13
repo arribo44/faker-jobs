@@ -8,7 +8,8 @@ Company Dataset" (7+ million companies, from LinkedIn company pages; CC BY 4.0):
 For the countries of the locales with posting conditions of their own
 (United States, United Kingdom, France, Germany, Spain, Italy, Belgium,
 Switzerland, Austria, Luxembourg, Ireland, Canada, Mexico, Chile, Colombia,
-Australia, New Zealand, Portugal, the Netherlands, Poland, Brazil) and
+Australia, New Zealand, Portugal, the Netherlands, Poland, Brazil, Sweden,
+Czechia, Romania, Greece, Saudi Arabia) and
 each of the 35 ROME activity sectors (LinkedIn
 industry → sector, see INDUSTRY_SECTORS):
 
@@ -20,7 +21,7 @@ industry → sector, see INDUSTRY_SECTORS):
   each group as LinkedIn splits them: the number of companies of the class
   times its typical size (TYPICAL_SIZES). Sectors without official figures
   (agriculture and public administration in Europe...) and countries
-  without them (Mexico, Chile, Colombia, Australia) keep the
+  without them (Mexico, Chile, Colombia, Australia, Saudi Arabia) keep the
   LinkedIn shares; sectors with fewer than MIN_SECTOR_COMPANIES
   companies take the country's LinkedIn split.
 - `companies`: up to PER_CLASS real companies per size class of 11
@@ -99,7 +100,8 @@ COUNTRY_CODES = {"United States": "US", "United Kingdom": "GB", "France": "FR", 
                  "Italy": "IT", "Belgium": "BE", "Switzerland": "CH", "Austria": "AT", "Luxembourg": "LU",
                  "Ireland": "IE", "Canada": "CA", "Mexico": "MX", "Chile": "CL", "Colombia": "CO",
                  "Australia": "AU", "New Zealand": "NZ", "Portugal": "PT", "The Netherlands": "NL", "Poland": "PL",
-                 "Brazil": "BR"}
+                 "Brazil": "BR", "Sweden": "SE", "Czechia": "CZ", "Romania": "RO", "Greece": "GR",
+                 "Saudi Arabia": "SA"}
 # Dataset country → country name of cities.json.gz.
 COUNTRIES = {country.lower(): country for country in COUNTRY_CODES} | {"netherlands": "The Netherlands"}
 # Headquarters of large groups that neither LinkedIn nor Wikidata (by

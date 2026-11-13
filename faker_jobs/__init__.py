@@ -58,7 +58,8 @@ _cities_cache: dict[str, Any] | None = None
 _country_aliases: dict[str, str] = {}
 
 # Locales with their own occupation data, and the one used for every other locale.
-OCCUPATION_LOCALES = ("de_DE", "en_US", "es_ES", "fr_FR", "it_IT", "nl_NL", "pl_PL", "pt_PT")
+OCCUPATION_LOCALES = ("ar_SA", "cs_CZ", "de_DE", "el_GR", "en_US", "es_ES", "fr_FR", "it_IT", "nl_NL", "pl_PL", "pt_PT",
+                      "ro_RO", "sv_SE")
 DEFAULT_OCCUPATION_LOCALE = "en_US"
 _occupation_cache: dict[str, dict[str, Any]] = {}
 # Posting conditions of every occupation locale (contracts, diplomas, salaries...).
