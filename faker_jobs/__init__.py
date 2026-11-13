@@ -38,8 +38,9 @@ import itertools
 import json
 import math
 import os
+import string
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypedDict
+from typing import TYPE_CHECKING, Any, TypedDict, overload
 
 from faker.providers import BaseProvider
 
@@ -209,7 +210,7 @@ class OccupationPosting(TypedDict):
     of WZ 2008, CNAE-2009 and ATECO 2007), whose label is the company's
     `industry`; it is None in English locales."""
 
-    job_id: int
+    job_id: int | str
     job_title: str
     occupation: OccupationRecord
     skills: list[str]
@@ -250,7 +251,7 @@ class JobPosting(TypedDict):
     7) or 'senior' (8 and more)."""
 
     occupation: OccupationRecord
-    job_id: int
+    job_id: int | str
     job_title: str
     role: str
     description: str
@@ -289,6 +290,7 @@ def _load_cities() -> dict[str, Any]:
         _cities_cache = {
             country.lower(): {
                 "country": country,
+                "code": entry["code"],
                 # {language: name} in the languages of the occupations ('Allemagne'), where not the English one.
                 "names": entry.get("names", {}),
                 # GeoNames admin1 code of each city (Belgium, Switzerland, Canada), else None.
@@ -334,6 +336,42 @@ def _in_regions(country: str, city: Any, regions: list[str] | None) -> bool:
         return True
     entry = _load_cities()[country.lower()]
     return isinstance(city, int) and entry["regions"] is not None and entry["regions"][city] in regions
+
+
+def _country_code(country: str | None) -> str:
+    """The ISO 3166-1 alpha-2 code of a country (any name `job_location` takes), '' when unknown."""
+    entry = _country_entry(country) if country else None
+    return str(entry["code"]) if entry is not None else ""
+
+
+JOB_ID_FIELDS = ("year", "month", "day", "date", "country", "locale", "n")
+_JOB_ID_CHARACTERS = {"#": string.digits, "?": string.ascii_uppercase, "*": string.ascii_uppercase + string.digits}
+
+
+def _format_job_id(
+    random: Any, template: str, date: _datetime.date, country: str, locale: str, n: int | None,
+) -> str:
+    """A job id from `template` (see `JobsProvider.job_id`)."""
+    if not isinstance(template, str) or not template:
+        raise ValueError(f"template must be a non-empty string, got {template!r}")
+    fields = {"year": date.year, "month": date.month, "day": date.day, "date": date,
+              "country": country, "locale": locale, "n": n}
+    try:
+        names = {name for _, name, _, _ in string.Formatter().parse(template) if name is not None}
+    except ValueError as error:
+        raise ValueError(f"bad job id template {template!r}: {error}") from None
+    unknown = names - set(fields)
+    if unknown:
+        raise ValueError(f"unknown field(s) {sorted(unknown)} in job id template {template!r}; "
+                         f"known: {', '.join('{' + name + '}' for name in JOB_ID_FIELDS)}")
+    if "n" in names and n is None:
+        raise ValueError("{n} (the posting's number) is only known in job_dataset(), or with job_id(n=...)")
+    try:
+        text = template.format(**fields)
+    except (ValueError, TypeError) as error:
+        raise ValueError(f"bad job id template {template!r}: {error}") from None
+    return "".join(random.choice(_JOB_ID_CHARACTERS[char]) if char in _JOB_ID_CHARACTERS else char
+                   for char in text)
 
 
 def _country_name(country: str, language: str) -> str:
@@ -1261,6 +1299,7 @@ class JobsProvider(BaseProvider):
         country: str | None = None,
         skills: int = 5,
         weighted: bool = True,
+        id_template: str | None = None,
     ) -> OccupationPosting:
         """Return a full random job posting built on an occupation (see
         `OccupationPosting`), in the language of the Faker locale.
@@ -1281,6 +1320,8 @@ class JobsProvider(BaseProvider):
         - `country` sets the job location (default: the locale's country,
           see `job_location`).
         - `weighted` picks the occupation by demand (see `job_occupation`).
+        - `id_template` makes `job_id` a string from a template (see
+          `job_id`), with the posting date and the country of the job.
 
         Local conditions, those of the country of the job (`country`, else
         the locale's: see `job_location`), in the language of the locale:
@@ -1313,7 +1354,13 @@ class JobsProvider(BaseProvider):
         """
         _check_count("skills", skills)
         occupation = self.job_occupation_record(code=code, sector=sector, weighted=weighted)
-        return self._occupation_posting(occupation, country, skills)
+        return self._templated_id(self._occupation_posting(occupation, country, skills), id_template)
+
+    def _templated_id(self, posting: OccupationPosting, id_template: str | None) -> OccupationPosting:
+        """The posting with its `job_id` from `id_template` (its date and country), if given."""
+        if id_template is not None:
+            posting["job_id"] = self.job_id(id_template, posting["job_posting_date"], posting["location"]["country"])
+        return posting
 
     def _occupation_posting(
         self, occupation: OccupationRecord, country: str | None, skills: int,
@@ -1503,9 +1550,45 @@ class JobsProvider(BaseProvider):
 
     # -- postings ---------------------------------------------------------------
 
-    def job_id(self) -> int:
-        """Return a random job posting id (a 15 or 16-digit number, as in the source data)."""
-        return self.random_int(10**14, 10**16 - 1)
+    @overload
+    def job_id(
+        self, template: None = None, date: _datetime.date | None = None, country: str | None = None,
+        n: int | None = None,
+    ) -> int: ...
+
+    @overload
+    def job_id(
+        self, template: str, date: _datetime.date | None = None, country: str | None = None,
+        n: int | None = None,
+    ) -> str: ...
+
+    def job_id(
+        self, template: str | None = None, date: _datetime.date | None = None, country: str | None = None,
+        n: int | None = None,
+    ) -> int | str:
+        """Return a random job posting id: by default a 15 or 16-digit number
+        (as in the source data); with a `template`, a string built from it:
+
+        - `#` a random digit, `?` a random uppercase letter, `*` either;
+        - `{year}`, `{month}`, `{day}`, `{date}` the posting date (`date`,
+          default today), with Python format specs: `{month:02d}`,
+          `{date:%y%m%d}`;
+        - `{country}` the ISO code of the country of the job (`country`,
+          default the locale's: 'FR'), `{locale}` the Faker locale;
+        - `{n}` the posting's number (`n`; numbered from 1 in
+          `job_dataset`), e.g. `{n:06d}`.
+
+        'JOB-{year}-######' -> 'JOB-2026-048213', '{country}-{date:%y%m}-****'
+        -> 'FR-2611-K7Q2', 'REQ{n:05d}' -> 'REQ00042'. The other characters
+        are kept; `#`, `?` and `*` are always replaced. `job_posting(id_template=...)`,
+        `job_occupation_posting()` and `job_dataset()` take a template too."""
+        if template is None:
+            return self.random_int(10**14, 10**16 - 1)
+        if country is None:
+            country = self._local_conditions()["country"]
+        return _format_job_id(
+            self.generator.random, template, date or _datetime.date.today(), _country_code(country),
+            _generator_locale(self.generator) or "", n)
 
     def job_posting_date(
         self, start_date: _datetime.date | str = "-2y", end_date: _datetime.date | str = "today"
@@ -1523,6 +1606,7 @@ class JobsProvider(BaseProvider):
         sector: str | None = None,
         weighted: bool = True,
         code: str | None = None,
+        id_template: str | None = None,
     ) -> JobPosting:
         """Return a full random job posting as a dict (see `JobPosting`),
         built on a ROME / ESCO occupation in the language of the Faker
@@ -1535,6 +1619,7 @@ class JobsProvider(BaseProvider):
         - `country` sets the job location (see `job_location`).
         - `weighted` (default True) picks popular occupations more often;
           False makes them uniform.
+        - `id_template` makes `job_id` a string from a template (see `job_id`).
 
         The contact person and phone number come from the Faker locale.
         """
@@ -1546,7 +1631,8 @@ class JobsProvider(BaseProvider):
             code = found["code"]
         found = self._pick_occupation(code=code, sector=sector, weighted=weighted)
         occupation = self._occupation_record(found, sector, title)
-        return self._occupation_job_posting(self._occupation_posting(occupation, country, 5))
+        posting = self._templated_id(self._occupation_posting(occupation, country, 5), id_template)
+        return self._occupation_job_posting(posting)
 
     def job_posting_text(
         self, posting: OccupationPosting | JobPosting | None = None, markdown: bool = False
@@ -1580,6 +1666,7 @@ class JobsProvider(BaseProvider):
         start_date: _datetime.date | str = "-2y",
         end_date: _datetime.date | str = "today",
         repost_rate: float = 0.08,
+        id_template: str | None = None,
     ) -> "JobDataset":
         """Return a dataset of `postings` job postings published by a pool of
         `companies` employers (default: one per 10 postings; more when a
@@ -1593,11 +1680,12 @@ class JobsProvider(BaseProvider):
         postings; the postings have a lifecycle (closing date, status
         'open' / 'filled' / 'expired' on `end_date`) and a share
         `repost_rate` of them are published again on another job board
-        (`repost_of`). See faker_jobs/dataset.py; `make_dataset()` mixes
-        several locales."""
+        (`repost_of`). `id_template` gives the job ids from a template (see
+        `job_id`; `{n}` numbers the postings from 1), unique in the dataset.
+        See faker_jobs/dataset.py; `make_dataset()` mixes several locales."""
         from faker_jobs.dataset import build_dataset
 
-        return build_dataset(self, postings, companies, start_date, end_date, repost_rate)
+        return build_dataset(self, postings, companies, start_date, end_date, repost_rate, id_template=id_template)
 
     @staticmethod
     def _occupation_job_posting(posting: OccupationPosting) -> JobPosting:

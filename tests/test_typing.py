@@ -83,6 +83,9 @@ class TestDocumentedTypedUsage(unittest.TestCase):
         assert_type(jobs.job_occupation_record(), OccupationRecord)
         assert_type(jobs.job_occupation_skills(), list[str])
         assert_type(jobs.job_occupation_posting()["occupation"], OccupationRecord)
+        assert_type(jobs.job_id(), int)
+        assert_type(jobs.job_id("JOB-######"), str)
+        assert_type(posting["job_id"], int | str)
 
 
 if __name__ == "__main__":

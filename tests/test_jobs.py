@@ -150,6 +150,29 @@ class TestJobsProvider(unittest.TestCase):
     def test_job_id(self):
         self.assertTrue(10**14 <= self.fake.job_id() < 10**16)
 
+    def test_job_id_template(self):
+        date = datetime.date(2025, 3, 7)
+        self.assertRegex(self.fake.job_id("JOB-######"), r"^JOB-\d{6}$")
+        self.assertRegex(self.fake.job_id("??-***"), r"^[A-Z]{2}-[A-Z0-9]{3}$")
+        self.assertEqual(self.fake.job_id("{year}/{month:02d}/{day:02d}", date=date), "2025/03/07")
+        self.assertEqual(self.fake.job_id("{date:%y%m%d}-{n:05d}", date=date, n=42), "250307-00042")
+        self.assertEqual(self.fake.job_id("{country}-{locale}"), "US-en_US")
+        self.assertEqual(self.fake.job_id("{country}", country="Allemagne"), "DE")
+        self.assertEqual(self.fake.job_id("{year}"), str(datetime.date.today().year))
+        for template in ("{foo}", "{n}", "", "A{", 12):
+            with self.assertRaises(ValueError, msg=template):
+                self.fake.job_id(template)
+
+    def test_posting_id_template(self):
+        posting = self.fake.job_posting(country="Japan", id_template="{country}-{date:%Y%m%d}-####")
+        self.assertEqual(posting["job_id"][:12], f"JP-{posting['job_posting_date']:%Y%m%d}-")
+        self.assertRegex(self.fake.job_occupation_posting(id_template="X-*****")["job_id"], r"^X-[A-Z0-9]{5}$")
+        Faker.seed(3)
+        first = self.fake.job_posting()
+        Faker.seed(3)
+        templated = self.fake.job_posting(id_template="J-####")
+        self.assertEqual({**templated, "job_id": first["job_id"]}, first)  # only the id changes
+
     def test_posting_date(self):
         today = datetime.date.today()
         date = self.fake.job_posting_date()
