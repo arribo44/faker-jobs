@@ -50,7 +50,7 @@ from faker_jobs.candidates import make_candidate
 if TYPE_CHECKING:
     from faker_jobs.dataset import JobDataset
 
-__version__ = "0.12.0"
+__version__ = "0.13.0"
 
 _DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 _CITIES_PATH = os.path.join(_DATA_DIR, "cities.json.gz")

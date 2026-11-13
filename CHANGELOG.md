@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.13.0] - 2026-11-13
+
 ### Added
 - Swedish, Czech, Romanian, Greek and Arabic occupations: the 2,045 ESCO occupations mapped to ROME in those languages (`occupations_sv_SE`, `_cs_CZ`, `_ro_RO`, `_el_GR`, `_ar_SA.json.gz`), with the 35 activity sectors, 14 domains and 16 soft skills translated by hand (`scripts/rome_labels.py`), NACE Rev. 2 activities in the four European languages (EU Vocabularies labels, weighted by the employment of each country) and the full text of the postings in the five languages. Every locale of these languages uses them (`sv_SE`, `cs_CZ`, `ro_RO`, `el_GR`, `el_CY`, `ar_SA`, `ar_EG`, `ar_AE`, `ar_JO`...) instead of the English occupations.
 - Posting conditions of Sweden (`sv_SE`: Tillsvidareanställning, Tjänstepension, Platsbanken..., SEK), Czechia (`cs_CZ`: Stravenky, Sick days, Jobs.cz, "(m/ž)", CZK), Romania (`ro_RO`: Tichete de masă, eJobs, "(m/f)", RON), Greece (`el_GR`: Σύμβαση αορίστου χρόνου, Kariera.gr, "(Α/Γ)") with their Eurostat SES 2022 earnings and LFS contract mix, and Saudi Arabia (`ar_SA`: دوام كامل, بدل سكن, Bayt..., SAR, ILOSTAT earnings of countries.json); neutral conditions in the five languages for the other countries (`ar_EG` in Egypt in EGP, `el_CY` in Cyprus). Local city names ('Göteborg', 'Praha', 'București', 'Αθήνα', 'الرياض'), country names in the five languages (Wikidata), real companies of the five countries (People Data Labs; Eurostat size shares for the four European ones).
@@ -24,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Brazilian Portuguese: `pt_BR` turns the European Portuguese of ESCO (titles, descriptions, skills) and of the posting texts into Brazilian spelling and vocabulary: consonants Brazil writes ('recepcionista', 'contato', 'detecção'), 'ô' / 'ê' ('eletrônico', 'gênero'), words ('equipe', 'registro', 'usuário', 'ônibus', 'controle'), phrases ('está contratando', 'Vaga publicada em'). New module `faker_jobs/pt_br.py` (word-based, hand-made). `pt_PT` and the other Portuguese locales keep the European spelling.
 - Official company size shares of Brazil (OECD SDBS, employees by ISIC section and size class); `fetch_business_sizes.py --oecd-only` refreshes the OECD countries only. Mexico, Chile, Colombia and Australia keep the LinkedIn shares (no such split at the OECD).
 - Dutch occupation names: 15 ESCO preferred labels left in English get the usual Dutch word ('directieassistent', 'kindermeisje', 'SEO-specialist'...; `LABEL_FIXES` in `scripts/build_occupations.py`), the English label stays a title. The other English labels of the Dutch ESCO are Dutch usage (data scientist, sommelier, producer).
+
 ### Changed
 - `job_id` of `JobPosting`, `OccupationPosting` and `PostingRow` (and `repost_of`) is typed `int | str`; `job_id()` is overloaded (`int` without a template, `str` with one).
 
