@@ -9,13 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- `job_dataset(postings=1000, companies=None, start_date="-2y", end_date="today", repost_rate=0.08)`: a dataset of employers and the postings they publish over a period, as two flat tables linked by `company_id` (`JobDataset.companies`, `.postings`; rows typed `CompanyRow`, `PostingRow`), with `to_csv()`, `to_jsonl()` and `to_dataframes()` (pandas). A stable pool of employers (real or made up, by size class from the official shares of jobs, spread between the sectors by demand) keeps its name, city, size and activity in all its postings; postings pick an employer of the occupation's sector, favouring the activities that employ it. Lifecycle: publication date in the period (seasonal contracts from March to September), closing date (log-normal, median 30 days), status `open` / `filled` / `expired` on `end_date`, and republications on another job board (`repost_of`). New module `faker_jobs/dataset.py`.
-- `make_dataset(locales, ...)`: a dataset of one locale or of several with their share of the postings ({"fr_FR": 0.6, "de_DE": 0.4}), company ids prefixed by the locale, `seed` for a reproducible output.
-- `python -m faker_jobs export DIR [--locale fr_FR[:SHARE]]... [--postings N] [--companies N] [--start-date] [--end-date] [--repost-rate] [--format csv|jsonl] [--seed]`; `python -m faker_jobs` alone still prints the demo.
+---
 
-### Changed
-- `python -m faker_jobs` prints the demo in English (`en_US`) only, instead of English, French then German (the terminal showed only the German one); `--locale fr_FR` (repeatable) picks other locales.
+## [0.12.0] - 2026-11-13
 
 ### Added
 - Portuguese, Dutch and Polish occupations: the 2,045 ESCO occupations mapped to ROME in those languages (`occupations_pt_PT.json.gz`, `occupations_nl_NL.json.gz`, `occupations_pl_PL.json.gz`), with the 35 activity sectors, 14 domains and 16 soft skills translated by hand (`scripts/rome_labels.py`), NACE Rev. 2 activities (labels from EU Vocabularies, weighted by the employment of Portugal, the Netherlands and Poland) and the full text of the postings in the three languages (`job_posting_text()`). Every locale of these languages uses them: `pt_PT`, `pt_BR`, `nl_NL`, `nl_BE`, `pl_PL`, instead of the English occupations.
@@ -24,10 +20,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Country names in the language of the occupations: a French posting in Algeria reads "Algérie", an Italian one in Germany "Germania", a Polish one "Niemcy" (Wikidata labels, CC0, of the item with the ISO code; the Netherlands and China by their usual item). `job_location(country=...)`, `job_posting(country=...)` also take these names ("Allemagne", "Pays-Bas"). Kept in `cities.json.gz` (`names` of each country, where they differ from the English one); cached in `DATAS/wikidata/country_names.json` (`build_cities.py --fetch-country-names`). Cities keep their English name outside the countries of the locale's language.
 - Jobs in the regions of the language in the countries of several: `fr_CA` in Quebec and New Brunswick, `fr_BE` in Wallonia and Brussels, `nl_BE` in Flanders and Brussels, `fr_CH` in the French-speaking cantons (with Fribourg and Valais), `de_CH` in the German-speaking ones, `it_CH` in Ticino (`regions` of `COUNTRY_CONDITIONS`, GeoNames admin1 codes; `cities.json.gz` gives the region of each city of Belgium, Switzerland and Canada). Companies of up to 500 employees hire in their headquarters only when it is in these regions.
 - `fetch_esco.py` takes `pt`, `nl` and `pl`; `fetch_activities.py` fetches the NACE labels in them; a country locale's earnings can be those of countries.json (`{"economy": country}`, Brazil).
+- `job_dataset(postings=1000, companies=None, start_date="-2y", end_date="today", repost_rate=0.08)`: a dataset of employers and the postings they publish over a period, as two flat tables linked by `company_id` (`JobDataset.companies`, `.postings`; rows typed `CompanyRow`, `PostingRow`), with `to_csv()`, `to_jsonl()` and `to_dataframes()` (pandas). A stable pool of employers (real or made up, by size class from the official shares of jobs, spread between the sectors by demand) keeps its name, city, size and activity in all its postings; postings pick an employer of the occupation's sector, favouring the activities that employ it. Lifecycle: publication date in the period (seasonal contracts from March to September), closing date (log-normal, median 30 days), status `open` / `filled` / `expired` on `end_date`, and republications on another job board (`repost_of`). New module `faker_jobs/dataset.py`.
+- `make_dataset(locales, ...)`: a dataset of one locale or of several with their share of the postings ({"fr_FR": 0.6, "de_DE": 0.4}), company ids prefixed by the locale, `seed` for a reproducible output.
+- `python -m faker_jobs export DIR [--locale fr_FR[:SHARE]]... [--postings N] [--companies N] [--start-date] [--end-date] [--repost-rate] [--format csv|jsonl] [--seed]`; `python -m faker_jobs` alone still prints the demo.
 
 ### Changed
 - **Breaking**: the `pt_*`, `nl_*` and `pl_*` locales return their occupations, sectors and conditions in their language (they were in English since 0.11.0, with neutral conditions).
 - The age ratios of the US salaries stay the mean of France, Germany, Spain and Italy (`AGE_RATIO_COUNTRIES`).
+- `python -m faker_jobs` prints the demo in English (`en_US`) only, instead of English, French then German (the terminal showed only the German one); `--locale fr_FR` (repeatable) picks other locales.
 
 ---
 
