@@ -10,6 +10,7 @@ postings (see faker_jobs/dataset.py):
     python -m faker_jobs export out/ --locale fr_FR:0.6 --locale de_DE:0.4 --format jsonl
     python -m faker_jobs export out/ --id-template "JOB-{year}-{n:06d}"
     python -m faker_jobs export out/ --dirty 0.1
+    python -m faker_jobs export out/ --candidates 2000 --applications 12
 """
 import argparse
 import sys
@@ -110,15 +111,22 @@ def export(argv: list[str]) -> None:
     parser.add_argument("--dirty", type=float, default=0.0,
                         help="share of the rows with a defect of real-world data (0 to 1; default 0), "
                         "listed in defects.csv")
+    parser.add_argument("--candidates", type=int, default=0,
+                        help="number of job seekers applying to the postings (candidates.csv, applications.csv)")
+    parser.add_argument("--applications", type=float, default=10.0,
+                        help="mean number of applications a posting (default 10)")
     args = parser.parse_args(argv)
     try:
         locales = parse_locales(args.locale or ["en_US"])
         dataset = make_dataset(locales, args.postings, args.companies, args.start_date, args.end_date,
-                               args.repost_rate, args.seed, args.id_template, args.dirty)
+                               args.repost_rate, args.seed, args.id_template, args.dirty,
+                               args.candidates, args.applications)
     except (ValueError, AttributeError, argparse.ArgumentTypeError) as error:
         parser.error(str(error))  # AttributeError: an unknown Faker locale
     paths = dataset.to_csv(args.directory) if args.format == "csv" else dataset.to_jsonl(args.directory)
-    print(f"{len(dataset.companies)} companies, {len(dataset.postings)} postings -> {', '.join(paths)}")
+    extra = f", {len(dataset.candidates)} candidates, {len(dataset.applications)} applications" \
+        if dataset.candidates else ""
+    print(f"{len(dataset.companies)} companies, {len(dataset.postings)} postings{extra} -> {', '.join(paths)}")
 
 
 def main(argv: list[str] | None = None) -> None:

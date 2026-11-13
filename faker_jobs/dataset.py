@@ -40,6 +40,9 @@ period, as two tables linked by `company_id` (`JobsProvider.job_dataset()`,
   the posting's number from 1 (across the locales of `make_dataset`);
   unique in the dataset.
 
+`candidates` adds a pool of candidates and their applications to the
+postings (see faker_jobs/candidates.py).
+
 `dirty` adds defects of real-world data to a share of the rows, listed in
 `JobDataset.defects` (see faker_jobs/dirty.py).
 
@@ -58,6 +61,7 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, TypedDict
 
+from faker_jobs.candidates import APPLICATION_FIELDS, CANDIDATE_FIELDS, Applications, ApplicationRow, CandidateRow
 from faker_jobs.dirty import DEFECT_FIELDS, DefectRow, add_defects
 
 if TYPE_CHECKING:
@@ -149,11 +153,15 @@ POSTING_FIELDS = tuple(PostingRow.__annotations__)
 class JobDataset:
     """Employers and their postings: `companies` and `postings` are lists of
     rows (see `CompanyRow`, `PostingRow`), linked by `company_id`; `defects`
-    lists the defects of a dirty dataset (see `DefectRow`), empty otherwise."""
+    lists the defects of a dirty dataset (see `DefectRow`), empty otherwise;
+    `candidates` and their `applications` to the postings (by `job_id` and
+    `candidate_id`), empty without `candidates`."""
 
     companies: list[CompanyRow] = field(default_factory=list)
     postings: list[PostingRow] = field(default_factory=list)
     defects: list[DefectRow] = field(default_factory=list)
+    candidates: list[CandidateRow] = field(default_factory=list)
+    applications: list[ApplicationRow] = field(default_factory=list)
 
     @classmethod
     def concat(cls, datasets: Iterable[JobDataset]) -> JobDataset:
@@ -163,17 +171,21 @@ class JobDataset:
             result.companies.extend(dataset.companies)
             result.postings.extend(dataset.postings)
             result.defects.extend(dataset.defects)
+            result.candidates.extend(dataset.candidates)
+            result.applications.extend(dataset.applications)
         return result
 
     def to_csv(self, directory: str) -> list[str]:
         """Write companies.csv and postings.csv (UTF-8, header row) in
-        `directory` (created if needed), and defects.csv for a dirty
-        dataset; return their paths."""
+        `directory` (created if needed), candidates.csv and
+        applications.csv with candidates, defects.csv for a dirty dataset;
+        return their paths."""
         return self._write(directory, "csv")
 
     def to_jsonl(self, directory: str) -> list[str]:
         """Write companies.jsonl and postings.jsonl (one JSON object a line)
-        in `directory` (created if needed), and defects.jsonl for a dirty
+        in `directory` (created if needed), candidates.jsonl and
+        applications.jsonl with candidates, defects.jsonl for a dirty
         dataset; return their paths."""
         return self._write(directory, "jsonl")
 
@@ -186,12 +198,29 @@ class JobDataset:
         return (pd.DataFrame(self.companies, columns=list(COMPANY_FIELDS)),
                 pd.DataFrame(self.postings, columns=list(POSTING_FIELDS)))
 
+    def to_dataframe(self, table: str) -> Any:
+        """One table ('companies', 'postings', 'candidates', 'applications'
+        or 'defects') as a pandas DataFrame (needs pandas)."""
+        try:
+            import pandas as pd  # type: ignore[import-untyped, import-not-found, unused-ignore]
+        except ImportError as error:  # pragma: no cover - depends on the environment
+            raise ImportError("to_dataframe() needs pandas: pip install pandas") from error
+        tables = {name: (fields, rows) for name, fields, rows in self._tables()}
+        if table not in tables:
+            raise ValueError(f"unknown table {table!r}: one of {', '.join(tables)}")
+        fields, rows = tables[table]
+        return pd.DataFrame(rows, columns=list(fields))
+
+    def _tables(self) -> list[tuple[str, tuple[str, ...], list[Any]]]:
+        return [("companies", COMPANY_FIELDS, self.companies), ("postings", POSTING_FIELDS, self.postings),
+                ("candidates", CANDIDATE_FIELDS, self.candidates),
+                ("applications", APPLICATION_FIELDS, self.applications), ("defects", DEFECT_FIELDS, self.defects)]
+
     def _write(self, directory: str, kind: str) -> list[str]:
         os.makedirs(directory, exist_ok=True)
         paths = []
-        tables: tuple[tuple[str, tuple[str, ...], list[Any]], ...] = (
-            ("companies", COMPANY_FIELDS, self.companies), ("postings", POSTING_FIELDS, self.postings),
-            *((("defects", DEFECT_FIELDS, self.defects),) if self.defects else ()))
+        tables = [(name, fields, rows) for name, fields, rows in self._tables()
+                  if rows or name in ("companies", "postings")]
         for name, fields, rows in tables:
             path = os.path.join(directory, f"{name}.{kind}")
             with open(path, "w", encoding="utf-8", newline="") as f:
@@ -444,18 +473,20 @@ def build_dataset(
     provider: JobsProvider, postings: int, companies: int | None = None,
     start_date: _datetime.date | str = "-2y", end_date: _datetime.date | str = "today",
     repost_rate: float = 0.08, prefix: str = "", id_template: str | None = None, ids: _Ids | None = None,
-    dirty: float = 0.0,
+    dirty: float = 0.0, candidates: int = 0, applications: float = 10.0,
 ) -> JobDataset:
     """The dataset of `JobsProvider.job_dataset()` (see the module docstring);
     `prefix` starts the company ids (one per locale in `make_dataset`), `ids`
     are the job ids already used (by the other locales of `make_dataset`)."""
     from faker_jobs import _generator_locale
 
-    for name, value in (("postings", postings), ("companies", companies)):
+    for name, value in (("postings", postings), ("companies", companies), ("candidates", candidates)):
         if value is not None and (isinstance(value, bool) or not isinstance(value, int) or value < 0):
             raise ValueError(f"{name} must be a non-negative integer, got {value!r}")
     if not 0 <= dirty <= 1:
         raise ValueError(f"dirty must be in [0, 1], got {dirty!r}")
+    if isinstance(applications, bool) or not isinstance(applications, (int, float)) or applications < 0:
+        raise ValueError(f"applications must be a non-negative number, got {applications!r}")
     if not 0 <= repost_rate < 1:
         raise ValueError(f"repost_rate must be in [0, 1), got {repost_rate!r}")
     start, end = _parse_date(start_date), _parse_date(end_date)
@@ -473,13 +504,21 @@ def build_dataset(
         rows.append(row)
         if len(rows) < postings and builder.rng.random() < repost_rate:
             rows.append(builder.repost(row))
-    return add_defects(JobDataset(builder.companies, rows), dirty, builder.rng)
+    data = JobDataset(builder.companies, rows)
+    if candidates:
+        pool = Applications(provider, builder.conditions, builder.locale, prefix, end, applications)
+        pool.build_pool(candidates)
+        for row in rows:
+            pool.add(dict(row))
+        data.candidates, data.applications = pool.candidates, pool.applications
+    return add_defects(data, dirty, builder.rng)
 
 
 def make_dataset(
     locales: str | Mapping[str, float] = "en_US", postings: int = 1000, companies: int | None = None,
     start_date: _datetime.date | str = "-2y", end_date: _datetime.date | str = "today",
     repost_rate: float = 0.08, seed: int | None = None, id_template: str | None = None, dirty: float = 0.0,
+    candidates: int = 0, applications: float = 10.0,
 ) -> JobDataset:
     """A dataset of one locale ('fr_FR') or of several, with the share of the
     postings of each ({'fr_FR': 0.6, 'de_DE': 0.4}): each locale's postings
@@ -487,7 +526,10 @@ def make_dataset(
     start with the locale when there are several ('fr_FR-C00001'). `seed`
     makes it reproducible; `id_template` gives the job ids from a template
     (see `JobsProvider.job_id`), unique and numbered (`{n}`) across the locales;
-    `dirty` the share of rows with a defect (see faker_jobs/dirty.py)."""
+    `dirty` the share of rows with a defect (see faker_jobs/dirty.py);
+    `candidates` (split between the locales as the postings) apply to the
+    postings of their locale, `applications` of them a posting on average
+    (see faker_jobs/candidates.py)."""
     from faker import Faker
 
     from faker_jobs import JobsProvider
@@ -497,6 +539,7 @@ def make_dataset(
         raise ValueError(f"locales must be a locale or {{locale: share}}, got {locales!r}")
     posting_counts = _shares(postings, weights)
     company_counts = _shares(companies, weights) if companies is not None else None
+    candidate_counts = _shares(candidates, weights)
     datasets = []
     ids = _Ids()
     for i, locale in enumerate(weights):
@@ -507,5 +550,5 @@ def make_dataset(
         datasets.append(build_dataset(
             provider, posting_counts[locale], company_counts[locale] if company_counts else None, start_date,
             end_date, repost_rate, prefix=f"{locale}-" if len(weights) > 1 else "", id_template=id_template, ids=ids,
-            dirty=dirty))
+            dirty=dirty, candidates=candidate_counts[locale], applications=applications))
     return JobDataset.concat(datasets)
