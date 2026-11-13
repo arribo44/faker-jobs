@@ -782,10 +782,11 @@ data.companies[0]
 data.postings[0]
 # {'job_id': 4737973820883535, 'company_id': 'C00069', 'locale': 'fr_FR',
 #  'job_title': 'Courtier en banque (H/F)', 'occupation_code': 'C1208', 'isco_code': '3324', ...,
-#  'work_type': 'CDD', 'salary_min': 28500, 'salary_max': 35500, 'salary_currency': 'EUR',
+#  'work_type': 'CDD', 'remote': 'on_site', 'salary_min': 28500, 'salary_max': 35500, 'salary_currency': 'EUR',
 #  'city': 'Périgueux', 'country': 'France', 'job_portal': 'Le Bon Coin Emploi',
 #  'posted_date': '2026-10-06', 'closed_date': '2026-10-18', 'status': 'expired', 'repost_of': None,
-#  'skills': 'Ecouter les besoins des clients; ...', 'benefits': 'Horaires flexibles; ...', ...}
+#  'skills': 'Ecouter les besoins des clients; ...', 'benefits': 'Horaires flexibles; ...',
+#  'contact_person': 'Claire Martin', 'contact_email': 'claire.martin@stehlin-legal.com', 'contact': '...'}
 
 data.to_csv("out/")             # out/companies.csv, out/postings.csv
 data.to_jsonl("out/")           # out/companies.jsonl, out/postings.jsonl
@@ -814,6 +815,36 @@ companies, postings = data.to_dataframes()   # needs pandas
   on another job board a few days later, with a new `job_id` and
   `repost_of` the first one's, as on job boards: a test case for
   deduplication.
+- **Recruiters**: each employer has its own (1 up to 50 employees, 2 up to
+  500, 3 up to 5,000, else 4), with an e-mail address at the company's
+  domain (its website, or one made of its name: `claire.martin@samson.fr`);
+  each posting names one of them.
+
+**Dirty data**: `dirty=0.1` adds defects of real-world job data to 10% of
+the rows, to test cleaning, validation and deduplication pipelines; each one
+is listed in `data.defects` (and `defects.csv`), the ground truth of a
+cleaning:
+
+```python
+data = fake.job_dataset(postings=1000, dirty=0.1)
+data.defects[:2]
+# [{'table': 'postings', 'id': '7660917990749480', 'field': 'posted_date', 'kind': 'date_format',
+#   'original': '2025-06-08'},            # the posting now reads '08.06.2025'
+#  {'table': 'postings', 'id': '9073136867723843', 'field': None, 'kind': 'duplicate',
+#   'original': '4393629242208145'}]      # a copy of that posting, not flagged by repost_of
+```
+
+| Kind | Defect |
+| --- | --- |
+| `typo` | a letter swapped, dropped or doubled in the job title or the city |
+| `case`, `whitespace` | job title in upper / lower case, extra spaces or tabs |
+| `missing` | salaries, city, qualification, contact, experience or benefits left empty |
+| `monthly_salary` | a monthly amount in the yearly salary fields |
+| `swapped_salary` | the minimum salary above the maximum |
+| `date_format` | `posted_date` as '13/11/2026', '11/13/2026', '13.11.2026', '2026/11/13' or '13 Nov 2026' |
+| `duplicate` | the posting again under another id, a day or two later, maybe with a case or spacing change |
+| `name_variant` | a company again under another id and a variant of its name (upper case, legal form, typo), with a third of its postings |
+| `missing` (companies) | website, founding year or city left empty |
 
 `make_dataset()` mixes locales, each in its country and language, with
 company ids prefixed by the locale; `seed` makes it reproducible:
@@ -831,6 +862,7 @@ python -m faker_jobs export out/ --locale fr_FR --postings 10000 --companies 800
 python -m faker_jobs export out/ --locale fr_FR:0.6 --locale de_DE:0.4 --format jsonl \
     --start-date 2025-01-01 --end-date 2026-10-31
 python -m faker_jobs export out/ --id-template "JOB-{year}-{n:06d}"   # job ids from a template
+python -m faker_jobs export out/ --dirty 0.1                          # 10% of the rows with a defect
 ```
 
 10,000 postings take a few seconds.
