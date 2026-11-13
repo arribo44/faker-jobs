@@ -1704,6 +1704,7 @@ class JobsProvider(BaseProvider):
         end_date: _datetime.date | str = "today",
         repost_rate: float = 0.08,
         id_template: str | None = None,
+        dirty: float = 0.0,
     ) -> "JobDataset":
         """Return a dataset of `postings` job postings published by a pool of
         `companies` employers (default: one per 10 postings; more when a
@@ -1719,10 +1720,15 @@ class JobsProvider(BaseProvider):
         `repost_rate` of them are published again on another job board
         (`repost_of`). `id_template` gives the job ids from a template (see
         `job_id`; `{n}` numbers the postings from 1), unique in the dataset.
+        `dirty` (0 to 1) adds defects of real-world data (typos, missing
+        values, monthly salaries, other date formats, unflagged duplicates,
+        company name variants...) to that share of the rows, listed in
+        `JobDataset.defects` (see faker_jobs/dirty.py).
         See faker_jobs/dataset.py; `make_dataset()` mixes several locales."""
         from faker_jobs.dataset import build_dataset
 
-        return build_dataset(self, postings, companies, start_date, end_date, repost_rate, id_template=id_template)
+        return build_dataset(self, postings, companies, start_date, end_date, repost_rate, id_template=id_template,
+                             dirty=dirty)
 
     @staticmethod
     def _occupation_job_posting(posting: OccupationPosting) -> JobPosting:

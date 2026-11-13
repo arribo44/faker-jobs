@@ -31,10 +31,17 @@ period, as two tables linked by `company_id` (`JobsProvider.job_dataset()`,
   much more where inflation is high), rounded as the postings' salaries.
 - Remote work: 'on_site', 'hybrid' or 'remote', as the postings (see
   `job_occupation_posting`).
+- Contacts: each employer has its recruiters (1 up to 50 employees, 2 up
+  to 500, 3 up to 5,000, else 4; names and phone numbers of the Faker
+  locale), with an e-mail address at the company's domain (its website, or
+  one made of its name); each posting names one of them.
 - Job ids: numbers by default, else from `id_template` (see
   `JobsProvider.job_id`) with the publication date, the country and `{n}`,
   the posting's number from 1 (across the locales of `make_dataset`);
   unique in the dataset.
+
+`dirty` adds defects of real-world data to a share of the rows, listed in
+`JobDataset.defects` (see faker_jobs/dirty.py).
 
 Reproducible with `Faker.seed()` (or the `seed` of `make_dataset`).
 """
@@ -45,9 +52,13 @@ import datetime as _datetime
 import json
 import math
 import os
+import re
+import unicodedata
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, TypedDict
+
+from faker_jobs.dirty import DEFECT_FIELDS, DefectRow, add_defects
 
 if TYPE_CHECKING:
     from faker_jobs import JobsProvider
@@ -66,6 +77,13 @@ MAX_REPOST_DELAY = 14
 SINGLE_SITE_EMPLOYEES = 500
 # Draws of a templated job id before giving up on finding one not used yet.
 ID_ATTEMPTS = 100
+# Recruiters of an employer: (up to this many employees, recruiters); 4 above.
+RECRUITERS = ((50, 1), (500, 2), (5000, 3))
+MAX_RECRUITERS = 4
+# Legal forms left out of the made-up domains ('Dupont SARL' -> dupont.fr).
+LEGAL_FORMS = re.compile(r"\b(s\.?a\.?r\.?l|sas|sasu|sa|eurl|snc|gmbh|ag|kgaa|kg|ohg|ug|e\.?k|ltd|llc|inc|plc|co|corp|"
+                         r"s\.?l|s\.?a|s\.?p\.?a|s\.?r\.?l|s\.?n\.?c|lda|bv|nv|vof|sp\.? z o\.?o|sp\.? ?[jkp]|s\.?c|"
+                         r"and sons|et fils|e hijos|e figli|group|groupe)\b\.?", re.IGNORECASE)
 
 
 class CompanyRow(TypedDict):
@@ -119,6 +137,7 @@ class PostingRow(TypedDict):
     skills: str
     benefits: str
     contact_person: str
+    contact_email: str
     contact: str
 
 
@@ -129,10 +148,12 @@ POSTING_FIELDS = tuple(PostingRow.__annotations__)
 @dataclass
 class JobDataset:
     """Employers and their postings: `companies` and `postings` are lists of
-    rows (see `CompanyRow`, `PostingRow`), linked by `company_id`."""
+    rows (see `CompanyRow`, `PostingRow`), linked by `company_id`; `defects`
+    lists the defects of a dirty dataset (see `DefectRow`), empty otherwise."""
 
     companies: list[CompanyRow] = field(default_factory=list)
     postings: list[PostingRow] = field(default_factory=list)
+    defects: list[DefectRow] = field(default_factory=list)
 
     @classmethod
     def concat(cls, datasets: Iterable[JobDataset]) -> JobDataset:
@@ -141,16 +162,19 @@ class JobDataset:
         for dataset in datasets:
             result.companies.extend(dataset.companies)
             result.postings.extend(dataset.postings)
+            result.defects.extend(dataset.defects)
         return result
 
     def to_csv(self, directory: str) -> list[str]:
         """Write companies.csv and postings.csv (UTF-8, header row) in
-        `directory` (created if needed); return their paths."""
+        `directory` (created if needed), and defects.csv for a dirty
+        dataset; return their paths."""
         return self._write(directory, "csv")
 
     def to_jsonl(self, directory: str) -> list[str]:
         """Write companies.jsonl and postings.jsonl (one JSON object a line)
-        in `directory` (created if needed); return their paths."""
+        in `directory` (created if needed), and defects.jsonl for a dirty
+        dataset; return their paths."""
         return self._write(directory, "jsonl")
 
     def to_dataframes(self) -> tuple[Any, Any]:
@@ -166,7 +190,8 @@ class JobDataset:
         os.makedirs(directory, exist_ok=True)
         paths = []
         tables: tuple[tuple[str, tuple[str, ...], list[Any]], ...] = (
-            ("companies", COMPANY_FIELDS, self.companies), ("postings", POSTING_FIELDS, self.postings))
+            ("companies", COMPANY_FIELDS, self.companies), ("postings", POSTING_FIELDS, self.postings),
+            *((("defects", DEFECT_FIELDS, self.defects),) if self.defects else ()))
         for name, fields, rows in tables:
             path = os.path.join(directory, f"{name}.{kind}")
             with open(path, "w", encoding="utf-8", newline="") as f:
@@ -194,6 +219,28 @@ def _parse_date(value: _datetime.date | str) -> _datetime.date:
         return _datetime.date.fromisoformat(str(value))
     except ValueError:
         return DateTimeProvider._parse_date(value)
+
+
+# Letters that do not decompose into an ASCII letter and an accent.
+_LETTERS = str.maketrans({"ł": "l", "Ł": "L", "ß": "ss", "æ": "ae", "Æ": "AE", "ø": "o", "Ø": "O", "đ": "d",
+                          "Đ": "D", "œ": "oe", "Œ": "OE", "ı": "i", "þ": "th", "ð": "d"})
+
+
+def _ascii(text: str) -> str:
+    """`text` in lowercase ASCII letters and digits ('Société Générale' -> 'societegenerale')."""
+    plain = unicodedata.normalize("NFKD", text.translate(_LETTERS)).encode("ascii", "ignore").decode()
+    return re.sub(r"[^a-z0-9]", "", plain.lower())
+
+
+def _domain(website: str | None, name: str, tld: str) -> str:
+    """The e-mail domain of a company: its website's, else one made of its name."""
+    if website:
+        domain = re.sub(r"^(https?://)?(www\.)?", "", website.strip().lower()).split("/")[0]
+        if "." in domain:
+            return domain
+    words = [_ascii(word) for word in LEGAL_FORMS.sub(" ", name).replace("-", " ").split()]
+    stem = "-".join(word for word in words if word)[:30].strip("-") or "entreprise"
+    return f"{stem}.{tld}"
 
 
 def _shares(total: int, weights: Mapping[str, float]) -> dict[str, int]:
@@ -243,6 +290,7 @@ class _Builder:
         self.pool: dict[str, list[tuple[str, Any, int | None]]] = {}
         self.companies: list[CompanyRow] = []
         self.seen: set[tuple[str, str | None]] = set()
+        self.recruiter_pool: dict[str, list[tuple[str, str, str]]] = {}
 
     def sector_demand(self) -> dict[str, float]:
         """{activity sector: demand of the occupations whose main sector it is}."""
@@ -323,6 +371,7 @@ class _Builder:
         closed, status = self.lifecycle(posted)
         location = posting["location"]
         salary_min, salary_max = self.salaries(posting["salary_min"], posting["salary_max"], posted)
+        contact_person, contact_email, contact = self.rng.choice(self.recruiters(company_id))
         return {
             "job_id": self.job_id(posting["job_id"], posted), "company_id": company_id, "locale": self.locale,
             "job_title": posting["job_title"], "occupation_code": occupation["code"],
@@ -335,9 +384,24 @@ class _Builder:
             "latitude": location["latitude"], "longitude": location["longitude"],
             "job_portal": posting["job_portal"], "posted_date": posted.isoformat(), "closed_date": closed,
             "status": status, "repost_of": None, "skills": "; ".join(posting["skills"]),
-            "benefits": "; ".join(posting["benefits"]), "contact_person": posting["contact_person"],
-            "contact": posting["contact"],
+            "benefits": "; ".join(posting["benefits"]), "contact_person": contact_person,
+            "contact_email": contact_email, "contact": contact,
         }
+
+    def recruiters(self, company_id: str) -> list[tuple[str, str, str]]:
+        """[(name, e-mail, phone)] of the recruiters of an employer, made on its first posting."""
+        if company_id not in self.recruiter_pool:
+            company = self.companies[int(company_id[len(self.prefix) + 1:]) - 1]
+            count = next((n for limit, n in RECRUITERS if company["employees"] <= limit), MAX_RECRUITERS)
+            generator = self.provider.generator
+            domain = _domain(company["website"], company["name"], generator.tld())
+            people = []
+            for i in range(count):
+                first, last = generator.first_name(), generator.last_name()
+                local = ".".join(part for part in (_ascii(first), _ascii(last)) if part) or f"recrutement{i + 1}"
+                people.append((f"{first} {last}", f"{local}@{domain}", self.provider._phone_number()))
+            self.recruiter_pool[company_id] = people
+        return self.recruiter_pool[company_id]
 
     def salaries(self, low: int, high: int, posted: _datetime.date) -> tuple[int, int]:
         """The salaries of a posting on `end_date`, brought back to its date by the country's growth."""
@@ -380,6 +444,7 @@ def build_dataset(
     provider: JobsProvider, postings: int, companies: int | None = None,
     start_date: _datetime.date | str = "-2y", end_date: _datetime.date | str = "today",
     repost_rate: float = 0.08, prefix: str = "", id_template: str | None = None, ids: _Ids | None = None,
+    dirty: float = 0.0,
 ) -> JobDataset:
     """The dataset of `JobsProvider.job_dataset()` (see the module docstring);
     `prefix` starts the company ids (one per locale in `make_dataset`), `ids`
@@ -389,6 +454,8 @@ def build_dataset(
     for name, value in (("postings", postings), ("companies", companies)):
         if value is not None and (isinstance(value, bool) or not isinstance(value, int) or value < 0):
             raise ValueError(f"{name} must be a non-negative integer, got {value!r}")
+    if not 0 <= dirty <= 1:
+        raise ValueError(f"dirty must be in [0, 1], got {dirty!r}")
     if not 0 <= repost_rate < 1:
         raise ValueError(f"repost_rate must be in [0, 1), got {repost_rate!r}")
     start, end = _parse_date(start_date), _parse_date(end_date)
@@ -406,20 +473,21 @@ def build_dataset(
         rows.append(row)
         if len(rows) < postings and builder.rng.random() < repost_rate:
             rows.append(builder.repost(row))
-    return JobDataset(builder.companies, rows)
+    return add_defects(JobDataset(builder.companies, rows), dirty, builder.rng)
 
 
 def make_dataset(
     locales: str | Mapping[str, float] = "en_US", postings: int = 1000, companies: int | None = None,
     start_date: _datetime.date | str = "-2y", end_date: _datetime.date | str = "today",
-    repost_rate: float = 0.08, seed: int | None = None, id_template: str | None = None,
+    repost_rate: float = 0.08, seed: int | None = None, id_template: str | None = None, dirty: float = 0.0,
 ) -> JobDataset:
     """A dataset of one locale ('fr_FR') or of several, with the share of the
     postings of each ({'fr_FR': 0.6, 'de_DE': 0.4}): each locale's postings
     in its country and language, and as many of the companies; company ids
     start with the locale when there are several ('fr_FR-C00001'). `seed`
     makes it reproducible; `id_template` gives the job ids from a template
-    (see `JobsProvider.job_id`), unique and numbered (`{n}`) across the locales."""
+    (see `JobsProvider.job_id`), unique and numbered (`{n}`) across the locales;
+    `dirty` the share of rows with a defect (see faker_jobs/dirty.py)."""
     from faker import Faker
 
     from faker_jobs import JobsProvider
@@ -438,5 +506,6 @@ def make_dataset(
         provider = JobsProvider(fake)
         datasets.append(build_dataset(
             provider, posting_counts[locale], company_counts[locale] if company_counts else None, start_date,
-            end_date, repost_rate, prefix=f"{locale}-" if len(weights) > 1 else "", id_template=id_template, ids=ids))
+            end_date, repost_rate, prefix=f"{locale}-" if len(weights) > 1 else "", id_template=id_template, ids=ids,
+            dirty=dirty))
     return JobDataset.concat(datasets)

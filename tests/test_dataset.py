@@ -76,6 +76,21 @@ class DatasetTests(unittest.TestCase):
         self.assertTrue(seasonal)
         self.assertTrue(all(3 <= int(row["posted_date"][5:7]) <= 9 for row in seasonal))
 
+    def test_recruiters(self):
+        by_company = collections.defaultdict(set)
+        for row in self.data.postings:
+            by_company[row["company_id"]].add((row["contact_person"], row["contact_email"], row["contact"]))
+        for company_id, contacts in by_company.items():
+            company = self.companies[company_id]
+            self.assertLessEqual(len(contacts), 1 if company["employees"] <= 50 else 4, company)
+            domains = {email.split("@")[1] for _, email, _ in contacts}
+            self.assertEqual(len(domains), 1, contacts)
+            if company["website"]:
+                self.assertIn(domains.pop(), company["website"].lower())
+            for _name, email, _ in contacts:
+                self.assertRegex(email, r"^[a-z0-9.]+@[a-z0-9.-]+\.[a-z]+$")
+        self.assertTrue(any(len(contacts) > 1 for contacts in by_company.values()))
+
     def test_reposts(self):
         by_id = {row["job_id"]: row for row in self.data.postings}
         reposts = [row for row in self.data.postings if row["repost_of"] is not None]
@@ -115,6 +130,47 @@ class DatasetOptionsTests(unittest.TestCase):
         data = make().job_dataset(postings=50, repost_rate=0)
         self.assertFalse(any(row["repost_of"] for row in data.postings))
 
+    def test_dirty(self):
+        clean = make_dataset({"fr_FR": 0.5, "de_DE": 0.5}, 1000, seed=3)
+        self.assertEqual(clean.defects, [])
+        data = make_dataset({"fr_FR": 0.5, "de_DE": 0.5}, 1000, seed=3, dirty=0.1)
+        self.assertEqual(make_dataset({"fr_FR": 0.5, "de_DE": 0.5}, 1000, seed=3, dirty=0.1), data)
+        kinds = collections.Counter(defect["kind"] for defect in data.defects)
+        self.assertLessEqual({"typo", "missing", "monthly_salary", "date_format", "duplicate", "name_variant"},
+                             set(kinds))
+        duplicates = [defect for defect in data.defects if defect["kind"] == "duplicate"]
+        self.assertEqual(len(data.postings), 1000 + len(duplicates))
+        self.assertTrue(80 < sum(kinds.values()) - kinds["name_variant"] / 2 < 160)
+        postings = {str(row["job_id"]): row for row in data.postings}
+        companies = {row["company_id"]: row for row in data.companies}
+        self.assertEqual(len(postings), len(data.postings))  # ids stay unique
+        self.assertTrue(all(row["company_id"] in companies for row in data.postings))
+        for defect in data.defects:
+            if defect["table"] == "companies":
+                row = companies[defect["id"]]
+                if defect["field"] == "name":
+                    self.assertNotEqual(row["name"], defect["original"])
+                continue
+            row = postings[defect["id"]]
+            if defect["kind"] == "duplicate":
+                first = postings[defect["original"]]
+                self.assertEqual((row["company_id"], row["occupation_code"], row["repost_of"]),
+                                 (first["company_id"], first["occupation_code"], None))
+            elif defect["kind"] == "missing":
+                self.assertIn(row[defect["field"]], (None, ""))
+            elif defect["kind"] == "monthly_salary":
+                self.assertAlmostEqual(row[defect["field"]], int(defect["original"]) / 12, delta=10)
+            elif defect["kind"] == "date_format":
+                self.assertNotRegex(row["posted_date"], r"^\d{4}-\d{2}-\d{2}$")
+            else:
+                self.assertNotEqual(str(row[defect["field"]]), defect["original"])
+        with tempfile.TemporaryDirectory() as directory:
+            paths = data.to_csv(directory)
+            self.assertEqual([os.path.basename(path) for path in paths],
+                             ["companies.csv", "postings.csv", "defects.csv"])
+        with self.assertRaises(ValueError):
+            make().job_dataset(postings=10, dirty=1.5)
+
     def test_salaries_over_time(self):
         data = make_dataset("es_AR", 600, start_date="2024-11-01", end_date="2026-10-31", seed=2)
         first = sorted(row["salary_min"] for row in data.postings if row["posted_date"] < "2025-07-01")
@@ -137,7 +193,7 @@ class DatasetOptionsTests(unittest.TestCase):
         mixed = make_dataset({"fr_FR": 0.5, "de_DE": 0.5}, postings=100, seed=1, id_template="{country}{n:04d}")
         self.assertEqual([mixed.postings[i]["job_id"] for i in (0, 49, 50, 99)],
                          ["FR0001", "FR0050", "DE0051", "DE0100"])
-        few = make().job_dataset(postings=100, id_template="{country}-##")
+        few = make().job_dataset(postings=100, id_template="{country}-###")
         self.assertEqual(len({row["job_id"] for row in few.postings}), 100)  # unique, drawn again when used
         with self.assertRaises(ValueError):
             make().job_dataset(postings=50, id_template="JOB-#")
@@ -188,6 +244,13 @@ class ExportCommandTests(unittest.TestCase):
             with open(os.path.join(directory, "postings.csv"), encoding="utf-8", newline="") as f:
                 ids = [row["job_id"] for row in csv.DictReader(f)]
         self.assertEqual(ids[:3], ["REQ-001", "REQ-002", "REQ-003"])
+
+    def test_export_dirty(self):
+        with tempfile.TemporaryDirectory() as directory, redirect_stdout(io.StringIO()):
+            main(["export", directory, "--postings", "200", "--seed", "4", "--dirty", "0.2"])
+            with open(os.path.join(directory, "defects.csv"), encoding="utf-8", newline="") as f:
+                defects = list(csv.DictReader(f))
+        self.assertGreater(len(defects), 20)
 
     def test_export_errors(self):
         with tempfile.TemporaryDirectory() as directory, redirect_stdout(io.StringIO()):

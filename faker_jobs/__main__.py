@@ -9,6 +9,7 @@ postings (see faker_jobs/dataset.py):
     python -m faker_jobs export out/ --locale fr_FR --postings 10000 --companies 800 --seed 42
     python -m faker_jobs export out/ --locale fr_FR:0.6 --locale de_DE:0.4 --format jsonl
     python -m faker_jobs export out/ --id-template "JOB-{year}-{n:06d}"
+    python -m faker_jobs export out/ --dirty 0.1
 """
 import argparse
 import sys
@@ -106,11 +107,14 @@ def export(argv: list[str]) -> None:
     parser.add_argument("--id-template", default=None,
                         help="job ids from a template: # digit, ? letter, * either, {year} {month} {day} "
                         "{date:%%y%%m%%d} {country} {locale} {n:06d} (default: 15-16 digit numbers)")
+    parser.add_argument("--dirty", type=float, default=0.0,
+                        help="share of the rows with a defect of real-world data (0 to 1; default 0), "
+                        "listed in defects.csv")
     args = parser.parse_args(argv)
     try:
         locales = parse_locales(args.locale or ["en_US"])
         dataset = make_dataset(locales, args.postings, args.companies, args.start_date, args.end_date,
-                               args.repost_rate, args.seed, args.id_template)
+                               args.repost_rate, args.seed, args.id_template, args.dirty)
     except (ValueError, AttributeError, argparse.ArgumentTypeError) as error:
         parser.error(str(error))  # AttributeError: an unknown Faker locale
     paths = dataset.to_csv(args.directory) if args.format == "csv" else dataset.to_jsonl(args.directory)
