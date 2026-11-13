@@ -43,7 +43,7 @@ from typing import Any, TypedDict
 
 from faker.providers import BaseProvider
 
-__version__ = "0.10.0"
+__version__ = "0.11.0"
 
 _DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 _CITIES_PATH = os.path.join(_DATA_DIR, "cities.json.gz")

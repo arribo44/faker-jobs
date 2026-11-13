@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.11.0] - 2026-11-13
+
 ### Added
 - Postings in every country: 232 of the 244 countries of `job_countries` have an economy in the new `faker_jobs/data/countries.json` (~200 KB): currency (ISO code, GeoNames; EUR for Bulgaria), mean yearly earnings by ISCO-08 major group and minimum wage. Sources, best first: the conditions of the country's locales; Eurostat SES 2022 for the 25 other European countries it covers (Portugal, Poland, the Netherlands, Sweden...); ILOSTAT average monthly earnings of employees by ISCO major group (~100 countries: India, Brazil, Argentina, South Africa...), latest year, brought to 2025 with the World Bank GDP per capita in local currency (series in median, net, real or daily terms left out; structures where professionals earn less than elementary occupations replaced by the median one); else the GDP per capita times the median ratio of earnings to it, with the median structure (Japan, China, Algeria...: ~70). Micro-states and territories take the economy of their neighbour or country (Liechtenstein: Switzerland, Monaco: France, Réunion: France, Jersey: United Kingdom...); Taiwan has hand-entered figures (DGBAS). Minimum wages: ILOSTAT, brought to the same year. `fetch_salaries.py` caches `DATAS/salaries/ilostat.json` and `worldbank_gdp.json`, and the SES earnings of every country it covers.
 - Neutral posting conditions in each language (`GENERIC_CONDITIONS` in `scripts/posting_conditions.py`): contracts, benefits and diplomas found in most countries, international job boards (LinkedIn, Indeed, Glassdoor, Jooble, Careerjet), the currency code in the salary ("JPY 3,100,000 - 4,250,000 a year", "620 000 - 820 000 DZD brut/an").
