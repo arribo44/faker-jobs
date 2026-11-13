@@ -72,7 +72,7 @@ from rome_labels import DOMAINS, SECTORS, SOFT_SKILLS  # noqa: E402
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROME_PATH = os.path.join(ROOT, "DATAS", "metiers", "rome-4-0-métiers-×-secteurs-d-activité.xlsx")
 OUTPUT_DIR = os.path.join(ROOT, "faker_jobs", "data")
-LOCALES = ("de_DE", "en_US", "es_ES", "fr_FR", "it_IT")
+LOCALES = ("de_DE", "en_US", "es_ES", "fr_FR", "it_IT", "nl_NL", "pl_PL", "pt_PT")
 
 BMO_PATH = os.path.join(ROOT, "DATAS", "bmo", "Base-open-data-BMO-2026.xlsx")
 FAP_ROME_PATH = os.path.join(ROOT, "DATAS", "bmo", "Dares_FAP2021_Table_passage_ROME.xlsx")
@@ -92,7 +92,8 @@ ESCO_SOURCE = ("ESCO 1.0.9 (© European Union), reused under Commission Decision
 SECTORS_EN, DOMAINS_EN, SOFT_SKILLS_EN = SECTORS["en"], DOMAINS["en"], SOFT_SKILLS["en"]
 
 # Locales built from ESCO -> ESCO language.
-ESCO_LOCALES = {"en_US": "en", "de_DE": "de", "es_ES": "es", "it_IT": "it"}
+ESCO_LOCALES = {"en_US": "en", "de_DE": "de", "es_ES": "es", "it_IT": "it", "pt_PT": "pt", "nl_NL": "nl",
+                "pl_PL": "pl"}
 
 # How job titles name both genders, by language ('rome': "Conducteur /
 # Conductrice de bus"; 'esco': "Busfahrer/Busfahrerin", two full forms), and
@@ -104,6 +105,9 @@ GENDER = {
     "de": {"titles": "esco", "posting_suffix": "(m/w/d)"},
     "es": {"titles": "esco", "posting_suffix": None},
     "it": {"titles": "esco", "posting_suffix": "(m/f)"},
+    "pt": {"titles": "esco", "posting_suffix": "(M/F)"},
+    "nl": {"titles": "esco", "posting_suffix": "(m/v/x)"},
+    "pl": {"titles": "esco", "posting_suffix": "(k/m)"},
 }
 
 
@@ -338,11 +342,15 @@ OFFICE_DOMAIN_CODES = {"C", "E", "M"}
 ROME_ATTRIBUTES = ("qualifications", "executive", "regulated", "riasec", "transitions")
 
 # Countries of the Eurostat earnings, by locale (en_US: BLS earnings).
-EUROSTAT_COUNTRIES = {"fr_FR": "FR", "de_DE": "DE", "es_ES": "ES", "it_IT": "IT"}
+EUROSTAT_COUNTRIES = {"fr_FR": "FR", "de_DE": "DE", "es_ES": "ES", "it_IT": "IT", "pt_PT": "PT", "nl_NL": "NL",
+                      "pl_PL": "PL"}
+# The countries whose mean age ratios stand for the United States (the BLS has none).
+AGE_RATIO_COUNTRIES = ("FR", "DE", "ES", "IT")
 # Locales whose companies get a NACE Rev. 2 class (their national
 # classifications, WZ 2008, CNAE-2009 and ATECO 2007, share its classes),
 # and the country of their employment figures.
-NACE_LOCALES = {"de_DE": "Germany", "es_ES": "Spain", "it_IT": "Italy"}
+NACE_LOCALES = {"de_DE": "Germany", "es_ES": "Spain", "it_IT": "Italy", "pt_PT": "Portugal",
+                "nl_NL": "The Netherlands", "pl_PL": "Poland"}
 # ISCO-08 major groups the earnings survey does not cover (agriculture,
 # armed forces), and the group whose earnings they take instead.
 ISCO_FALLBACK = {"6": "9", "0": "3"}
@@ -370,7 +378,8 @@ SALARY_SOURCES = {
 }
 SES_YEAR = "2022"
 # Country code of the earnings of each occupation locale (OECD average wages).
-BASE_COUNTRY_CODES = {"fr_FR": "FR", "de_DE": "DE", "es_ES": "ES", "it_IT": "IT", "en_US": "US"}
+BASE_COUNTRY_CODES = {"fr_FR": "FR", "de_DE": "DE", "es_ES": "ES", "it_IT": "IT", "en_US": "US", "pt_PT": "PT",
+                      "nl_NL": "NL", "pl_PL": "PL"}
 
 # NACE Rev. 2 section of each NAF / NACE division (first two digits).
 NACE_SECTIONS = [
@@ -623,7 +632,7 @@ def bls_salary(eurostat, bls):
     """`salary_table` of the United States: BLS means, mean age ratios of the base Eurostat countries."""
     groups = sorted(SKILL_LEVELS)
     wages = bls["mean_annual_wage"]
-    ratios = [age_ratios(eurostat, country) for country in EUROSTAT_COUNTRIES.values()]
+    ratios = [age_ratios(eurostat, country) for country in AGE_RATIO_COUNTRIES]
     return {
         "base": {group: {"*": sum(wages[soc] for soc in ISCO_TO_SOC[group]) / len(ISCO_TO_SOC[group])}
                  for group in groups},
@@ -641,11 +650,13 @@ def ratio_year(oecd, code, base_code, year):
     return max(years)
 
 
-def country_conditions(locale, local, base, eurostat, bls, lfs, oecd):
+def country_conditions(locale, local, base, eurostat, bls, lfs, oecd, world=None):
     """The posting conditions of a country of COUNTRY_CONDITIONS, over those of
     its occupation locale (`base`, conditions.json): the keys it gives,
     its contracts with their mix, its salaries and minimum wage, and the
-    base locale (`base` key) to take the rest from."""
+    base locale (`base` key) to take the rest from. `world`: the economies
+    of countries.json, for the countries whose earnings are those
+    ({"economy": country}: Brazil)."""
     base_locale = local["base"]
     contracts = normalized_contracts(local["contracts"])
     earnings = local["earnings"]
@@ -653,7 +664,12 @@ def country_conditions(locale, local, base, eurostat, bls, lfs, oecd):
         code = earnings["eurostat"]
         salary, year, country_lfs = eurostat_salary(code, eurostat), SES_YEAR, lfs["values"][code]
         source = f"{SALARY_SOURCES['eurostat']}; minimum wage: OECD; {lfs_source(lfs)}"
-        scale = 1
+        scale, minimum = 1, oecd["minimum_wage"].get(code, {}).get(year)
+    elif "economy" in earnings:
+        economy = world[earnings["economy"]]
+        salary = {"base": economy["salary"]["base"], "age_ratio": base["salary"]["age_ratio"]}
+        country_lfs, source = None, economy["salary_source"]
+        scale, minimum = economy.get("salary_scale", 1), economy["minimum_wage"]
     else:
         code, base_code = earnings["oecd"], BASE_COUNTRY_CODES[base_locale]
         survey_year = bls["year"] if base_locale == "en_US" else SES_YEAR
@@ -666,11 +682,12 @@ def country_conditions(locale, local, base, eurostat, bls, lfs, oecd):
         source = SALARY_SOURCES["oecd"].format(base=base["country"], year=year, country=code, base_code=base_code)
         # Amounts rounded to 500 / 1,000 units in EUR, USD...; to 500,000 in COP.
         scale = 10 ** round(math.log10(ratio))
+        minimum = oecd["minimum_wage"].get(code, {}).get(year)
     kept = {key: value for key, value in local.items() if key not in ("earnings", "contracts")}
     conditions = {**kept, "contracts": contracts, "contract_weights": contract_weights(local["contracts"], country_lfs),
                   # Always set: the base's would name its own country ("España" for Chile).
                   "place_names": local.get("place_names", {"country": local["country"]}),
-                  "salary": salary, "minimum_wage": oecd["minimum_wage"].get(code, {}).get(year),
+                  "salary": salary, "minimum_wage": minimum,
                   "salary_source": source}
     if scale != 1:
         conditions["salary_scale"] = scale
@@ -937,10 +954,16 @@ def build_occupations():
                                    source, lfs, nace)
     with open(fetch_salaries.OECD_PATH, encoding="utf-8") as f:
         oecd = json.load(f)
-    for locale, local in COUNTRY_CONDITIONS.items():
-        # No occupation data of their own: only posting conditions.
+    # No occupation data of their own: only posting conditions. Those whose
+    # earnings come from countries.json last, once the others are known.
+    ordered = sorted(COUNTRY_CONDITIONS.items(), key=lambda item: "economy" in item[1]["earnings"])
+    world = None
+    for locale, local in ordered:
+        if "economy" in local["earnings"] and world is None:
+            known = {name: entry["conditions"] for name, entry in built.items()}
+            world = economies(known, *world_sources())
         built[locale] = {"conditions": country_conditions(locale, local, built[local["base"]]["conditions"],
-                                                          eurostat, bls, lfs, oecd)}
+                                                          eurostat, bls, lfs, oecd, world)}
     return dict(sorted(built.items()))
 
 
@@ -1056,6 +1079,13 @@ def merged_conditions(conditions, locale):
     return {**conditions[entry["base"]], **entry} if "base" in entry else entry
 
 
+def base_salary_source(locale):
+    """The source of the salaries of an occupation locale (its conditions do not say it)."""
+    if locale in EUROSTAT_COUNTRIES:
+        return SALARY_SOURCES["eurostat"]
+    return "salaries: U.S. BLS OEWS, by SOC major group (public domain)"
+
+
 def economies(conditions, ilo, gdp, info, eurostat):
     """{country: {"currency", "salary": {"base": {ISCO group: {"*" or NACE section: yearly mean}}},
     "minimum_wage", "salary_scale" (optional), "salary_source"}}: those of the
@@ -1071,7 +1101,7 @@ def economies(conditions, ilo, gdp, info, eurostat):
             continue
         result[country] = {"currency": merged["currency"], "salary": {"base": merged["salary"]["base"]},
                            "minimum_wage": merged["minimum_wage"],
-                           "salary_source": merged.get("salary_source") or f"those of {locale}"}
+                           "salary_source": merged.get("salary_source") or base_salary_source(locale)}
         if "salary_scale" in merged:
             result[country]["salary_scale"] = merged["salary_scale"]
     by_alpha2 = {alpha2: (iso3, country, currency) for iso3, (country, currency, alpha2) in info.items()}
@@ -1151,21 +1181,27 @@ def generic_conditions():
     return result
 
 
-def build_countries(conditions):
-    """countries.json: the conditions of each language for the countries
-    without conditions of their own in it, and the economy of every country."""
+def world_sources():
+    """(ILOSTAT, World Bank GDP per capita, GeoNames country info, Eurostat SES) for `economies`."""
     with open(fetch_salaries.ILOSTAT_PATH, encoding="utf-8") as f:
         ilo = json.load(f)
     with open(fetch_salaries.WORLD_BANK_PATH, encoding="utf-8") as f:
         gdp = json.load(f)["gdp_per_capita"]
     with open(fetch_salaries.EUROSTAT_PATH, encoding="utf-8") as f:
         eurostat = json.load(f)
+    return ilo, gdp, country_info(), eurostat
+
+
+def build_countries(conditions):
+    """countries.json: the conditions of each language for the countries
+    without conditions of their own in it, and the economy of every country."""
+    ilo, gdp, info, eurostat = world_sources()
     return round_floats({
         "meta": {"source": f"{ilo['source']}; World Bank GDP per capita (current LCU); currencies: GeoNames",
                  # Age ratios of the salaries (see salary_table): those of the US conditions.
                  "age_ratio": conditions["en_US"]["salary"]["age_ratio"]},
         "generic": generic_conditions(),
-        "countries": economies(conditions, ilo, gdp, country_info(), eurostat),
+        "countries": economies(conditions, ilo, gdp, info, eurostat),
     })
 
 

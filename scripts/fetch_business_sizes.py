@@ -5,8 +5,8 @@ industry, used by build_companies.py to pick the size of the hiring
 companies (LinkedIn, the source of the companies, lists few small ones),
 and cache it in DATAS/business_sizes/sizes.json:
 
-- France, Germany, Spain, Italy, and Belgium, Austria, Luxembourg, Ireland
-  and Switzerland where Eurostat has enough figures (OPTIONAL_COUNTRIES:
+- France, Germany, Spain, Italy, Portugal, the Netherlands, Poland, and
+  Belgium, Austria, Luxembourg, Ireland and Switzerland where Eurostat has enough figures (OPTIONAL_COUNTRIES:
   left out with a warning otherwise, their companies then keep the
   LinkedIn shares): Eurostat structural business statistics
   (sbs_sc_ovw), persons employed (EMP_NR: employees and working owners;
@@ -62,7 +62,8 @@ USER_AGENT = "faker-jobs data build (https://github.com/arribo44/faker-jobs)"
 EUROSTAT_URL = ("https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/sbs_sc_ovw"
                 "?format=JSON&lang=EN&indic_sbs=EMP_NR")
 EUROSTAT_COUNTRIES = {"FR": "France", "DE": "Germany", "ES": "Spain", "IT": "Italy", "BE": "Belgium",
-                      "AT": "Austria", "LU": "Luxembourg", "IE": "Ireland", "CH": "Switzerland"}
+                      "AT": "Austria", "LU": "Luxembourg", "IE": "Ireland", "CH": "Switzerland", "PT": "Portugal",
+                      "NL": "The Netherlands", "PL": "Poland"}
 OPTIONAL_COUNTRIES = {"Belgium", "Austria", "Luxembourg", "Ireland", "Switzerland", "Canada", "New Zealand"}
 MIN_SECTIONS = 13
 EU_GEO = "EU27_2020"

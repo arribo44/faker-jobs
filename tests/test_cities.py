@@ -39,13 +39,18 @@ class CitiesDataTests(unittest.TestCase):
                 self.assertIsInstance(names, dict)
                 self.assertTrue(names)
             if key in ("france", "germany", "spain", "italy", "belgium", "switzerland", "austria",
-                       "luxembourg", "canada", "mexico", "chile", "colombia"):
+                       "luxembourg", "canada", "mexico", "chile", "colombia", "portugal", "the netherlands",
+                       "poland", "brazil"):
                 self.assertTrue(local, key)
             else:
                 self.assertFalse(local, key)
         self.assertEqual(languages["CH"], {"fr", "de", "it"})
         geneva = next(row for row in _load_cities()["switzerland"]["cities"] if row[0] == "Geneva")
         self.assertEqual(geneva[4], {"fr": "Genève", "de": "Genf", "it": "Ginevra"})
+        # Country names in the languages of the occupations, where not the English one.
+        self.assertEqual(_load_cities()["germany"]["names"]["fr"], "Allemagne")
+        self.assertEqual(_load_cities()["the netherlands"]["names"]["fr"], "Pays-Bas")
+        self.assertNotIn("de", _load_cities()["china"]["names"])  # 'China' as in English
         # Only the names that differ from the English one.
         paris = next(row for row in _load_cities()["france"]["cities"] if row[0] == "Paris")
         self.assertEqual(len(paris), 4)

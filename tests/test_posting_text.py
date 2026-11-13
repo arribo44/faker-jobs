@@ -9,7 +9,8 @@ from faker import Faker
 from faker_jobs import JobsProvider
 from faker_jobs.posting_text import TEXTS
 
-LOCALES = {"fr_FR": "fr", "en_US": "en", "en_GB": "en", "de_DE": "de", "es_ES": "es", "it_IT": "it"}
+LOCALES = {"fr_FR": "fr", "en_US": "en", "en_GB": "en", "de_DE": "de", "es_ES": "es", "it_IT": "it",
+           "pt_PT": "pt", "pt_BR": "pt", "nl_NL": "nl", "nl_BE": "nl", "pl_PL": "pl"}
 
 
 def make_faker(locale):

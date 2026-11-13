@@ -51,7 +51,7 @@ _cities_cache: dict[str, Any] | None = None
 _country_aliases: dict[str, str] = {}
 
 # Locales with their own occupation data, and the one used for every other locale.
-OCCUPATION_LOCALES = ("de_DE", "en_US", "es_ES", "fr_FR", "it_IT")
+OCCUPATION_LOCALES = ("de_DE", "en_US", "es_ES", "fr_FR", "it_IT", "nl_NL", "pl_PL", "pt_PT")
 DEFAULT_OCCUPATION_LOCALE = "en_US"
 _occupation_cache: dict[str, dict[str, Any]] = {}
 # Posting conditions of every occupation locale (contracts, diplomas, salaries...).
@@ -202,9 +202,9 @@ class OccupationPosting(TypedDict):
     number of employees. `company_naf` is the activity code of the company,
     in the sector and among those that employ the occupation: a NAF rév. 2
     sub-class in France (e.g. '86.10Z'), a NACE Rev. 2 class in the other
-    countries of the French, German, Spanish and Italian locales (e.g.
-    '86.10', also the class of WZ 2008, CNAE-2009 and ATECO 2007), whose
-    label is the company's `industry`; it is None in English locales."""
+    countries of the locales but English ones (e.g. '86.10', also the class
+    of WZ 2008, CNAE-2009 and ATECO 2007), whose label is the company's
+    `industry`; it is None in English locales."""
 
     job_id: int
     job_title: str
@@ -286,6 +286,10 @@ def _load_cities() -> dict[str, Any]:
         _cities_cache = {
             country.lower(): {
                 "country": country,
+                # {language: name} in the languages of the occupations ('Allemagne'), where not the English one.
+                "names": entry.get("names", {}),
+                # GeoNames admin1 code of each city (Belgium, Switzerland, Canada), else None.
+                "regions": entry.get("regions"),
                 "cities": entry["cities"],
                 # Uniform without populations (or with none but 0: Palau).
                 "cum_weights": None if any(row[3] is None for row in entry["cities"])
@@ -297,7 +301,43 @@ def _load_cities() -> dict[str, Any]:
         # ISO codes ('US', 'FR') and the short names of version 0.6 ('USA', 'UK', 'UAE').
         _country_aliases.update({entry["code"].lower(): country.lower() for country, entry in raw["countries"].items()})
         _country_aliases.update({"usa": "united states", "uk": "united kingdom", "uae": "united arab emirates"})
+        # Names in the languages of the occupations ('Allemagne', 'Niemcy'); a name of two
+        # countries ('Saint-Martin' in French) stays that of the first.
+        for country, entry in raw["countries"].items():
+            for name in entry.get("names", {}).values():
+                if name.lower() not in _cities_cache:
+                    _country_aliases.setdefault(name.lower(), country.lower())
     return _cities_cache
+
+
+_regional_cache: dict[tuple[str, tuple[str, ...]], tuple[list[Any], list[int] | None]] = {}
+
+
+def _regional_cities(entry: dict[str, Any], regions: tuple[str, ...]) -> tuple[list[Any], list[int] | None]:
+    """(cities, cumulative populations or None) of a country in `regions` (GeoNames admin1 codes)."""
+    key = (entry["country"], regions)
+    if key not in _regional_cache:
+        rows = [row for row, region in zip(entry["cities"], entry["regions"], strict=True) if region in regions]
+        weights = None if any(row[3] is None for row in rows) or not any(row[3] for row in rows) \
+            else list(itertools.accumulate(row[3] for row in rows))
+        _regional_cache[key] = (rows, weights)
+    return _regional_cache[key]
+
+
+def _in_regions(country: str, city: Any, regions: list[str] | None) -> bool:
+    """Whether a company's headquarters (an index into the country's cities) is in
+    `regions`: always without regions; never for a city that is not an index."""
+    if not regions:
+        return True
+    entry = _load_cities()[country.lower()]
+    return isinstance(city, int) and entry["regions"] is not None and entry["regions"][city] in regions
+
+
+def _country_name(country: str, language: str) -> str:
+    """The name of a country of `job_countries` in a language of the occupations
+    ('Germany', 'fr' -> 'Allemagne'); the English one without."""
+    entry = _country_entry(country)
+    return str(entry["names"].get(language, entry["country"])) if entry is not None else country
 
 
 def _country_entry(country: str) -> dict[str, Any] | None:
@@ -431,6 +471,7 @@ def _generic_conditions(base: dict[str, Any], language: str, country: str) -> di
         conditions.update({key: value for key, value in economy.items() if key != "salary"})
         conditions["salary"] = {"base": economy["salary"]["base"], "age_ratio": data["meta"]["age_ratio"]}
         conditions["country"] = country
+        conditions["place_names"] = {"country": _country_name(country, language)}
         _generic_conditions_cache[key] = conditions
     return _generic_conditions_cache[key]
 
@@ -547,7 +588,7 @@ def _generator_locale(generator: Any) -> str | None:
 def _occupation_locale(locale: str | None) -> str:
     """The occupation data used for a Faker locale, by language: French for
     'fr', 'fr_FR', 'fr_CA'..., German for 'de_DE', 'de_AT'..., Spanish,
-    Italian; else English."""
+    Italian, Portuguese ('pt_BR'), Dutch ('nl_BE'), Polish; else English."""
     language = locale.replace("-", "_").split("_")[0].lower() if locale else None
     return next((known for known in OCCUPATION_LOCALES if known.startswith(f"{language}_")),
                 DEFAULT_OCCUPATION_LOCALE)
@@ -835,8 +876,8 @@ class JobsProvider(BaseProvider):
         Cities are those of 15,000 inhabitants or more (GeoNames), picked in
         proportion to their population: Paris comes up more often than
         Annecy. Their names are in English ('Munich'), except in the
-        locale's own country for German, Spanish, French and Italian
-        locales ('München', 'Deutschland'; 'Genf', 'Schweiz' for de_CH), and
+        locale's own country for the locales but English ones ('München',
+        'Deutschland'; 'Genf', 'Schweiz' for de_CH; 'Warszawa'), and
         in another country with conditions in the language ('Belgique' for
         fr_FR)."""
         return self._local_location(self._posting_conditions(country), country)
@@ -853,16 +894,20 @@ class JobsProvider(BaseProvider):
             entry = _country_entry(country)
             country = entry["country"] if entry is not None else country  # 'US', 'USA' -> 'United States'
         local = country == conditions["country"]
-        return self._city(country, local_country if local else None)
+        # In a country of several languages, the regions of the locale's (Quebec for fr_CA).
+        return self._city(country, local_country if local else None, conditions.get("regions") if local else None)
 
     @staticmethod
     def _home_country(conditions: dict[str, Any]) -> str:
         """The locale's country (name of `job_countries`): that of its conditions."""
         return str(conditions["country"])
 
-    def _city(self, country: str, local_country: str | None = None) -> LocationRecord:
+    def _city(
+        self, country: str, local_country: str | None = None, regions: list[str] | None = None,
+    ) -> LocationRecord:
         """A city of `country`, picked by population; with `local_country`,
-        the local names of the city and the country."""
+        the local names of the city and the country; with `regions`, one of
+        those regions (GeoNames admin1 codes) where the country has them."""
         entry = _country_entry(country)
         if entry is None:
             similar = _suggest_similar(country, self.job_countries)
@@ -871,21 +916,25 @@ class JobsProvider(BaseProvider):
                 msg += f". Did you mean: {', '.join(similar)}?"
             raise ValueError(msg)
         rng = self.generator.random
-        if entry["cum_weights"] is None:
-            row = rng.choice(entry["cities"])
+        cities, cum_weights = entry["cities"], entry["cum_weights"]
+        if regions and entry["regions"]:
+            cities, cum_weights = _regional_cities(entry, tuple(regions))
+        if cum_weights is None:
+            row = rng.choice(cities)
         else:
-            row = rng.choices(entry["cities"], cum_weights=entry["cum_weights"])[0]
+            row = rng.choices(cities, cum_weights=cum_weights)[0]
         return self._city_record(entry, row, local_country, self._language)
 
     @staticmethod
     def _city_record(
         entry: dict[str, Any], row: list[Any], local_country: str | None, language: str,
     ) -> LocationRecord:
-        """A location record of a city row; with `local_country`, the city's name in `language`."""
+        """A location record of a city row; with `local_country`, the city's name in `language`;
+        the country's name in `language` ('Allemagne'), else `local_country`."""
         local = local_country is not None and len(row) > 4
         return {
             "city": row[4].get(language, row[0]) if local else row[0],
-            "country": local_country if local_country is not None else entry["country"],
+            "country": local_country if local_country is not None else entry["names"].get(language, entry["country"]),
             "latitude": row[1],
             "longitude": row[2],
         }
@@ -923,8 +972,8 @@ class JobsProvider(BaseProvider):
         of the country. With `company`: that company of `job_companies`
         ('ibm' -> IBM, case-insensitive), else a company of that name made
         up by the Faker locale, with a city of the country and a CEO, in
-        `sector` (else a random one). In French, German, Spanish and Italian
-        locales, an activity (NAF / NACE) of the sector as `industry`."""
+        `sector` (else a random one). In the locales but English ones, an
+        activity (NAF / NACE) of the sector as `industry`."""
         conditions = self._local_conditions()
         if company is not None:
             country = self._home_country(conditions)
@@ -964,7 +1013,11 @@ class JobsProvider(BaseProvider):
     def _company_country(self, conditions: dict[str, Any], location: LocationRecord) -> str | None:
         """The country of `location` (name of `job_countries`) when it has companies, else None."""
         local_country = (conditions.get("place_names") or {}).get("country", conditions["country"])
-        country = conditions["country"] if location["country"] == local_country else location["country"]
+        if location["country"] == local_country:
+            country = conditions["country"]
+        else:  # another country, maybe by its name in the language ('Allemagne')
+            entry = _country_entry(location["country"])
+            country = entry["country"] if entry is not None else location["country"]
         return country if country in _load_companies()["countries"] else None
 
     def _pick_naf(
@@ -1032,7 +1085,8 @@ class JobsProvider(BaseProvider):
         if naf is None:
             naf = self._pick_naf(sector, conditions, data["industries"][row[6]], isco)
         profile, size, headquarters = self._real_company(row, sector, country, conditions, naf)
-        if headquarters is not None and size_class <= _SINGLE_SITE_MAX_CLASS:
+        if headquarters is not None and size_class <= _SINGLE_SITE_MAX_CLASS and _in_regions(
+                country, row[3], conditions.get("regions") if country == conditions["country"] else None):
             location = headquarters
         return profile, size, location, naf
 
@@ -1218,7 +1272,7 @@ class JobsProvider(BaseProvider):
           employees or outside the countries of the locales with
           conditions of their own. Companies of up to 500 employees
           hire in their headquarters city when it is a city of
-          `job_location`. French, German, Spanish and Italian locales add an
+          `job_location`. Locales other than English add an
           activity of the sector that employs the occupation (NAF / NACE).
         - `skills`: how many of the occupation's skills to list (default 5).
         - `country` sets the job location (default: the locale's country,
@@ -1319,7 +1373,7 @@ class JobsProvider(BaseProvider):
     def _activity_code(naf: list[Any] | None, conditions: dict[str, Any]) -> str | None:
         """The activity code of a company: the NAF sub-class ('86.10Z'), its
         NACE class ('86.10') outside France (`activity_code` 'nace'), a
-        NACE class in German, Spanish and Italian locales; None without."""
+        NACE class in the other locales but English; None without."""
         if naf is None:
             return None
         code = str(naf[0])
@@ -1492,8 +1546,8 @@ class JobsProvider(BaseProvider):
 
         `posting` is a dict from `job_occupation_posting()` or `job_posting()`
         (default: a new `job_occupation_posting()`). The text is in the
-        language of the occupation data (French, English, German, Spanish or
-        Italian), so render a posting with a provider of the locale that made
+        language of the occupation data (French, English, German, Spanish,
+        Italian, Portuguese, Dutch or Polish), so render a posting with a provider of the locale that made
         it. `markdown=True` gives Markdown headings, bold and bullets; else
         plain text with upper-case headings.
 

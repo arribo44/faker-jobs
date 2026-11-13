@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Portuguese, Dutch and Polish occupations: the 2,045 ESCO occupations mapped to ROME in those languages (`occupations_pt_PT.json.gz`, `occupations_nl_NL.json.gz`, `occupations_pl_PL.json.gz`), with the 35 activity sectors, 14 domains and 16 soft skills translated by hand (`scripts/rome_labels.py`), NACE Rev. 2 activities (labels from EU Vocabularies, weighted by the employment of Portugal, the Netherlands and Poland) and the full text of the postings in the three languages (`job_posting_text()`). Every locale of these languages uses them: `pt_PT`, `pt_BR`, `nl_NL`, `nl_BE`, `pl_PL`, instead of the English occupations.
+- Posting conditions of Portugal (`pt_PT`: Contrato sem termo, Subsídio de alimentação, Net-Empregos...), the Netherlands (`nl_NL`: Vast contract, 13e maand, Nationale Vacaturebank..., "(m/v/x)"), Poland (`pl_PL`: Umowa o pracę, Kontrakt B2B, PPK, Pracuj.pl..., "(k/m)", PLN), with their Eurostat SES 2022 earnings and LFS contract mix; of Brazil (`pt_BR`: CLT, PJ, Vale-refeição, Catho, Gupy..., BRL from the ILOSTAT earnings of Brazil) and Dutch-speaking Belgium (`nl_BE`: Studentenjob, Maaltijdcheques, VDAB..., the Belgian earnings). Local city names in these countries ('Lisboa', 'Den Haag', 'Warszawa', 'Antwerpen'), real companies of Portugal, the Netherlands, Poland and Brazil (People Data Labs), with the Eurostat size shares of the first three.
+- Neutral conditions in Portuguese, Dutch and Polish for the other countries (`pt_PT` with `country="Angola"`: AOA salaries).
+- Country names in the language of the occupations: a French posting in Algeria reads "Algérie", an Italian one in Germany "Germania", a Polish one "Niemcy" (Wikidata labels, CC0, of the item with the ISO code; the Netherlands and China by their usual item). `job_location(country=...)`, `job_posting(country=...)` also take these names ("Allemagne", "Pays-Bas"). Kept in `cities.json.gz` (`names` of each country, where they differ from the English one); cached in `DATAS/wikidata/country_names.json` (`build_cities.py --fetch-country-names`). Cities keep their English name outside the countries of the locale's language.
+- Jobs in the regions of the language in the countries of several: `fr_CA` in Quebec and New Brunswick, `fr_BE` in Wallonia and Brussels, `nl_BE` in Flanders and Brussels, `fr_CH` in the French-speaking cantons (with Fribourg and Valais), `de_CH` in the German-speaking ones, `it_CH` in Ticino (`regions` of `COUNTRY_CONDITIONS`, GeoNames admin1 codes; `cities.json.gz` gives the region of each city of Belgium, Switzerland and Canada). Companies of up to 500 employees hire in their headquarters only when it is in these regions.
+- `fetch_esco.py` takes `pt`, `nl` and `pl`; `fetch_activities.py` fetches the NACE labels in them; a country locale's earnings can be those of countries.json (`{"economy": country}`, Brazil).
+
+### Changed
+- **Breaking**: the `pt_*`, `nl_*` and `pl_*` locales return their occupations, sectors and conditions in their language (they were in English since 0.11.0, with neutral conditions).
+- The age ratios of the US salaries stay the mean of France, Germany, Spain and Italy (`AGE_RATIO_COUNTRIES`).
+
 ---
 
 ## [0.11.0] - 2026-11-13

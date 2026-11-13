@@ -12,6 +12,7 @@ from faker_jobs import (
     JobsProvider,
     OccupationPosting,
     OccupationRecord,
+    _country_name,
     _gender_form,
     _load_companies,
     _occupation_locale,
@@ -39,13 +40,15 @@ class TestOccupationLocale(unittest.TestCase):
             self.assertEqual(_occupation_locale(locale), expected, msg=locale)
 
     def test_other_locales_use_english(self):
-        for locale in ("en_US", "en_GB", "nl_NL", "pt_BR", None):
+        for locale in ("en_US", "en_GB", "ja_JP", "sv_SE", None):
             self.assertEqual(_occupation_locale(locale), "en_US", msg=locale)
 
     def test_faker_locale_selects_the_data(self):
         self.assertIn("Santé", make_provider("fr_FR").job_activity_sectors)
         self.assertIn("Healthcare", make_provider("en_US").job_activity_sectors)
-        self.assertIn("Healthcare", make_provider("nl_NL").job_activity_sectors)
+        self.assertIn("Healthcare", make_provider("ja_JP").job_activity_sectors)
+        self.assertIn("Gezondheidszorg", make_provider("nl_NL").job_activity_sectors)
+        self.assertIn("Saúde", make_provider("pt_BR").job_activity_sectors)
         self.assertIn("Gesundheitswesen", make_provider("de_DE").job_activity_sectors)
         self.assertIn("Sanidad", make_provider("es_ES").job_activity_sectors)
         self.assertIn("Sanità", make_provider("it_IT").job_activity_sectors)
@@ -76,7 +79,7 @@ class TestOccupationLocale(unittest.TestCase):
 
     def test_bad_occupations_locale(self):
         class BadJobs(JobsProvider):
-            occupations_locale = "nl_NL"
+            occupations_locale = "ja_JP"
 
         # Faker reads the provider's properties on registration: the error shows up there.
         with self.assertRaisesRegex(ValueError, "occupations_locale"):
@@ -219,7 +222,8 @@ class OccupationTests:
 
     def test_posting_options(self):
         posting = self.fake.job_occupation_posting(country="France", skills=2)
-        self.assertEqual(posting["location"]["country"], "France")
+        # France by its name in the language of the locale ('Frankreich').
+        self.assertEqual(posting["location"]["country"], _country_name("France", self.provider._language))
         self.assertLessEqual(len(posting["skills"]), 2)
         with self.assertRaises(ValueError):
             self.fake.job_occupation_posting(skills=-1)
@@ -277,7 +281,7 @@ class HiringCompanyTests:
     def test_company_abroad_is_made_up(self):
         # No real companies outside the countries of the locales with conditions of their own.
         posting = self.fake.job_occupation_posting(country="Portugal")
-        self.assertEqual(posting["location"]["country"], "Portugal")
+        self.assertEqual(posting["location"]["country"], _country_name("Portugal", self.provider._language))
         self.assertIsNone(posting["company"]["website"])
         self.assertEqual(posting["company"]["city"], posting["location"]["city"])
 

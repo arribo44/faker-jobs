@@ -49,7 +49,7 @@ SOURCE = ("employees by profession and activity of the employer: 2022 census (IN
           "employees), professions → ISCO-08 by the INSEE PCS 2020 × ISCO matrix, Licence Ouverte / Etalab 2.0")
 LABELS_SOURCE = "NACE Rev. 2 labels: EU Vocabularies (Publications Office of the EU, Decision 2011/833/EU)"
 SPARQL_URL = "https://publications.europa.eu/webapi/rdf/sparql"
-LANGUAGES = ("de", "es", "it")
+LANGUAGES = ("de", "es", "it", "pt", "nl", "pl")
 SALARIED = "10"
 
 

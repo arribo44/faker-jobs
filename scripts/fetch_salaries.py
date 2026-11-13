@@ -7,8 +7,9 @@ contracts (build_occupations.py) and cache them in DATAS/salaries/:
   gross annual earnings in national currency (EUR, CHF for Switzerland;
   both sexes; all enterprise sizes, or those of 10 employees or more where
   only those are published, as for France and Italy) for France, Germany,
-  Spain, Italy and the countries of COUNTRY_LOCALES with their own
-  earnings (Belgium, Austria, Luxembourg, Ireland, Switzerland):
+  Spain, Italy, Portugal, the Netherlands, Poland and the countries of
+  COUNTRY_CONDITIONS with their own earnings (Belgium, Austria, Luxembourg,
+  Ireland, Switzerland), and every other country of the survey:
   - by ISCO-08 major group and NACE Rev. 2 section (earn_ses22_49);
   - by ISCO-08 major group and age band (earn_ses22_28).
 - eurostat_lfs.json: Eurostat Labour Force Survey, latest year, people
@@ -68,12 +69,12 @@ LFS_YEAR = "2025"
 EUROSTAT_URL = "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/{dataset}?format=JSON&lang=EN"
 BLS_URL = "https://api.bls.gov/publicAPI/v1/timeseries/data/"
 USER_AGENT = "faker-jobs data build (https://github.com/arribo44/faker-jobs)"
-COUNTRIES = ("FR", "DE", "ES", "IT", "BE", "AT", "LU", "IE", "CH")
+COUNTRIES = ("FR", "DE", "ES", "IT", "BE", "AT", "LU", "IE", "CH", "PT", "NL", "PL")
 # Every country of the Structure of Earnings Survey 2022 (Eurostat codes: EL
 # for Greece): the earnings of the countries without conditions of their own
 # (countries.json); the Labour Force Survey is only fetched for COUNTRIES.
 SES_COUNTRIES = COUNTRIES + ("AL", "BA", "BG", "CY", "CZ", "DK", "EE", "EL", "FI", "HR", "HU", "IS", "LT", "LV",
-                             "MK", "MT", "NL", "NO", "PL", "PT", "RO", "RS", "SE", "SI", "SK")
+                             "MK", "MT", "NO", "RO", "RS", "SE", "SI", "SK")
 # Countries that adopted the euro after 2022: their earnings in EUR, their currency now.
 EURO_SINCE_2022 = ("BG", "HR")
 OECD_URL = "https://sdmx.oecd.org/public/rest/data/OECD.ELS.SAE,DSD_EARNINGS@{dataset},/all?startPeriod={start}&format=csv"

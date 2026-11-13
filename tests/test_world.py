@@ -66,14 +66,16 @@ class EveryLocaleTests(unittest.TestCase):
                 self.assertLess(posting["salary_min"], posting["salary_max"])
 
     def test_locales_of_other_languages_get_their_country(self):
-        for locale, country in (("ja_JP", "Japan"), ("pt_BR", "Brazil"), ("hi_IN", "India"), ("zh_CN", "China"),
-                                ("ar_EG", "Egypt"), ("fr_DZ", "Algeria"), ("de_LI", "Liechtenstein"),
-                                ("zh_TW", "Taiwan")):
+        # (locale, country, its name in the postings)
+        for locale, country, shown in (("ja_JP", "Japan", "Japan"), ("pt_BR", "Brazil", "Brasil"),
+                                       ("hi_IN", "India", "India"), ("zh_CN", "China", "China"),
+                                       ("ar_EG", "Egypt", "Egypt"), ("fr_DZ", "Algeria", "Algérie"),
+                                       ("de_LI", "Liechtenstein", "Liechtenstein"), ("zh_TW", "Taiwan", "Taiwan")):
             if locale not in AVAILABLE_LOCALES:
                 continue  # fr_DZ: recent Faker versions only
             fake, provider = make(locale)
             self.assertEqual(provider._local_conditions()["country"], country, locale)
-            self.assertEqual(fake.job_location()["country"], country, locale)
+            self.assertEqual(fake.job_location()["country"], shown, locale)
 
 
 class JobCountryTests(unittest.TestCase):
