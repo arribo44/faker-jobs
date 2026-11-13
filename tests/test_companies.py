@@ -12,7 +12,7 @@ import unittest
 
 from faker import Faker
 
-from faker_jobs import JobsProvider, _load_cities, _load_companies, _load_conditions
+from faker_jobs import JobsProvider, _country_conditions, _load_cities, _load_companies, _load_conditions
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
@@ -24,10 +24,12 @@ from rome_labels import SECTORS  # noqa: E402
 
 
 class CompaniesDataTests(unittest.TestCase):
-    def test_six_countries_and_35_sectors(self):
+    def test_countries_and_35_sectors(self):
         data = _load_companies()
         self.assertEqual(set(data["countries"]),
-                         {"United States", "United Kingdom", "France", "Germany", "Spain", "Italy"})
+                         {"United States", "United Kingdom", "France", "Germany", "Spain", "Italy", "Belgium",
+                          "Switzerland", "Austria", "Luxembourg", "Ireland", "Canada", "Mexico", "Chile",
+                          "Colombia", "Australia", "New Zealand"})
         codes = set(_load_conditions()["fr_FR"]["sector_codes"].values())
         self.assertEqual(len(codes), 35)
         for country, entry in data["countries"].items():
@@ -56,6 +58,9 @@ class CompaniesDataTests(unittest.TestCase):
 
     def test_sector_codes_in_every_locale(self):
         for locale, conditions in _load_conditions().items():
+            if "base" in conditions:  # a country locale: those of its language
+                self.assertNotIn("sector_codes", conditions, locale)
+                conditions = _country_conditions(locale)
             self.assertEqual(len(conditions["sector_codes"]), 35, locale)
 
     def test_no_company_dominates(self):
@@ -70,7 +75,10 @@ class CompaniesDataTests(unittest.TestCase):
         # Official statistics: 2-9 persons employed hold ~16% of the jobs in France, ~28% in Italy.
         self.assertTrue(0.1 < micro["France"] < 0.25, micro)
         self.assertGreater(micro["Italy"], micro["France"])
-        self.assertTrue(all(share > 0.05 for share in micro.values()), micro)
+        # Countries without official figures keep the LinkedIn shares, which list few small companies.
+        official = {"France", "Germany", "Spain", "Italy", "United States", "United Kingdom", "Belgium",
+                    "Austria", "Luxembourg", "Ireland", "Switzerland", "Canada", "New Zealand"}
+        self.assertTrue(all(micro[country] > 0.05 for country in official), micro)
         # French mining and waste: confidential, the EU split.
         with gzip.open(os.path.join(ROOT, "faker_jobs", "data", "companies.json.gz"), "rt", encoding="utf-8") as f:
             sections = json.load(f)["countries"]["France"]["official_sizes"]["sections"]
@@ -197,8 +205,10 @@ class BuildCompaniesTests(unittest.TestCase):
 
     def _index(self):
         cities = {"countries": {country: {"cities": []} for country in build_companies.COUNTRY_CODES}}
-        cities["countries"]["France"]["cities"] = [["Paris", 48.8534, 2.3488, 2138551, "Paris"],
-                                                   ["Neuilly-sur-Seine", 48.8846, 2.2697, 60361, "Neuilly-sur-Seine"]]
+        cities["countries"]["France"]["cities"] = [["Paris", 48.8534, 2.3488, 2138551],
+                                                   ["Neuilly-sur-Seine", 48.8846, 2.2697, 60361]]
+        cities["countries"]["Switzerland"]["cities"] = [["Geneva", 46.2022, 6.1457, 183981,
+                                                         {"fr": "Genève", "de": "Genf", "it": "Ginevra"}]]
         cities["countries"]["United States"]["cities"] = [["New York City", 40.7143, -74.006, 8804190],
                                                           ["Bentonville", 36.3729, -94.2088, 54164]]
         geonames = {"FR": [(48.8534, 2.3488, ["Paris", "Paris", "Lutece"], "11"),
@@ -216,6 +226,8 @@ class BuildCompaniesTests(unittest.TestCase):
         # A district left out of cities.json.gz: the nearest city, also by the last word of its name.
         self.assertEqual(index["France"]["names"]["levallois perret"], 1)
         self.assertEqual(index["France"]["suffixes"]["perret"], 1)
+        # Local names of every language.
+        self.assertEqual({index["Switzerland"]["names"][name] for name in ("geneva", "geneve", "genf")}, {0})
 
     def test_headquarters_city(self):
         index = self._index()
@@ -247,9 +259,14 @@ class BuildCompaniesTests(unittest.TestCase):
 
     def test_large_groups_have_a_city(self):
         data = _load_companies()
+        every = []
         for country, entry in data["countries"].items():
             rows = [row for grouped in entry["by_class"].values() for row in grouped[7]]
-            self.assertGreater(sum(isinstance(row[3], int) for row in rows), 0.9 * len(rows), country)
+            every += rows
+            if country in ("United States", "United Kingdom", "France", "Germany", "Spain", "Italy"):
+                self.assertGreater(sum(isinstance(row[3], int) for row in rows), 0.9 * len(rows), country)
+        # Elsewhere some headquarters are towns or suburbs of less than 15,000 (North Sydney).
+        self.assertGreater(sum(isinstance(row[3], int) for row in every), 0.9 * len(every))
         walmart = data["by_name"]["United States"]["walmart"][2]
         self.assertEqual((_load_cities()["united states"]["cities"][walmart[3]][0], walmart[4]),
                          ("Bentonville", "Arkansas"))

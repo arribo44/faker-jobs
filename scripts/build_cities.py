@@ -6,9 +6,12 @@ proportion to its population, in the 244 countries that have one, under
 their GeoNames English name ('United States', 'United Kingdom', 'France').
 
 Names: the English name of the city (GeoNames preferred English name, else
-its first English name, else its GeoNames name); for France, Germany, Spain
-and Italy also the name in the country's language (preferred name, else the
-first one), shown in the locales of that language.
+its first English name, else its GeoNames name); for the countries of the
+locales with conditions of their own (France, Germany, Spain, Italy,
+Belgium, Switzerland, Austria, Luxembourg, Canada, Mexico, Chile, Colombia:
+LOCAL_LANGUAGES) also the names in their languages, shown in the locales of
+that language ('München', 'Anvers', 'Genf'), when they differ from the
+English name.
 
 Districts are left out, as their population is part of their city's:
 feature codes PPLX (and abandoned places PPLQ, PPLH, PPLW), names made of a
@@ -16,8 +19,9 @@ bigger city's name and a number ("Paris 15 Vaugirard", "Marseille 13") and
 places less than 3 km from the centre of a bigger city ("Quinze-Vingts").
 
 Input, in DATAS/geonames/ (https://download.geonames.org/export/dump/):
-cities15000.zip, countryInfo.txt, alternatenames/{FR,DE,ES,IT}.zip saved as
-alt_{FR,DE,ES,IT}.zip. Run with --download to fetch them.
+cities15000.zip, countryInfo.txt, alternatenames/<code>.zip of the
+countries of LOCAL_LANGUAGES saved as alt_<code>.zip. Run with --download
+to fetch the missing ones.
 """
 import gzip
 import io
@@ -34,8 +38,13 @@ GEONAMES_DIR = os.path.join(ROOT, "DATAS", "geonames")
 OUTPUT_PATH = os.path.join(ROOT, "faker_jobs", "data", "cities.json.gz")
 BASE_URL = "https://download.geonames.org/export/dump/"
 
-# Country -> language of its local city names.
-LOCAL_LANGUAGES = {"FR": "fr", "DE": "de", "ES": "es", "IT": "it"}
+# Country -> languages of its local city names (those of its Faker locales
+# with conditions of their own, see posting_conditions.py).
+LOCAL_LANGUAGES = {"FR": ["fr"], "DE": ["de"], "ES": ["es"], "IT": ["it"], "BE": ["fr"], "CH": ["fr", "de", "it"],
+                   "AT": ["de"], "LU": ["de"], "CA": ["fr"], "MX": ["es"], "CL": ["es"], "CO": ["es"]}
+# Countries of several languages, where the official GeoNames name is often
+# in another one ("Antwerpen", "Genève"): the name in the language comes first.
+MULTILINGUAL = {"BE", "CH", "LU", "CA"}
 SKIPPED_FEATURES = {"PPLX", "PPLQ", "PPLH", "PPLW"}
 DISTRICT_KM = 3
 
@@ -44,6 +53,8 @@ def download():
     files = {"cities15000.zip": "cities15000.zip", "countryInfo.txt": "countryInfo.txt"}
     files.update({f"alt_{code}.zip": f"alternatenames/{code}.zip" for code in LOCAL_LANGUAGES})
     for name, path in files.items():
+        if os.path.exists(os.path.join(GEONAMES_DIR, name)):
+            continue  # delete a file to fetch it again
         print(f"Downloading {BASE_URL}{path}")
         urllib.request.urlretrieve(BASE_URL + path, os.path.join(GEONAMES_DIR, name))
 
@@ -74,22 +85,25 @@ def read_cities():
 
 
 def alternate_names(code, cities):
-    """{geonameid: {language: name}} for English and the local language.
+    """{geonameid: {language: name}} for English and the local languages.
 
     English: the preferred English name, else the GeoNames name if it is
     one of the English names, else the first English name. Local language:
     the GeoNames name (usually the official one: "Torrent", "Greifswald"),
     unless it is an English name that is not a name in the language
     ("Rome", "Munich"): then the preferred name in the language, else the
-    first one ("Roma", "München"). Colloquial and historic names are left out."""
-    local = LOCAL_LANGUAGES[code]
+    first one ("Roma", "München"). In MULTILINGUAL countries, the preferred
+    name in the language, else the GeoNames name if it is one of its names,
+    else its first name ("Anvers", "Genf"), else the GeoNames name.
+    Colloquial and historic names are left out."""
+    languages = LOCAL_LANGUAGES[code]
     preferred, every = {}, {}
     with zipfile.ZipFile(os.path.join(GEONAMES_DIR, f"alt_{code}.zip")) as archive:
         with archive.open(f"{code}.txt") as raw:
             for line in io.TextIOWrapper(raw, encoding="utf-8"):
                 fields = line.rstrip("\n").split("\t")
                 geonameid, language, name = fields[1], fields[2], fields[3]
-                if geonameid not in cities or language not in ("en", local) or "1" in fields[6:8]:
+                if geonameid not in cities or (language != "en" and language not in languages) or "1" in fields[6:8]:
                     continue
                 every.setdefault(geonameid, {}).setdefault(language, []).append(name)
                 if fields[4] == "1":
@@ -98,12 +112,16 @@ def alternate_names(code, cities):
     for geonameid, names in every.items():
         own = cities[geonameid][0]
         best = preferred.get(geonameid, {})
-        english, in_language = names.get("en", []), names.get(local, [])
-        chosen[geonameid] = {
-            "en": best.get("en") or (own if own in english or not english else english[0]),
-            local: own if own in in_language or own not in english or not in_language
-            else best.get(local, in_language[0]),
-        }
+        english = names.get("en", [])
+        chosen[geonameid] = {"en": best.get("en") or (own if own in english or not english else english[0])}
+        for local in languages:
+            in_language = names.get(local, [])
+            if code in MULTILINGUAL:
+                chosen[geonameid][local] = best.get(local) or (own if own in in_language or not in_language
+                                                               else in_language[0])
+            else:
+                chosen[geonameid][local] = (own if own in in_language or own not in english or not in_language
+                                            else best.get(local, in_language[0]))
     return chosen
 
 
@@ -143,8 +161,10 @@ def build():
     for geonameid, (name, code, latitude, longitude, population) in cities.items():
         found = names.get(geonameid, {})
         row = [found.get("en", name), latitude, longitude, population]
-        if code in LOCAL_LANGUAGES:
-            row.append(found.get(LOCAL_LANGUAGES[code], name))
+        local = {language: found.get(language, name) for language in LOCAL_LANGUAGES.get(code, [])}
+        local = {language: value for language, value in local.items() if value != row[0]}
+        if local:
+            row.append(local)
         by_code.setdefault(code, []).append(row)
 
     countries = {}
@@ -155,7 +175,8 @@ def build():
     data = {
         "meta": {
             "source": "GeoNames cities15000 (www.geonames.org, CC BY 4.0)",
-            "row": ["city (English)", "latitude", "longitude", "population", "local name (FR, DE, ES, IT)"],
+            "row": ["city (English)", "latitude", "longitude", "population",
+                    "optional: {language: local name} where it differs from the English name (LOCAL_LANGUAGES)"],
             "local_languages": LOCAL_LANGUAGES,
         },
         "countries": countries,

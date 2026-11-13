@@ -62,7 +62,9 @@ import fetch_business_sizes  # noqa: E402
 import fetch_esco  # noqa: E402
 import fetch_salaries  # noqa: E402
 from naf_industries import INDUSTRY_NAF  # noqa: E402
-from posting_conditions import BENEFITS_PER_POSTING, CONDITIONS, EXPERIENCE, FIELDS_OF_STUDY, SKILL_LEVELS  # noqa: E402
+from posting_conditions import (  # noqa: E402
+    BENEFITS_PER_POSTING, CONDITIONS, COUNTRY_CONDITIONS, EXPERIENCE, FIELDS_OF_STUDY, SKILL_LEVELS,
+)
 from rome_labels import DOMAINS, SECTORS, SOFT_SKILLS  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -361,7 +363,12 @@ ISCO_TO_SOC = {
 SALARY_SOURCES = {
     "eurostat": "salaries: Eurostat SES 2022 (© European Union), by ISCO-08 major group, NACE section and age",
     "bls": "salaries: U.S. BLS OEWS {year}, by SOC major group (public domain)",
+    "oecd": "salaries: those of {base} scaled by the ratio of the OECD average annual wages {year} "
+            "({country} / {base_code}, national currency); minimum wage: OECD",
 }
+SES_YEAR = "2022"
+# Country code of the earnings of each occupation locale (OECD average wages).
+BASE_COUNTRY_CODES = {"fr_FR": "FR", "de_DE": "DE", "es_ES": "ES", "it_IT": "IT", "en_US": "US"}
 
 # NACE Rev. 2 section of each NAF / NACE division (first two digits).
 NACE_SECTIONS = [
@@ -574,42 +581,100 @@ def salary_table(locale, eurostat, bls):
     each ISCO group (ISCO_TO_SOC), for every section, with the mean age
     ratios of the Eurostat countries. Groups the survey misses take the
     earnings of ISCO_FALLBACK."""
-    groups = sorted(SKILL_LEVELS)
-
-    def source(group, ages):
-        # Cells under statistical confidentiality are missing: a group with no
-        # mean at all takes the earnings of its fallback group.
-        return f"OC{group}" if f"OC{group}|TOTAL" in ages else f"OC{ISCO_FALLBACK[group]}"
-
-    def age_ratios(country):
-        ages = eurostat["by_isco_age"][country]["values"]
-        ratios = {}
-        for group in groups:
-            occupation = source(group, ages)
-            ratios[group] = {band: ages.get(f"{occupation}|{band}", ages[f"{occupation}|TOTAL"])
-                             / ages[f"{occupation}|TOTAL"] for band in AGE_BANDS}
-        return ratios
-
     if locale in EUROSTAT_COUNTRIES:
-        country = EUROSTAT_COUNTRIES[locale]
-        table = eurostat["by_isco_section"][country]["values"]
-        ages = eurostat["by_isco_age"][country]["values"]
-        base = {}
-        for group in groups:
-            occupation = source(group, ages)
-            sections = {key.split("|")[1]: value for key, value in table.items()
-                        if key.startswith(f"{occupation}|") and len(key.split("|")[1]) == 1}
-            # "*": every section (the age table covers sections B to S except O).
-            base[group] = {"*": ages[f"{occupation}|TOTAL"], **sections}
-        return {"base": base, "age_ratio": age_ratios(country)}
+        return eurostat_salary(EUROSTAT_COUNTRIES[locale], eurostat)
+    return bls_salary(eurostat, bls)
+
+
+def survey_group(group, ages):
+    """The ISCO group whose earnings `group` takes: itself, or its fallback when
+    the survey has no mean for it (cells under statistical confidentiality)."""
+    return f"OC{group}" if f"OC{group}|TOTAL" in ages else f"OC{ISCO_FALLBACK[group]}"
+
+
+def eurostat_salary(country, eurostat):
+    """`salary_table` of a country of the Eurostat earnings (alpha-2 code), in its currency."""
+    table = eurostat["by_isco_section"][country]["values"]
+    ages = eurostat["by_isco_age"][country]["values"]
+    base = {}
+    for group in sorted(SKILL_LEVELS):
+        occupation = survey_group(group, ages)
+        sections = {key.split("|")[1]: value for key, value in table.items()
+                    if key.startswith(f"{occupation}|") and len(key.split("|")[1]) == 1}
+        # "*": every section (the age table covers sections B to S except O).
+        base[group] = {"*": ages[f"{occupation}|TOTAL"], **sections}
+    return {"base": base, "age_ratio": age_ratios(eurostat, country)}
+
+
+def age_ratios(eurostat, country):
+    """{ISCO major group: {age band: mean of the band / mean of the group}} of a Eurostat country."""
+    ages = eurostat["by_isco_age"][country]["values"]
+    ratios = {}
+    for group in sorted(SKILL_LEVELS):
+        occupation = survey_group(group, ages)
+        ratios[group] = {band: ages.get(f"{occupation}|{band}", ages[f"{occupation}|TOTAL"])
+                         / ages[f"{occupation}|TOTAL"] for band in AGE_BANDS}
+    return ratios
+
+
+def bls_salary(eurostat, bls):
+    """`salary_table` of the United States: BLS means, mean age ratios of the base Eurostat countries."""
+    groups = sorted(SKILL_LEVELS)
     wages = bls["mean_annual_wage"]
-    ratios = [age_ratios(country) for country in EUROSTAT_COUNTRIES.values()]
+    ratios = [age_ratios(eurostat, country) for country in EUROSTAT_COUNTRIES.values()]
     return {
         "base": {group: {"*": sum(wages[soc] for soc in ISCO_TO_SOC[group]) / len(ISCO_TO_SOC[group])}
                  for group in groups},
         "age_ratio": {group: {band: sum(r[group][band] for r in ratios) / len(ratios) for band in AGE_BANDS}
                       for group in groups},
     }
+
+
+def ratio_year(oecd, code, base_code, year):
+    """The latest year up to `year` with the OECD average wages of both countries."""
+    wages = oecd["average_wage"]
+    years = [y for y in wages[code] if y in wages[base_code] and y <= year]
+    if not years:
+        raise ValueError(f"no OECD average wages of {code} and {base_code} up to {year}")
+    return max(years)
+
+
+def country_conditions(locale, local, base, eurostat, bls, lfs, oecd):
+    """The posting conditions of a country of COUNTRY_CONDITIONS, over those of
+    its occupation locale (`base`, conditions.json): the keys it gives,
+    its contracts with their mix, its salaries and minimum wage, and the
+    base locale (`base` key) to take the rest from."""
+    base_locale = local["base"]
+    contracts = {name: {"kind": spec["kind"], "salary_factor": spec.get("salary_factor", 1),
+                        "max_experience": spec.get("max_experience"), "employee": spec.get("employee", True)}
+                 for name, spec in local["contracts"].items()}
+    earnings = local["earnings"]
+    if "eurostat" in earnings:
+        code = earnings["eurostat"]
+        salary, year, country_lfs = eurostat_salary(code, eurostat), SES_YEAR, lfs["values"][code]
+        source = f"{SALARY_SOURCES['eurostat']}; minimum wage: OECD; {lfs_source(lfs)}"
+        scale = 1
+    else:
+        code, base_code = earnings["oecd"], BASE_COUNTRY_CODES[base_locale]
+        survey_year = bls["year"] if base_locale == "en_US" else SES_YEAR
+        year = ratio_year(oecd, code, base_code, survey_year)
+        ratio = oecd["average_wage"][code][year] / oecd["average_wage"][base_code][year]
+        salary = {"base": {group: {section: value * ratio for section, value in sections.items()}
+                           for group, sections in base["salary"]["base"].items()},
+                  "age_ratio": base["salary"]["age_ratio"]}
+        country_lfs = None
+        source = SALARY_SOURCES["oecd"].format(base=base["country"], year=year, country=code, base_code=base_code)
+        # Amounts rounded to 500 / 1,000 units in EUR, USD...; to 500,000 in COP.
+        scale = 10 ** round(math.log10(ratio))
+    kept = {key: value for key, value in local.items() if key not in ("earnings", "contracts")}
+    conditions = {**kept, "contracts": contracts, "contract_weights": contract_weights(local["contracts"], country_lfs),
+                  # Always set: the base's would name its own country ("España" for Chile).
+                  "place_names": local.get("place_names", {"country": local["country"]}),
+                  "salary": salary, "minimum_wage": oecd["minimum_wage"].get(code, {}).get(year),
+                  "salary_source": source}
+    if scale != 1:
+        conditions["salary_scale"] = scale
+    return conditions
 
 
 # Labour Force Survey figure that adapts each contract kind to the ISCO
@@ -643,7 +708,8 @@ def contract_weights(contracts, lfs):
         weights = {}
         for name, spec in contracts.items():
             ratio = 1
-            if lfs is not None and spec["kind"] in LFS_SHARES:
+            if lfs is not None and spec["kind"] in LFS_SHARES and lfs[LFS_SHARES[spec["kind"]][1]].get(f"OC{group}"):
+                # A group the survey does not publish (armed forces in Luxembourg) keeps the national mix.
                 part, whole = LFS_SHARES[spec["kind"]]
                 group_share = lfs[part].get(f"OC{group}", 0) / lfs[whole][f"OC{group}"]
                 ratio = min(MAX_LFS_RATIO, group_share / (lfs[part]["TOTAL"] / lfs[whole]["TOTAL"]))
@@ -864,6 +930,12 @@ def build_occupations():
         nace = (nace_labels[ESCO_LOCALES[locale]], employment[country], isco_naf) if country else None
         built[locale] = build_esco(locale, jobs, weights, seasonal, naf, salary_table(locale, eurostat, bls),
                                    source, lfs, nace)
+    with open(fetch_salaries.OECD_PATH, encoding="utf-8") as f:
+        oecd = json.load(f)
+    for locale, local in COUNTRY_CONDITIONS.items():
+        # No occupation data of their own: only posting conditions.
+        built[locale] = {"conditions": country_conditions(locale, local, built[local["base"]]["conditions"],
+                                                          eurostat, bls, lfs, oecd)}
     return dict(sorted(built.items()))
 
 
@@ -892,7 +964,8 @@ def split_outputs(built):
     for locale, data in built.items():
         data = round_floats(data)
         conditions[locale] = data.pop("conditions")
-        occupations[locale] = data
+        if data:  # country locales (COUNTRY_CONDITIONS) only have conditions
+            occupations[locale] = data
     return occupations, conditions
 
 
