@@ -53,6 +53,7 @@ import json
 import math
 import os
 import re
+import statistics
 import sys
 import unicodedata
 
@@ -63,7 +64,8 @@ import fetch_esco  # noqa: E402
 import fetch_salaries  # noqa: E402
 from naf_industries import INDUSTRY_NAF  # noqa: E402
 from posting_conditions import (  # noqa: E402
-    BENEFITS_PER_POSTING, CONDITIONS, COUNTRY_CONDITIONS, EXPERIENCE, FIELDS_OF_STUDY, SKILL_LEVELS,
+    BENEFITS_PER_POSTING, CONDITIONS, COUNTRY_CONDITIONS, EXPERIENCE, FIELDS_OF_STUDY, GENERIC_CONDITIONS,
+    SKILL_LEVELS,
 )
 from rome_labels import DOMAINS, SECTORS, SOFT_SKILLS  # noqa: E402
 
@@ -645,9 +647,7 @@ def country_conditions(locale, local, base, eurostat, bls, lfs, oecd):
     its contracts with their mix, its salaries and minimum wage, and the
     base locale (`base` key) to take the rest from."""
     base_locale = local["base"]
-    contracts = {name: {"kind": spec["kind"], "salary_factor": spec.get("salary_factor", 1),
-                        "max_experience": spec.get("max_experience"), "employee": spec.get("employee", True)}
-                 for name, spec in local["contracts"].items()}
+    contracts = normalized_contracts(local["contracts"])
     earnings = local["earnings"]
     if "eurostat" in earnings:
         code = earnings["eurostat"]
@@ -727,15 +727,20 @@ def contract_weights(contracts, lfs):
     return result
 
 
+def normalized_contracts(contracts):
+    """The contracts of posting_conditions.py with every key, defaults filled in (weights left out)."""
+    return {name: {"kind": spec["kind"], "salary_factor": spec.get("salary_factor", 1),
+                   "max_experience": spec.get("max_experience"), "employee": spec.get("employee", True)}
+            for name, spec in contracts.items()}
+
+
 def make_conditions(locale, office_domains, salary, sector_names, naf, lfs, naf_sectors=None, naf_industries=None):
     """The posting conditions of a locale (see posting_conditions.py), with
     its salaries, contract weights, the NACE section and field of study of
     each activity sector ({ROME sector code: name} in `sector_names`)."""
     local = CONDITIONS[locale]
-    contracts = {name: {"kind": spec["kind"], "salary_factor": spec.get("salary_factor", 1),
-                        "max_experience": spec.get("max_experience"), "employee": spec.get("employee", True)}
-                 for name, spec in local["contracts"].items()}
-    conditions = {**local, "contracts": contracts, "contract_weights": contract_weights(local["contracts"], lfs),
+    conditions = {**local, "contracts": normalized_contracts(local["contracts"]),
+                  "contract_weights": contract_weights(local["contracts"], lfs),
                   "experience": EXPERIENCE, "skill_levels": SKILL_LEVELS,
                   "benefits_per_posting": BENEFITS_PER_POSTING, "office_domains": sorted(office_domains),
                   "salary": salary, "section_by_sector": section_by_sector(sector_names, naf),
@@ -940,6 +945,42 @@ def build_occupations():
 
 
 CONDITIONS_PATH = os.path.join(OUTPUT_DIR, "conditions.json")
+COUNTRIES_PATH = os.path.join(OUTPUT_DIR, "countries.json")
+COUNTRY_INFO_PATH = os.path.join(ROOT, "DATAS", "geonames", "countryInfo.txt")
+# The locale whose earnings stand for a country with several (fr_CA and en_CA
+# scale those of France and of the United States).
+ECONOMY_LOCALES = {"Canada": "en_CA", "Switzerland": "de_CH"}
+# Bounds of the ratio of the yearly mean earnings to the GDP per capita: an
+# ILOSTAT figure outside them (another currency unit, a partial survey) is
+# left out, and the country gets the median ratio instead.
+EARNINGS_TO_GDP = (0.2, 6)
+# Micro-states whose GDP per capita (cross-border workers, finance) says little
+# of their wages, and territories without figures of their own that use the
+# currency of their country: the economy of that country.
+ECONOMY_PROXIES = {
+    "Liechtenstein": "Switzerland", "Monaco": "France", "San Marino": "Italy", "Andorra": "Spain", "Vatican": "Italy",
+    "French Guiana": "France", "Guadeloupe": "France", "Martinique": "France", "Mayotte": "France",
+    "Reunion": "France", "Saint Barthelemy": "France", "Saint Pierre and Miquelon": "France",
+    "Aland Islands": "Finland", "Svalbard and Jan Mayen": "Norway", "Guernsey": "United Kingdom",
+    "Jersey": "United Kingdom", "Gibraltar": "United Kingdom", "Christmas Island": "Australia",
+    "Cocos Islands": "Australia", "Norfolk Island": "Australia", "Cook Islands": "New Zealand", "Niue": "New Zealand",
+}
+# Countries that neither the World Bank nor ILOSTAT cover: hand-entered yearly
+# figures, with the median structure of the ISCO groups.
+MANUAL_ECONOMIES = {
+    "Taiwan": {"currency": "TWD", "total": 59_000 * 12, "minimum_wage": 28_590 * 12,
+               "source": "salaries: mean total monthly earnings of employees 2024 (DGBAS, Taiwan), about "
+                         "NT$59,000, with the median earnings of each ISCO-08 major group (ILOSTAT); minimum "
+                         "wage 2025: NT$28,590 a month (hand-entered)"},
+}
+# Currencies replaced by the euro, at their fixed conversion rate: ILOSTAT
+# figures of past years in them are brought to EUR; GeoNames may still give
+# the former one (Bulgaria, euro since 2026).
+EURO_RATES = {"BGN": 1.95583, "HRK": 7.5345}
+GENERIC_SOURCE = ("salaries: ILOSTAT average monthly earnings of employees by ISCO-08 major group {year}, "
+                  "local currency, brought to {latest} with the World Bank GDP per capita (current LCU)")
+GDP_SOURCE = ("salaries: World Bank GDP per capita {latest} (current LCU) times the median ratio of the mean "
+              "earnings to it, with the median earnings of each ISCO-08 major group (ILOSTAT)")
 FLOAT_DIGITS = 6
 
 
@@ -969,6 +1010,165 @@ def split_outputs(built):
     return occupations, conditions
 
 
+def country_info():
+    """{ISO alpha-3 code: (country name of cities.json.gz, currency code, ISO alpha-2 code)}
+    (GeoNames countryInfo.txt)."""
+    info = {}
+    with open(COUNTRY_INFO_PATH, encoding="utf-8") as f:
+        for line in f:
+            if not line.startswith("#"):
+                fields = line.rstrip("\n").split("\t")
+                if fields[10]:
+                    currency = "EUR" if fields[10] in EURO_RATES else fields[10]
+                    info[fields[1]] = (fields[4], currency, fields[0])
+    return info
+
+
+def in_currency(value, source, currency):
+    """`value` in `source` currency converted to `currency`: the same, or a former
+    currency of the euro area; None otherwise."""
+    if source == currency:
+        return value
+    if currency == "EUR" and source in EURO_RATES:
+        return value / EURO_RATES[source]
+    return None
+
+
+def scaled_minimum(wage, currency, series, year):
+    """A yearly ILOSTAT minimum wage brought to `year` with the GDP per capita, None without."""
+    monthly = in_currency(wage["monthly"], wage["currency"], currency) if wage else None
+    if monthly is None or not series:
+        return None
+    since, until = gdp_year(series, wage["year"]), gdp_year(series, year)
+    if since is None or until is None:
+        return None
+    return monthly * 12 * series[until] / series[since]
+
+
+def gdp_year(gdp, year):
+    """The latest year up to `year` with a GDP per capita figure, None without."""
+    years = [y for y in gdp if y <= year]
+    return max(years) if years else None
+
+
+def merged_conditions(conditions, locale):
+    entry = conditions[locale]
+    return {**conditions[entry["base"]], **entry} if "base" in entry else entry
+
+
+def economies(conditions, ilo, gdp, info, eurostat):
+    """{country: {"currency", "salary": {"base": {ISCO group: {"*" or NACE section: yearly mean}}},
+    "minimum_wage", "salary_scale" (optional), "salary_source"}}: those of the
+    locales with conditions of their own; for the other countries, the
+    Eurostat SES 2022 earnings where they have them (as the European
+    locales), else ILOSTAT's (brought to the latest year with the GDP per
+    capita), else an estimate from the GDP per capita (see GDP_SOURCE)."""
+    result = {}
+    for locale in sorted(conditions):
+        merged = merged_conditions(conditions, locale)
+        country = merged["country"]
+        if ECONOMY_LOCALES.get(country, locale) != locale or country in result:
+            continue
+        result[country] = {"currency": merged["currency"], "salary": {"base": merged["salary"]["base"]},
+                           "minimum_wage": merged["minimum_wage"],
+                           "salary_source": merged.get("salary_source") or f"those of {locale}"}
+        if "salary_scale" in merged:
+            result[country]["salary_scale"] = merged["salary_scale"]
+    by_alpha2 = {alpha2: (iso3, country, currency) for iso3, (country, currency, alpha2) in info.items()}
+    for geo in sorted(eurostat["by_isco_age"]):
+        iso3, country, currency = by_alpha2["GR" if geo == "EL" else geo]
+        if country in result or not eurostat["by_isco_age"][geo]["values"]:
+            continue
+        salary = eurostat_salary(geo, eurostat)
+        result[country] = {"currency": currency, "salary": {"base": salary["base"]},
+                           "minimum_wage": scaled_minimum(ilo["minimum_wage"].get(iso3), currency, gdp.get(iso3),
+                                                          SES_YEAR),
+                           "salary_source": f"{SALARY_SOURCES['eurostat']}; minimum wage: ILOSTAT"}
+    groups = sorted(SKILL_LEVELS)
+    surveyed, ratios, structures = {}, [], {group: [] for group in groups}
+    for iso3, (country, currency, _alpha2) in info.items():
+        found, series = ilo["earnings"].get(iso3), gdp.get(iso3)
+        if country in result or not found or not series or in_currency(1, found["currency"], currency) is None:
+            continue
+        year = gdp_year(series, found["year"])
+        monthly = {group: in_currency(value, found["currency"], currency) for group, value in found["monthly"].items()}
+        if year is None or not EARNINGS_TO_GDP[0] <= monthly["TOTAL"] * 12 / series[year] <= EARNINGS_TO_GDP[1]:
+            continue
+        ratios.append(monthly["TOTAL"] * 12 / series[year])
+        shares = {}
+        for group in groups:
+            # A group missing or at 0 (armed forces in Saudi Arabia): its fallback group's.
+            source = group if monthly.get(group) else ISCO_FALLBACK.get(group)
+            if monthly.get(source):
+                shares[group] = monthly[source] / monthly["TOTAL"]
+        if shares.get("2", 0) <= shares.get("9", 0):
+            shares = {}  # professionals under elementary occupations (Laos, Sudan): the median structure
+        for group, share in shares.items():
+            structures[group].append(share)
+        surveyed[iso3] = (year, found["year"], shares, monthly["TOTAL"])
+    median_ratio = statistics.median(ratios)
+    median_shares = {group: statistics.median(values) for group, values in structures.items()}
+    for iso3, (country, currency, _alpha2) in sorted(info.items(), key=lambda item: item[1][0]):
+        series = gdp.get(iso3)
+        if country in result or not series:
+            continue
+        latest = max(series)
+        if iso3 in surveyed:
+            year, survey_year, shares, monthly_total = surveyed[iso3]
+            total = monthly_total * 12 * series[latest] / series[year]
+            source = GENERIC_SOURCE.format(year=survey_year, latest=latest)
+        else:
+            shares, total = {}, median_ratio * series[latest]
+            source = GDP_SOURCE.format(latest=latest)
+        base = {group: {"*": total * shares.get(group, median_shares[group])} for group in groups}
+        minimum = scaled_minimum(ilo["minimum_wage"].get(iso3), currency, series, latest)
+        if minimum is not None and minimum >= total:
+            minimum = None  # above the mean earnings: not a floor of the postings
+        entry = {"currency": currency, "salary": {"base": base}, "minimum_wage": minimum, "salary_source": source}
+        scale = 10 ** round(math.log10(total / 40_000))
+        if scale != 1:
+            entry["salary_scale"] = scale
+        result[country] = entry
+    for country, manual in MANUAL_ECONOMIES.items():
+        base = {group: {"*": manual["total"] * median_shares[group]} for group in groups}
+        result[country] = {"currency": manual["currency"], "salary": {"base": base},
+                           "minimum_wage": manual["minimum_wage"], "salary_source": manual["source"]}
+        scale = 10 ** round(math.log10(manual["total"] / 40_000))
+        if scale != 1:
+            result[country]["salary_scale"] = scale
+    for country, neighbour in ECONOMY_PROXIES.items():
+        if country in {name for name, _currency, _alpha2 in info.values()}:
+            result[country] = {**result[neighbour], "salary_source": f"those of {neighbour} (a micro-state)"}
+    return dict(sorted(result.items()))
+
+
+def generic_conditions():
+    """{language: conditions of GENERIC_CONDITIONS, with their contract mix}."""
+    result = {}
+    for language, local in GENERIC_CONDITIONS.items():
+        result[language] = {**local, "contracts": normalized_contracts(local["contracts"]),
+                            "contract_weights": contract_weights(local["contracts"], None)}
+    return result
+
+
+def build_countries(conditions):
+    """countries.json: the conditions of each language for the countries
+    without conditions of their own in it, and the economy of every country."""
+    with open(fetch_salaries.ILOSTAT_PATH, encoding="utf-8") as f:
+        ilo = json.load(f)
+    with open(fetch_salaries.WORLD_BANK_PATH, encoding="utf-8") as f:
+        gdp = json.load(f)["gdp_per_capita"]
+    with open(fetch_salaries.EUROSTAT_PATH, encoding="utf-8") as f:
+        eurostat = json.load(f)
+    return round_floats({
+        "meta": {"source": f"{ilo['source']}; World Bank GDP per capita (current LCU); currencies: GeoNames",
+                 # Age ratios of the salaries (see salary_table): those of the US conditions.
+                 "age_ratio": conditions["en_US"]["salary"]["age_ratio"]},
+        "generic": generic_conditions(),
+        "countries": economies(conditions, ilo, gdp, country_info(), eurostat),
+    })
+
+
 def main():
     occupations, conditions = split_outputs(build_occupations())
     for locale, data in occupations.items():
@@ -981,6 +1181,11 @@ def main():
         json.dump(conditions, f, ensure_ascii=False, indent=1)
         f.write("\n")
     print(f"conditions of {', '.join(conditions)} → {CONDITIONS_PATH}")
+    countries = build_countries(conditions)
+    with open(COUNTRIES_PATH, "w", encoding="utf-8") as f:
+        json.dump(countries, f, ensure_ascii=False, separators=(",", ":"))
+        f.write("\n")
+    print(f"economies of {len(countries['countries'])} countries → {COUNTRIES_PATH}")
 
 
 if __name__ == "__main__":

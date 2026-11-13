@@ -63,9 +63,48 @@ gender mark of the titles, the place of the job and its companies:
 Structure of Earnings Survey 2022 and Labour Force Survey); "France ×
 OECD": those of the country of the language, scaled by the ratio of the
 OECD average wages of the two countries (see [Salaries](#-occupations-rome--esco)).
-The other locales of a language take the conditions of its country
-(`es_AR`: Spain, `fr_DZ`: France), and the others those of the United
-States (`en_IN`, `nl_NL`, `ja_JP`...).
+**Every other country** (232 of the 244 of `job_countries`) gets neutral
+conditions in the language of the occupations, with its own currency,
+salaries and minimum wage: the locales of other countries (`es_AR`,
+`fr_DZ`, `en_IN`, `ja_JP`, `pt_BR`, `nl_NL`...) post in their country, and
+`country=` takes the conditions of the country of the job:
+
+| Locale | Example |
+|---|---|
+| `ja_JP` | senior salesperson, Full-time, JPY 3,100,000 - 4,250,000 a year, Utsunomiya, Japan |
+| `pt_BR` | senior salesperson, Full-time, BRL 22,000 - 27,500 a year, Macapá, Brazil |
+| `en_IN` | senior salesperson, Full-time, INR 140,000 - 185,000 a year, Varanasi, India |
+| `es_AR` | vendedor especializado en vehículos de motor, Indefinido, 9.000.000 - 12.000.000 ARS brutos al año, Avellaneda |
+| `fr_DZ` | Technicien de mesure de la qualité de l'eau (H/F), CDI, 620 000 - 820 000 DZD brut/an, Chlef, Algeria |
+| `fr_FR`, `country="Brazil"` | the same occupation, CDI, 34 500 - 45 000 BRL brut/an, Macapá, Brazil |
+| `fr_FR`, `country="Belgium"` | the Belgian conditions (`fr_BE`): (H/F/X), Job étudiant, Le Forem, Belgique |
+
+Neutral conditions have contracts, benefits and diplomas found in most
+countries (Full-time / CDI / Unbefristet..., health insurance, meal
+allowance...), international job boards (LinkedIn, Indeed, Glassdoor,
+Jooble, Careerjet) and the ISO code of the currency in the salary. The
+salaries are:
+- those of the country's locales (France, Canada...), or the [Eurostat
+  SES 2022](https://ec.europa.eu/eurostat/web/microdata/structure-of-earnings-survey)
+  earnings for the other European countries it covers (Portugal, Poland,
+  the Netherlands...: 25 more);
+- else the [ILOSTAT](https://ilostat.ilo.org/) average monthly earnings of
+  employees by ISCO-08 major group (~100 countries: India, Brazil,
+  Argentina, South Africa...), latest year, brought to 2025 with the
+  [World Bank](https://data.worldbank.org/indicator/NY.GDP.PCAP.CN) GDP per
+  capita in local currency;
+- else (Japan, China, Algeria...: ~70 countries) the GDP per capita times
+  the median ratio of mean earnings to it, with the median earnings of
+  each ISCO group; micro-states and territories take those of their
+  neighbour or country (Monaco: France, Réunion: France, Jersey: United
+  Kingdom), Taiwan hand-entered figures (DGBAS).
+
+The minimum wage is ILOSTAT's (brought to the same year). Countries
+without any figures (North Korea, Western Sahara, a few islands) keep the
+locale's conditions. Hiring companies are made up by the Faker locale
+outside the 17 countries with real ones, with the size shares of the
+country of the language. These are **orders of magnitude**: the earnings
+of broad groups, 2022 to 2026 depending on the source.
 
 Companies of a posting are in the country of the job and the activity
 sector of the job. Contact names and phone numbers always come from the
@@ -243,7 +282,7 @@ fake.job_company_profile(sector="Santé")   # as the hiring companies of the pos
 |---|---|---|
 | `job_title()`, `job_role()`, `job_role_record()`... | ESCO occupations, in English | ROME (fr) or ESCO (de, es, it) occupations, in the language |
 | conditions (`job_qualification()`, `job_salary_range()`, `job_work_type()`...) | US | the country's |
-| `job_location()` | the locale's country by default (the United States without conditions of its own) | the locale's country by default, with local names (Deutschland, München, Sevilla, Roma, Anvers...) |
+| `job_location()` | the locale's country by default (the United States for `en`) | the locale's country by default, with local names (Deutschland, München, Sevilla, Roma, Anvers...) |
 | `job_company()`, `job_company_profile()`, `job_companies` | companies of the country, LinkedIn industry | companies of the country, NAF (France) or NACE (other countries) activity |
 
 Countries other than the locale's keep their English
@@ -470,10 +509,9 @@ Casual...; Chèques-repas, Halbtax-Abo, Vales de despensa, KiwiSaver...; Le
 Forem, jobs.ch, OCC Mundial, SEEK...). Where ROME sheets list French
 diplomas (CAP, BTS...), Belgian, Swiss and Canadian postings ask for local
 ones (CESS, CFC, DEC...); their companies get the NACE class of their NAF
-activity ('86.10'). The US conditions also serve the locales without
-conditions of their own that use the English data (`en_IN`, `nl_NL`,
-`ja_JP`...): USD salaries, US job boards and a place in the United States
-by default.
+activity ('86.10'). The other countries get neutral conditions in the
+language with their own economy (see
+[Languages and countries](#-languages-and-countries)).
 
 **Salaries follow the occupation.** The occupation's ISCO-08 major group
 (`isco_group`, from ESCO) gives its mean gross annual earnings in the
@@ -739,9 +777,12 @@ DATAS/salaries/eurostat_lfs.json             Eurostat LFS 2025 temporary, part-t
                                              by ISCO group, cached by fetch_salaries.py
 DATAS/salaries/oecd_wages.json               OECD average annual wages and minimum wages, national currency,
                                              cached by fetch_salaries.py
+DATAS/salaries/ilostat.json                  ILOSTAT monthly earnings by ISCO group and minimum wages, by
+                                             fetch_salaries.py
+DATAS/salaries/worldbank_gdp.json            World Bank GDP per capita (current LCU), by fetch_salaries.py
 scripts/
   fetch_esco.py [language]      ESCO web-service API -> the caches above (~2,000 requests each, resumable)
-  fetch_salaries.py             Eurostat, BLS and OECD APIs -> the salary and labour caches above
+  fetch_salaries.py             Eurostat, BLS, OECD, ILOSTAT and World Bank APIs -> the caches above
   fetch_activities.py [--download]   census + matrix -> isco_naf.json; EU Vocabularies SPARQL -> labels.json
   posting_conditions.py         local contracts, benefits, job boards, diplomas by locale and country
   rome_labels.py                ROME sectors, domains and soft skills in English, German, Spanish, Italian
@@ -749,6 +790,8 @@ scripts/
                                    and faker_jobs/data/conditions.json (posting conditions of the 20
                                    locales, plain JSON; a country locale only holds what differs
                                    from its language's: `base`)
+                                   and faker_jobs/data/countries.json (economy of 232 countries,
+                                   neutral conditions of each language; needs countryInfo.txt)
                                    (with the ROME code of each sector, the key of companies.json.gz)
 ```
 

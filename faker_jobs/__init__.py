@@ -17,9 +17,10 @@ sectors, skills, knowledge and soft skills. The posting conditions
 are those of the locale's country: France, Germany, Spain, Italy, the
 United States, and Belgium, Switzerland, Canada, Austria, Luxembourg,
 Mexico, Chile, Colombia, the United Kingdom, Ireland, Australia, New
-Zealand for their locales (fr_BE, de_CH, es_MX, en_GB...); those of the
-country of the language for its other locales (es_AR: Spain), of the
-United States for every other locale.
+Zealand for their locales (fr_BE, de_CH, es_MX, en_GB...); in every other
+country (232 in all), neutral conditions in the language with the
+country's currency and salaries (ILOSTAT, World Bank): ja_JP posts in
+Japan in JPY, and `country=` takes the conditions of the country of the job.
 
 Job locations are the ~29,700 cities of 15,000 inhabitants or more of
 GeoNames in 244 countries, picked in proportion to their population, with
@@ -60,9 +61,14 @@ _conditions_cache: dict[str, Any] | None = None
 _COMPANIES_PATH = os.path.join(_DATA_DIR, "companies.json.gz")
 _companies_cache: dict[str, Any] | None = None
 # Faker locales that stand for another one with posting conditions (fr_QC is
-# Faker's former name of fr_CA).
-_LOCALE_ALIASES = {"fr_QC": "fr_CA"}
+# Faker's former name of fr_CA, es_CA its Spanish of Catalonia).
+_LOCALE_ALIASES = {"fr_QC": "fr_CA", "es_CA": "es_ES"}
 _country_conditions_cache: dict[str, dict[str, Any]] = {}
+# Economy of every country (currency, salaries, minimum wage) and neutral
+# conditions of each language, for the countries without conditions of their own.
+_COUNTRIES_PATH = os.path.join(_DATA_DIR, "countries.json")
+_countries_cache: dict[str, Any] | None = None
+_generic_conditions_cache: dict[tuple[str, str], dict[str, Any]] = {}
 # Companies up to this size class (201-500 employees) hire in their headquarters city.
 _SINGLE_SITE_MAX_CLASS = 3
 # Companies sampled per sector and size class: in a class of fewer companies,
@@ -182,9 +188,10 @@ class OccupationPosting(TypedDict):
     Unbefristet, Indefinido, Tempo indeterminato, Full-time...), a yearly
     gross salary in the local currency from official earnings (see
     `job_occupation_posting`), local diplomas, a place in the country, local
-    job boards and benefits: those of the locale's country (see
-    `JobsProvider.job_location`), of the United States in the locales
-    without conditions of their own (en_IN, nl_NL...). The job title reads
+    job boards and benefits: those of the country of the job (see
+    `JobsProvider.job_occupation_posting`), neutral ones in the language
+    with the country's currency and salaries where it has no conditions of
+    its own in that language (Japan, India...). The job title reads
     "Conducteur de poids lourd (H/F)" in French ("(H/F/X)" in Belgium, both
     forms in Canada), "Busfahrer (m/w/d)" in German, "autista di autobus
     (m/f)" in Italian (Spanish keeps both forms).
@@ -280,7 +287,9 @@ def _load_cities() -> dict[str, Any]:
             country.lower(): {
                 "country": country,
                 "cities": entry["cities"],
+                # Uniform without populations (or with none but 0: Palau).
                 "cum_weights": None if any(row[3] is None for row in entry["cities"])
+                or not any(row[3] for row in entry["cities"])
                 else list(itertools.accumulate(row[3] for row in entry["cities"])),
             }
             for country, entry in raw["countries"].items()
@@ -372,6 +381,58 @@ def _conditions_locale(locale: str | None) -> str | None:
     key = _LOCALE_ALIASES.get(key, key)
     entry = _load_conditions().get(key)
     return key if entry is not None and "base" in entry else None
+
+
+def _load_countries() -> dict[str, Any]:
+    global _countries_cache
+    if _countries_cache is None:
+        with open(_COUNTRIES_PATH, encoding="utf-8") as f:
+            _countries_cache = json.load(f)
+    return _countries_cache
+
+
+def _locale_country(locale: str | None) -> str | None:
+    """The country of a Faker locale's territory ('ja_JP' -> 'Japan'), None
+    without one or for a territory without cities ('de_LI')."""
+    if not locale:
+        return None
+    key = locale.replace("-", "_")
+    key = _LOCALE_ALIASES.get(key, key)
+    parts = key.split("_")
+    if len(parts) < 2:
+        return None
+    entry = _country_entry(parts[1])
+    return str(entry["country"]) if entry is not None else None
+
+
+def _own_conditions(language: str, country: str) -> dict[str, Any] | None:
+    """The conditions of a locale of `language` with conditions of its own in
+    `country` ('fr' and 'Belgium' -> those of fr_BE), None without."""
+    for locale, entry in _load_conditions().items():
+        if locale.startswith(f"{language}_"):
+            conditions = _country_conditions(locale) if "base" in entry else entry
+            if conditions["country"] == country:
+                return conditions
+    return None
+
+
+def _generic_conditions(base: dict[str, Any], language: str, country: str) -> dict[str, Any] | None:
+    """Neutral conditions in `language` (countries.json) over those of its
+    occupation locale (`base`), with the currency, salaries and minimum wage
+    of `country`; None for a country without them."""
+    key = (language, country)
+    if key not in _generic_conditions_cache:
+        data = _load_countries()
+        economy, generic = data["countries"].get(country), data["generic"].get(language)
+        if economy is None or generic is None:
+            return None
+        conditions = {key: value for key, value in base.items() if key not in ("place_names", "salary_scale")}
+        conditions.update(generic)
+        conditions.update({key: value for key, value in economy.items() if key != "salary"})
+        conditions["salary"] = {"base": economy["salary"]["base"], "age_ratio": data["meta"]["age_ratio"]}
+        conditions["country"] = country
+        _generic_conditions_cache[key] = conditions
+    return _generic_conditions_cache[key]
 
 
 def _load_occupations(locale: str) -> dict[str, Any]:
@@ -504,7 +565,7 @@ def _local_salary_text(conditions: dict[str, Any], low: int, high: int) -> str:
     def amount(value: int) -> str:
         return f"{value:,}".replace(",", salary_format["thousands"])
 
-    return str(salary_format["template"].format(min=amount(low), max=amount(high)))
+    return str(salary_format["template"].format(min=amount(low), max=amount(high), currency=conditions["currency"]))
 
 
 class _RoleTexts(TypedDict):
@@ -557,15 +618,49 @@ class JobsProvider(BaseProvider):
 
     def _local_conditions(self) -> dict[str, Any]:
         """The posting conditions of the Faker locale's country: its own for
-        the country locales of conditions.json (fr_BE, fr_CA, de_AT, es_MX,
-        en_GB...), else those of the occupation data (France, Germany, Spain,
-        Italy, or the United States for every other locale: nl_NL, en_IN...)."""
+        the locales of conditions.json (fr_FR, fr_BE, de_AT, es_MX, en_GB...);
+        for the other locales, neutral ones in the language of the
+        occupations with the economy of the locale's territory (en_IN: India,
+        ja_JP: Japan, in English; es_AR: Argentina, in Spanish); else those of
+        the occupation data (the United States for 'en', 'de_LI'...)."""
         if self.occupations_locale is None:
-            key = _conditions_locale(_generator_locale(self.generator))
+            locale = _generator_locale(self.generator)
+            key = _conditions_locale(locale)
             if key is not None:
                 return _country_conditions(key)
+            country = _locale_country(locale)
+            if country is not None:
+                found = self._conditions_in(country)
+                if found is not None:
+                    return found
         conditions: dict[str, Any] = self._occupations["conditions"]
         return conditions
+
+    def _conditions_in(self, country: str) -> dict[str, Any] | None:
+        """The conditions of a posting in `country` (name of `job_countries`) in
+        the language of the occupations: those of a locale of the language in
+        that country (fr_BE for 'Belgium' in French), else neutral ones with
+        its economy (see `_generic_conditions`); None for a country without."""
+        base: dict[str, Any] = self._occupations["conditions"]
+        if base["country"] == country:
+            return base
+        return _own_conditions(self._language, country) or _generic_conditions(base, self._language, country)
+
+    def _posting_conditions(self, country: str | None) -> dict[str, Any]:
+        """The conditions of a posting in `country` (any name `job_location`
+        takes, None: the locale's country): those of the locale, or of the
+        country of the job (see `_conditions_in`); the locale's own with a
+        forced `occupations_locale` or a country without economy data."""
+        home = self._local_conditions()
+        if country is None or self.occupations_locale is not None:
+            return home
+        local_country = (home.get("place_names") or {}).get("country", home["country"])
+        if str(country).strip().lower() in (local_country.lower(), home["country"].lower()):
+            return home
+        entry = _country_entry(country)
+        if entry is None:
+            return home  # an unknown country: job_location raises
+        return self._conditions_in(entry["country"]) or home
 
     @property
     def _language(self) -> str:
@@ -734,16 +829,17 @@ class JobsProvider(BaseProvider):
     def job_location(self, country: str | None = None) -> LocationRecord:
         """Return a random job location (city, country and coordinates), in
         the locale's country by default (Belgium for fr_BE, the United
-        Kingdom for en_GB..., the United States for the locales without
-        conditions of their own), or in the given `country` (see
-        `job_countries`).
+        Kingdom for en_GB, Japan for ja_JP..., the United States for 'en'),
+        or in the given `country` (see `job_countries`).
 
         Cities are those of 15,000 inhabitants or more (GeoNames), picked in
         proportion to their population: Paris comes up more often than
         Annecy. Their names are in English ('Munich'), except in the
         locale's own country for German, Spanish, French and Italian
-        locales ('München', 'Deutschland'; 'Genf', 'Schweiz' for de_CH)."""
-        return self._local_location(self._local_conditions(), country)
+        locales ('München', 'Deutschland'; 'Genf', 'Schweiz' for de_CH), and
+        in another country with conditions in the language ('Belgique' for
+        fr_FR)."""
+        return self._local_location(self._posting_conditions(country), country)
 
     def _local_location(self, conditions: dict[str, Any], country: str | None) -> LocationRecord:
         """A location, in the locale's country by default (its local name is
@@ -847,8 +943,15 @@ class JobsProvider(BaseProvider):
         (1-10, 11-50... 10001+ employees) picked by the share of jobs in the
         companies of each class in the locale's country (People Data Labs,
         every sector), then a number of employees in that class."""
-        entry = _load_companies()["countries"][self._home_country(self._local_conditions())]
+        entry = self._companies_entry(self._home_country(self._local_conditions()))
         return self._class_size(self._pick_size_class(entry["cum_weights_all"]))
+
+    def _companies_entry(self, country: str) -> dict[str, Any]:
+        """The companies of a country (companies.json.gz), else those of the
+        country of the occupation data, whose size shares stand for it."""
+        countries = _load_companies()["countries"]
+        entry: dict[str, Any] = countries.get(country) or countries[self._occupations["conditions"]["country"]]
+        return entry
 
     def _pick_size_class(self, cum_weights: list[float]) -> int:
         return self.generator.random.choices(range(len(cum_weights)), cum_weights=cum_weights)[0]
@@ -908,7 +1011,7 @@ class JobsProvider(BaseProvider):
         The activity is the company's industry."""
         data = _load_companies()
         country = self._company_country(conditions, location)
-        entry = data["countries"][country or self._home_country(conditions)]
+        entry = self._companies_entry(country or self._home_country(conditions))
         code = conditions["sector_codes"][sector]
         size_class = self._pick_size_class(entry["cum_weights"].get(code, entry["cum_weights_all"]))
         rows = entry["by_class"][code][size_class] if country is not None and code in entry["by_class"] else []
@@ -1122,8 +1225,17 @@ class JobsProvider(BaseProvider):
           see `job_location`).
         - `weighted` picks the occupation by demand (see `job_occupation`).
 
-        Local conditions, those of the locale's country (see `job_location`):
-        benefits, job boards and default diplomas are hand-made and
+        Local conditions, those of the country of the job (`country`, else
+        the locale's: see `job_location`), in the language of the locale:
+        a locale's own (fr_BE for a French posting in Belgium), else neutral
+        ones (contracts, benefits, diplomas found in most countries,
+        international job boards) with the country's currency, salaries and
+        minimum wage (countries.json: Eurostat SES, ILOSTAT earnings by ISCO
+        group or the GDP per capita), and the locale's conditions in the few
+        countries without figures (North Korea...); with
+        `occupations_locale` set, always the locale's.
+
+        Benefits, job boards and default diplomas are hand-made and
         illustrative (scripts/posting_conditions.py); the contract comes
         from a national mix adapted to the occupation's ISCO major group
         (Eurostat LFS shares of temporary, part-time and self-employed
@@ -1136,7 +1248,8 @@ class JobsProvider(BaseProvider):
         Belgium, Switzerland, Austria, Luxembourg, Ireland), BLS OEWS by SOC
         major group (United States), those of the country of the language
         times the ratio of the OECD average wages (Canada, Mexico, Chile,
-        Colombia, United Kingdom, Australia, New Zealand), adjusted to the
+        Colombia, United Kingdom, Australia, New Zealand), those of
+        countries.json elsewhere (no section, no contract adaptation), adjusted to the
         experience asked (earnings by age), to the contract (internships,
         apprenticeships, part-time) and kept above the minimum wage. ROME
         diplomas come first in France.
@@ -1146,7 +1259,7 @@ class JobsProvider(BaseProvider):
         return self._occupation_posting(occupation, country, skills)
 
     def _occupation_posting(self, occupation: OccupationRecord, country: str | None, skills: int) -> OccupationPosting:
-        conditions = self._local_conditions()
+        conditions = self._posting_conditions(country)
         terms = self._local_terms(occupation, conditions, country)
         company, company_size, location, naf = self._hiring_company(
             occupation["sector"], conditions, terms["location"], occupation["isco_code"])
@@ -1193,8 +1306,14 @@ class JobsProvider(BaseProvider):
             "job_portal": terms["job_portal"],
             "job_posting_date": self.job_posting_date(),
             "contact_person": self.generator.name(),
-            "contact": self.generator.phone_number(),
+            "contact": self._phone_number(),
         }
+
+    def _phone_number(self) -> str:
+        """A phone number of the Faker locale; a generic one where it has none (en_PH, fil_PH...)."""
+        if hasattr(self.generator, "phone_number"):
+            return str(self.generator.phone_number())
+        return str(self.generator.numerify("+## ### ### ####"))
 
     @staticmethod
     def _activity_code(naf: list[Any] | None, conditions: dict[str, Any]) -> str | None:

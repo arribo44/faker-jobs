@@ -27,12 +27,24 @@ contracts (build_occupations.py) and cache them in DATAS/salaries/:
   Mexico, Chile, Colombia, United Kingdom, Australia, New Zealand) are those
   of the country of their language scaled by the ratio of the average wages.
 
+- ilostat.json: ILOSTAT (International Labour Organization), for every
+  country it covers: average monthly earnings of employees by ISCO-08 major
+  group, local currency (DF_EAR_EMTA_SEX_OCU_NB), latest year (annual
+  figure, else the mean of the quarters of the latest year); statutory
+  monthly minimum wage, local currency (DF_EAR_INEE_NOC_NB), latest year
+  (the lowest where there are several). With the currency ILOSTAT notes.
+- worldbank_gdp.json: World Bank GDP per capita, current local currency
+  (NY.GDP.PCAP.CN), 2010 onwards: it brings the ILOSTAT figures of past
+  years to the latest one, and gives an earnings level to the countries
+  ILOSTAT does not cover.
+
 All are public APIs that need no key. Re-run when a newer survey is out.
 """
 import csv
 import io
 import json
 import os
+import re
 import sys
 import urllib.request
 
@@ -42,12 +54,28 @@ EUROSTAT_PATH = os.path.join(SALARY_DIR, "eurostat_ses2022.json")
 LFS_PATH = os.path.join(SALARY_DIR, "eurostat_lfs.json")
 BLS_PATH = os.path.join(SALARY_DIR, "bls_oews.json")
 OECD_PATH = os.path.join(SALARY_DIR, "oecd_wages.json")
+ILOSTAT_PATH = os.path.join(SALARY_DIR, "ilostat.json")
+WORLD_BANK_PATH = os.path.join(SALARY_DIR, "worldbank_gdp.json")
+ILOSTAT_URL = "https://sdmx.ilo.org/rest/data/ILO,{dataflow}/?startPeriod={start}&format=csvfile"
+ILOSTAT_START = "2012"
+# Series that are not mean gross monthly earnings: left out.
+ILOSTAT_LEFT_OUT = ("Central tendency measure: Median", "Accounting concept: Net", "Value type: Real values",
+                    "Time unit: Per day")
+WORLD_BANK_URL = ("https://api.worldbank.org/v2/country/all/indicator/NY.GDP.PCAP.CN"
+                  "?format=json&date=2010:2030&per_page=20000")
 LFS_YEAR = "2025"
 
 EUROSTAT_URL = "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/{dataset}?format=JSON&lang=EN"
 BLS_URL = "https://api.bls.gov/publicAPI/v1/timeseries/data/"
 USER_AGENT = "faker-jobs data build (https://github.com/arribo44/faker-jobs)"
 COUNTRIES = ("FR", "DE", "ES", "IT", "BE", "AT", "LU", "IE", "CH")
+# Every country of the Structure of Earnings Survey 2022 (Eurostat codes: EL
+# for Greece): the earnings of the countries without conditions of their own
+# (countries.json); the Labour Force Survey is only fetched for COUNTRIES.
+SES_COUNTRIES = COUNTRIES + ("AL", "BA", "BG", "CY", "CZ", "DK", "EE", "EL", "FI", "HR", "HU", "IS", "LT", "LV",
+                             "MK", "MT", "NL", "NO", "PL", "PT", "RO", "RS", "SE", "SI", "SK")
+# Countries that adopted the euro after 2022: their earnings in EUR, their currency now.
+EURO_SINCE_2022 = ("BG", "HR")
 OECD_URL = "https://sdmx.oecd.org/public/rest/data/OECD.ELS.SAE,DSD_EARNINGS@{dataset},/all?startPeriod={start}&format=csv"
 OECD_START = "2022"
 # ISO 3166 alpha-3 codes of the OECD data → alpha-2.
@@ -82,25 +110,25 @@ def get_json(url, data=None):
         return json.load(response)
 
 
-def eurostat_by_size(dataset, keep, **fixed):
+def eurostat_by_size(dataset, keep, countries=COUNTRIES, **fixed):
     """`eurostat()` for all enterprise sizes, or for 10 employees or more in
     the countries that only publish those; {country: {"size": ..., "values": ...}}."""
-    every = eurostat(dataset, keep, sizeclas="TOTAL", **fixed)
-    large = eurostat(dataset, keep, sizeclas="GE10", **fixed)
+    every = eurostat(dataset, keep, countries, sizeclas="TOTAL", **fixed)
+    large = eurostat(dataset, keep, countries, sizeclas="GE10", **fixed)
     return {geo: {"size": "TOTAL", "values": every[geo]} if every[geo] else {"size": "GE10", "values": large[geo]}
-            for geo in COUNTRIES}
+            for geo in countries}
 
 
-def eurostat(dataset, keep, **fixed):
+def eurostat(dataset, keep, countries=COUNTRIES, **fixed):
     """{country: {key: value}} of a JSON-stat dataset, `key` made of the `keep` dimensions
     ("OC2|Q"), the other dimensions set to `fixed` (filtered by the API too)."""
-    query = "".join(f"&geo={geo}" for geo in COUNTRIES) + "".join(f"&{dim}={code}" for dim, code in fixed.items())
+    query = "".join(f"&geo={geo}" for geo in countries) + "".join(f"&{dim}={code}" for dim, code in fixed.items())
     raw = get_json(EUROSTAT_URL.format(dataset=dataset) + query)
     ids, sizes = raw["id"], raw["size"]
     positions = {dim: {code: index for code, index in raw["dimension"][dim]["category"]["index"].items()}
                  for dim in ids}
     codes = {dim: {index: code for code, index in positions[dim].items()} for dim in ids}
-    result = {geo: {} for geo in COUNTRIES}
+    result = {geo: {} for geo in countries}
     for flat, value in raw["value"].items():
         flat, coords = int(flat), {}
         for dim, size in zip(reversed(ids), reversed(sizes), strict=True):
@@ -148,7 +176,7 @@ def fetch_bls():
 
 
 def get_text(url):
-    with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": USER_AGENT}), timeout=120) as r:
+    with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": USER_AGENT}), timeout=300) as r:
         return r.read().decode("utf-8")
 
 
@@ -176,6 +204,62 @@ def fetch_oecd():
             "average_wage": dict(sorted(average.items())), "minimum_wage": dict(sorted(minimum.items()))}
 
 
+def ilostat_rows(dataflow):
+    return list(csv.DictReader(io.StringIO(get_text(ILOSTAT_URL.format(dataflow=dataflow, start=ILOSTAT_START)))))
+
+
+def ilostat_currency(note):
+    """The currency code of an ILOSTAT indicator note ('... | INR: Indian rupee' -> 'INR')."""
+    match = re.search(r"(?:^|\| )([A-Z]{3}): ", note or "")
+    return match.group(1) if match else None
+
+
+def latest_values(rows, key):
+    """{country: (year, currency, {key(row): value})}: the values of the
+    latest year, annual where published, else the mean of its quarters."""
+    by_year = {}
+    for row in rows:
+        year = row["TIME_PERIOD"][:4]
+        entry = by_year.setdefault((row["REF_AREA"], year), {"A": {}, "Q": {}, "currency": set()})
+        entry["A" if row["FREQ"] == "A" else "Q"].setdefault(key(row), []).append(float(row["OBS_VALUE"]))
+        entry["currency"].add(ilostat_currency(row["NOTE_INDICATOR"]))
+    result = {}
+    for (country, year), entry in sorted(by_year.items()):
+        values = entry["A"] or entry["Q"]
+        currency = entry["currency"] - {None}
+        if len(currency) == 1:
+            result[country] = (year, currency.pop(), {k: sum(v) / len(v) for k, v in values.items()})
+    return result
+
+
+def fetch_ilostat():
+    earnings = [row for row in ilostat_rows("DF_EAR_EMTA_SEX_OCU_NB")
+                if row["SEX"] == "SEX_T" and row["OCU"].startswith("OCU_ISCO08_") and row["OBS_VALUE"]
+                and row["UNIT_MEASURE"] == "LC" and not any(note in (row["NOTE_INDICATOR"] or "")
+                                                            for note in ILOSTAT_LEFT_OUT)]
+    minimum = [row for row in ilostat_rows("DF_EAR_INEE_NOC_NB") if row["OBS_VALUE"] and row["UNIT_MEASURE"] == "LC"]
+    by_group = latest_values(earnings, lambda row: row["OCU"].removeprefix("OCU_ISCO08_"))
+    # Several minimum wages (sectoral, by region...): the lowest.
+    lowest = latest_values(minimum, lambda row: f"{row['OBS_VALUE']}|{row['NOTE_INDICATOR']}")
+    return {
+        "source": "ILOSTAT (ILO): average monthly earnings of employees by ISCO-08 major group "
+                  "(DF_EAR_EMTA_SEX_OCU_NB) and monthly minimum wage (DF_EAR_INEE_NOC_NB), local currency",
+        "earnings": {country: {"year": year, "currency": currency, "monthly": values}
+                     for country, (year, currency, values) in by_group.items() if "TOTAL" in values},
+        "minimum_wage": {country: {"year": year, "currency": currency, "monthly": min(values.values())}
+                         for country, (year, currency, values) in lowest.items()},
+    }
+
+
+def fetch_world_bank():
+    raw = json.loads(get_text(WORLD_BANK_URL))
+    values = {}
+    for row in raw[1]:
+        if row["value"] is not None and row["countryiso3code"]:
+            values.setdefault(row["countryiso3code"], {})[row["date"]] = row["value"]
+    return {"source": "World Bank, GDP per capita (current LCU), NY.GDP.PCAP.CN", "gdp_per_capita": values}
+
+
 def save(path, data):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=1, sort_keys=True)
@@ -184,12 +268,19 @@ def save(path, data):
 
 def main():
     os.makedirs(SALARY_DIR, exist_ok=True)
-    # National currency: EUR in the euro area, CHF in Switzerland.
-    common = {"sex": "T", "indic_se": "ERN", "unit": "NAC", "freq": "A", "time": "2022"}
+    # National currency (EUR in the euro area, CHF in Switzerland...), EUR for the
+    # countries that adopted it since.
+    common = {"sex": "T", "indic_se": "ERN", "freq": "A", "time": "2022"}
+    national = tuple(geo for geo in SES_COUNTRIES if geo not in EURO_SINCE_2022)
     data = {
-        "source": "Eurostat SES 2022, mean gross annual earnings, national currency (earn_ses22_49, earn_ses22_28)",
-        "by_isco_section": eurostat_by_size("earn_ses22_49", ("isco08", "nace_r2"), **common),
-        "by_isco_age": eurostat_by_size("earn_ses22_28", ("isco08", "age"), **common),
+        "source": "Eurostat SES 2022, mean gross annual earnings, national currency (EUR for "
+                  f"{', '.join(EURO_SINCE_2022)}) (earn_ses22_49, earn_ses22_28)",
+        "by_isco_section": {**eurostat_by_size("earn_ses22_49", ("isco08", "nace_r2"), national, unit="NAC", **common),
+                            **eurostat_by_size("earn_ses22_49", ("isco08", "nace_r2"), EURO_SINCE_2022, unit="EUR",
+                                               **common)},
+        "by_isco_age": {**eurostat_by_size("earn_ses22_28", ("isco08", "age"), national, unit="NAC", **common),
+                        **eurostat_by_size("earn_ses22_28", ("isco08", "age"), EURO_SINCE_2022, unit="EUR",
+                                           **common)},
     }
     for table in ("by_isco_section", "by_isco_age"):
         empty = [geo for geo, entry in data[table].items() if not entry["values"]]
@@ -199,6 +290,8 @@ def main():
     save(LFS_PATH, fetch_lfs())
     save(BLS_PATH, fetch_bls())
     save(OECD_PATH, fetch_oecd())
+    save(ILOSTAT_PATH, fetch_ilostat())
+    save(WORLD_BANK_PATH, fetch_world_bank())
 
 
 if __name__ == "__main__":

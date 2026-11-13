@@ -8,6 +8,7 @@ import re
 import unittest
 
 from faker import Faker
+from faker.config import AVAILABLE_LOCALES
 
 from faker_jobs import JobsProvider, _conditions_locale, _load_companies, _load_conditions
 
@@ -47,6 +48,8 @@ class CountryConditionsTests(unittest.TestCase):
 
     def test_postings_are_in_the_country(self):
         for locale, (country, local_name, currency, base) in COUNTRIES.items():
+            if locale not in AVAILABLE_LOCALES:
+                continue  # de_LU: Faker 21+
             with self.subTest(locale=locale):
                 fake, provider = make(locale)
                 conditions = provider._local_conditions()
@@ -218,10 +221,14 @@ class OtherLocalesTests(unittest.TestCase):
         self.assertEqual(fake.job_location()["country"], "France")
 
     def test_language_without_country_conditions(self):
-        # es_AR has no conditions of its own yet: those of Spain.
+        # es_AR: neutral Spanish conditions with the economy of Argentina.
         fake, provider = make("es_AR")
-        self.assertEqual(provider._local_conditions()["country"], "Spain")
-        self.assertEqual(fake.job_posting()["salary_currency"], "EUR")
+        self.assertEqual(provider._local_conditions()["country"], "Argentina")
+        posting = fake.job_posting()
+        self.assertEqual(posting["salary_currency"], "ARS")
+        self.assertTrue(posting["salary_range"].endswith(" ARS brutos al año"), posting["salary_range"])
+        # es_CA is Faker's Spanish of Catalonia: Spain.
+        self.assertEqual(make("es_CA")[1]._local_conditions()["country"], "Spain")
 
 
 if __name__ == "__main__":

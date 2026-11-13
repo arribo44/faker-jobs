@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Postings in every country: 232 of the 244 countries of `job_countries` have an economy in the new `faker_jobs/data/countries.json` (~200 KB): currency (ISO code, GeoNames; EUR for Bulgaria), mean yearly earnings by ISCO-08 major group and minimum wage. Sources, best first: the conditions of the country's locales; Eurostat SES 2022 for the 25 other European countries it covers (Portugal, Poland, the Netherlands, Sweden...); ILOSTAT average monthly earnings of employees by ISCO major group (~100 countries: India, Brazil, Argentina, South Africa...), latest year, brought to 2025 with the World Bank GDP per capita in local currency (series in median, net, real or daily terms left out; structures where professionals earn less than elementary occupations replaced by the median one); else the GDP per capita times the median ratio of earnings to it, with the median structure (Japan, China, Algeria...: ~70). Micro-states and territories take the economy of their neighbour or country (Liechtenstein: Switzerland, Monaco: France, Réunion: France, Jersey: United Kingdom...); Taiwan has hand-entered figures (DGBAS). Minimum wages: ILOSTAT, brought to the same year. `fetch_salaries.py` caches `DATAS/salaries/ilostat.json` and `worldbank_gdp.json`, and the SES earnings of every country it covers.
+- Neutral posting conditions in each language (`GENERIC_CONDITIONS` in `scripts/posting_conditions.py`): contracts, benefits and diplomas found in most countries, international job boards (LinkedIn, Indeed, Glassdoor, Jooble, Careerjet), the currency code in the salary ("JPY 3,100,000 - 4,250,000 a year", "620 000 - 820 000 DZD brut/an").
+
+### Changed
+- **Breaking**: the locales of countries without conditions of their own post in their country, with its currency and salaries, in the language of the occupations: `ja_JP` in Japan in JPY, `en_IN` in India in INR, `pt_BR` in Brazil, `nl_NL` in the Netherlands (in English); `es_AR` in Argentina and `fr_DZ` in Algeria, in Spanish and French. They used the conditions and the country of the United States (or Spain, France). `es_CA` (Faker's Spanish of Catalonia) stays in Spain; `en` keeps the United States.
+- **Breaking**: `country=` of `job_posting()`, `job_occupation_posting()` and `job_location()` sets the conditions too: those of a locale of the language in that country (`fr_FR` with `country="Belgium"`: the Belgian ones, "Belgique"), else neutral ones with the country's economy (`fr_FR` with `country="Brazil"`: BRL salaries, not EUR). The locale's conditions are kept with `occupations_locale` set and in countries without figures.
+- Countries without real companies take the company size shares of the country of the language (no more error for a locale's country without companies).
+- Locales without phone numbers in Faker (`en_PH`, `fil_PH`, `tl_PH`) get a generic one as contact instead of an error.
+
+### Fixed
+- `job_location(country="Palau")` raised an error: its only city has a population of 0 (now a uniform pick).
+- Tests: locales missing from older Faker versions (`de_LU`, `fr_DZ` before Faker 21) are skipped (the CI with Faker 20 failed since 0.10.0; the library itself was not affected).
+
 ---
 
 ## [0.10.0] - 2026-11-13
