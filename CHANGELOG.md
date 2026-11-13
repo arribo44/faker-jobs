@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.10.0] - 2026-11-13
+
 ### Added
 - Posting conditions of their own for 15 country locales, over those of their language: `fr_BE`, `fr_CH`, `fr_CA` (and `fr_QC`), `de_AT`, `de_CH`, `de_LU`, `it_CH`, `es_MX`, `es_CL`, `es_CO`, `en_GB`, `en_IE`, `en_CA`, `en_AU`, `en_NZ`. Each has its currency (CHF, CAD, MXN, CLP, COP, GBP, AUD, NZD...), contracts (Job étudiant, Lehre, Honorarios, Casual...), default diplomas (CESS, CFC, DEC, EFZ, GCSEs, NCEA...), benefits, job boards (Le Forem, jobs.ch, Jobboom, karriere.at, OCC Mundial, SEEK...), salary wording and gender mark of the titles ("(H/F/X)" in Belgium, none in Canada). Jobs are located in the country by default, with the local names of its cities ('Anvers', 'Genf', 'Ginevra', 'Montréal', 'Wien'), and hired by real companies of the country. Hand-made and illustrative, as the other conditions (`scripts/posting_conditions.py`, `COUNTRY_CONDITIONS`); `conditions.json` holds for these locales only what differs from their language's (`base`).
 - Salaries of these countries: Eurostat SES 2022 earnings and LFS contract mix of Belgium, Switzerland (in CHF), Austria, Luxembourg and Ireland, as for the base countries; for Canada, Mexico, Chile, Colombia, the United Kingdom, Australia and New Zealand, which have no such survey, the earnings of the country of their language (France, Spain, United States) times the ratio of the OECD average annual wages of the two countries in national currency, the same year. Minimum wage: the OECD statutory one (none in Austria and Switzerland). Amounts are rounded to 500 / 1,000 units, 10 times more in MXN, 1,000 times in CLP and COP. `fetch_salaries.py` also caches `DATAS/salaries/oecd_wages.json`.
