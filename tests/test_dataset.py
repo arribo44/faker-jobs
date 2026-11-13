@@ -16,6 +16,7 @@ from faker import Faker
 
 from faker_jobs import JobsProvider
 from faker_jobs.__main__ import main
+from faker_jobs.candidates import APPLICATION_FIELDS, CANDIDATE_FIELDS
 from faker_jobs.dataset import COMPANY_FIELDS, POSTING_FIELDS, SINGLE_SITE_EMPLOYEES, JobDataset, make_dataset
 
 START, END = datetime.date(2025, 1, 1), datetime.date(2026, 10, 31)
@@ -217,6 +218,81 @@ class DatasetOptionsTests(unittest.TestCase):
             make_dataset({"fr_FR": -1})
 
 
+class CandidatesTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.data = make().job_dataset(postings=800, candidates=1200, start_date=START, end_date=END)
+        cls.postings = {row["job_id"]: row for row in cls.data.postings}
+        cls.candidates = {row["candidate_id"]: row for row in cls.data.candidates}
+
+    def test_tables(self):
+        self.assertEqual(len(self.candidates), 1200)
+        self.assertTrue(all(tuple(row) == CANDIDATE_FIELDS for row in self.data.candidates))
+        self.assertTrue(all(tuple(row) == APPLICATION_FIELDS for row in self.data.applications))
+        self.assertTrue(5 < len(self.data.applications) / 800 < 15)
+        self.assertEqual(len({row["application_id"] for row in self.data.applications}), len(self.data.applications))
+        pairs = [(row["job_id"], row["candidate_id"]) for row in self.data.applications]
+        self.assertEqual(len(set(pairs)), len(pairs))  # one application of a candidate to a posting
+        for row in self.data.applications:
+            self.assertIn(row["job_id"], self.postings)
+            self.assertIn(row["candidate_id"], self.candidates)
+            self.assertTrue(0 <= row["match_score"] <= 100)
+
+    def test_candidates(self):
+        for row in self.data.candidates:
+            self.assertEqual((row["country"], row["salary_currency"]), ("France", "EUR"))
+            self.assertRegex(row["email"], r"^[a-z0-9.]+@[a-z0-9.-]+$")
+            self.assertGreater(row["desired_salary"], 15000)
+            self.assertIn(row["availability"], {"immediate", "1_month", "3_months", "6_months"})
+
+    def test_statuses_follow_the_postings(self):
+        by_posting = collections.defaultdict(list)
+        for row in self.data.applications:
+            by_posting[row["job_id"]].append(row)
+        hired = [row["candidate_id"] for row in self.data.applications if row["status"] == "hired"]
+        self.assertEqual(len(hired), len(set(hired)))  # hired once at most
+        for job_id, posting in self.postings.items():
+            rows = by_posting[job_id]
+            statuses = collections.Counter(row["status"] for row in rows)
+            posted = posting["posted_date"]
+            last = posting["closed_date"] or END.isoformat()
+            for row in rows:
+                self.assertTrue(posted <= row["applied_date"] <= last, (posting, row))
+                self.assertTrue(row["applied_date"] <= row["status_date"] <= last, (posting, row))
+            if posting["status"] == "filled":
+                self.assertEqual(statuses["hired"], 1, rows)
+            else:
+                self.assertEqual(statuses["hired"], 0)
+            if posting["status"] == "expired":
+                self.assertLessEqual(set(statuses), {"rejected", "withdrawn"})
+        scores = collections.defaultdict(list)
+        for row in self.data.applications:
+            scores[row["status"] == "hired"].append(row["match_score"])
+        self.assertGreater(sum(scores[True]) / len(scores[True]), sum(scores[False]) / len(scores[False]))
+
+    def test_applicants_fit_the_posting(self):
+        same = sum(self.candidates[row["candidate_id"]]["isco_code"] == self.postings[row["job_id"]]["isco_code"]
+                   or self.candidates[row["candidate_id"]]["sector"] == self.postings[row["job_id"]]["sector"]
+                   for row in self.data.applications)
+        self.assertGreater(same / len(self.data.applications), 0.8)
+
+    def test_options(self):
+        self.assertEqual(make().job_dataset(postings=50).candidates, [])
+        data = make_dataset({"fr_FR": 0.5, "de_DE": 0.5}, 200, candidates=100, applications=3, seed=2, dirty=0.1)
+        self.assertEqual({row["candidate_id"][:6] for row in data.candidates}, {"fr_FR-", "de_DE-"})
+        self.assertTrue(1 < len(data.applications) / 200 < 5)
+        with tempfile.TemporaryDirectory() as directory:
+            names = [os.path.basename(path) for path in data.to_csv(directory)]
+        self.assertEqual(names, ["companies.csv", "postings.csv", "candidates.csv", "applications.csv",
+                                 "defects.csv"])
+        for kwargs in ({"candidates": -1}, {"applications": -2}, {"candidates": 1.5}):
+            with self.assertRaises(ValueError, msg=kwargs):
+                make().job_dataset(postings=10, **kwargs)
+        candidate = make("de_DE").job_candidate(code=data.postings[-1]["occupation_code"], country="Austria")
+        self.assertEqual((candidate["country"], candidate["occupation_code"]),
+                         ("Österreich", data.postings[-1]["occupation_code"]))
+
+
 class ExportCommandTests(unittest.TestCase):
     def test_export_command(self):
         with tempfile.TemporaryDirectory() as directory, redirect_stdout(io.StringIO()) as output:
@@ -251,6 +327,12 @@ class ExportCommandTests(unittest.TestCase):
             with open(os.path.join(directory, "defects.csv"), encoding="utf-8", newline="") as f:
                 defects = list(csv.DictReader(f))
         self.assertGreater(len(defects), 20)
+
+    def test_export_candidates(self):
+        with tempfile.TemporaryDirectory() as directory, redirect_stdout(io.StringIO()) as output:
+            main(["export", directory, "--postings", "100", "--seed", "4", "--candidates", "80"])
+            self.assertIn("80 candidates", output.getvalue())
+            self.assertTrue(os.path.exists(os.path.join(directory, "applications.csv")))
 
     def test_export_errors(self):
         with tempfile.TemporaryDirectory() as directory, redirect_stdout(io.StringIO()):

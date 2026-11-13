@@ -820,6 +820,40 @@ companies, postings = data.to_dataframes()   # needs pandas
   domain (its website, or one made of its name: `claire.martin@samson.fr`);
   each posting names one of them.
 
+**Candidates and applications**: `candidates=2000` adds a pool of job
+seekers and their applications to the postings, two more tables linked by
+`candidate_id` and `job_id` (`candidates.csv`, `applications.csv`):
+
+```python
+data = fake.job_dataset(postings=1000, candidates=2000, applications=10)
+data.candidates[0]
+# {'candidate_id': 'P000001', 'locale': 'fr_FR', 'name': 'Alphonse Michel', 'email': 'alphonse.michel@voila.fr',
+#  'phone': '03 64 60 83 77', 'city': 'Rennes', 'country': 'France', 'occupation_code': 'D1116',
+#  'occupation': 'Négociant / Négociante en bétail', 'job_title': 'Chevillard / Chevillarde', ...,
+#  'experience_years': 6, 'qualification': 'Bac pro ...', 'skills': '...; ...',
+#  'desired_salary': 41500, 'salary_currency': 'EUR', 'availability': '1_month'}
+data.applications[0]
+# {'application_id': 'A0000001', 'job_id': 8207814926684802, 'candidate_id': 'P001093',
+#  'applied_date': '2025-09-01', 'match_score': 48, 'status': 'rejected', 'status_date': '2025-09-15'}
+data.to_dataframe("applications")       # any table as a DataFrame (needs pandas)
+```
+
+- **Candidates** have an occupation picked by demand, the title they look
+  for, years of experience for its skill level, a diploma, some of its
+  skills, the salary they ask (around the local earnings of the occupation
+  at their experience), their availability, a personal e-mail address.
+  `fake.job_candidate()` returns one (`CandidateRecord`).
+- **Applications**: about `applications` a posting (a mean, spread), from
+  candidates of the same occupation, else of its ISCO unit group, its
+  sector or any, preferring the posting's city; each with a **match score**
+  (0-100: skills in common 40, experience in the range asked 25, salary
+  within the offer 20, place 15).
+- **Statuses follow the posting**: a filled posting hires one applicant
+  (better scores more likely; a candidate is hired once at most while the
+  pool has free ones), the others are `rejected` or `withdrawn`; an expired
+  one rejects all; an open one has applications `in_review`, at
+  `interview` or already `rejected`.
+
 **Dirty data**: `dirty=0.1` adds defects of real-world job data to 10% of
 the rows, to test cleaning, validation and deduplication pipelines; each one
 is listed in `data.defects` (and `defects.csv`), the ground truth of a
@@ -863,6 +897,7 @@ python -m faker_jobs export out/ --locale fr_FR:0.6 --locale de_DE:0.4 --format 
     --start-date 2025-01-01 --end-date 2026-10-31
 python -m faker_jobs export out/ --id-template "JOB-{year}-{n:06d}"   # job ids from a template
 python -m faker_jobs export out/ --dirty 0.1                          # 10% of the rows with a defect
+python -m faker_jobs export out/ --candidates 2000 --applications 12  # candidates and applications
 ```
 
 10,000 postings take a few seconds.

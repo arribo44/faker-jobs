@@ -44,6 +44,9 @@ from typing import TYPE_CHECKING, Any, TypedDict, overload
 
 from faker.providers import BaseProvider
 
+from faker_jobs.candidates import CandidateRecord as CandidateRecord
+from faker_jobs.candidates import make_candidate
+
 if TYPE_CHECKING:
     from faker_jobs.dataset import JobDataset
 
@@ -1671,6 +1674,23 @@ class JobsProvider(BaseProvider):
         posting = self._templated_id(self._occupation_posting(occupation, country, 5), id_template)
         return self._occupation_job_posting(posting)
 
+    def job_candidate(
+        self, code: str | None = None, sector: str | None = None, country: str | None = None,
+        weighted: bool = True,
+    ) -> CandidateRecord:
+        """Return a random job seeker (see `CandidateRecord`): an occupation
+        (by `code`, else picked by demand, optionally of an activity
+        `sector`), the title they look for, years of experience for its
+        skill level, a diploma, some of its skills and knowledge, the yearly
+        salary they ask (around the local earnings of the occupation at that
+        experience, in the currency of `country`, default the locale's), when
+        they are available; a name, a personal e-mail address and a phone
+        number of the Faker locale, in a city of `country`."""
+        conditions = self._posting_conditions(country)
+        found = self._pick_occupation(code=code, sector=sector, weighted=weighted)
+        occupation = self._occupation_record(found, sector)
+        return make_candidate(self, conditions, dict(occupation), self._local_location(conditions, country))
+
     def job_posting_text(
         self, posting: OccupationPosting | JobPosting | None = None, markdown: bool = False
     ) -> str:
@@ -1705,6 +1725,8 @@ class JobsProvider(BaseProvider):
         repost_rate: float = 0.08,
         id_template: str | None = None,
         dirty: float = 0.0,
+        candidates: int = 0,
+        applications: float = 10.0,
     ) -> "JobDataset":
         """Return a dataset of `postings` job postings published by a pool of
         `companies` employers (default: one per 10 postings; more when a
@@ -1723,12 +1745,16 @@ class JobsProvider(BaseProvider):
         `dirty` (0 to 1) adds defects of real-world data (typos, missing
         values, monthly salaries, other date formats, unflagged duplicates,
         company name variants...) to that share of the rows, listed in
-        `JobDataset.defects` (see faker_jobs/dirty.py).
+        `JobDataset.defects` (see faker_jobs/dirty.py). `candidates` adds a
+        pool of that many job seekers (`JobDataset.candidates`) and their
+        `applications` (about that many a posting; `JobDataset.applications`),
+        with a match score and a status that follows the posting's (see
+        faker_jobs/candidates.py).
         See faker_jobs/dataset.py; `make_dataset()` mixes several locales."""
         from faker_jobs.dataset import build_dataset
 
         return build_dataset(self, postings, companies, start_date, end_date, repost_rate, id_template=id_template,
-                             dirty=dirty)
+                             dirty=dirty, candidates=candidates, applications=applications)
 
     @staticmethod
     def _occupation_job_posting(posting: OccupationPosting) -> JobPosting:

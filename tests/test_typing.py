@@ -12,6 +12,7 @@ from typing import assert_type
 from faker import Faker
 
 from faker_jobs import (
+    CandidateRecord,
     CompanyProfile,
     JobPosting,
     JobsProvider,
@@ -52,6 +53,9 @@ class TestTypedDictsMatchRuntime(unittest.TestCase):
     def test_occupation_record_keys(self) -> None:
         self.assertEqual(set(self.fake.job_occupation_record()), set(OccupationRecord.__annotations__))
 
+    def test_candidate_keys(self) -> None:
+        self.assertEqual(set(self.fake.job_candidate()), set(CandidateRecord.__annotations__))
+
     def test_occupation_posting_keys(self) -> None:
         posting = self.fake.job_occupation_posting()
         self.assertEqual(set(posting), set(OccupationPosting.__annotations__))
@@ -83,6 +87,7 @@ class TestDocumentedTypedUsage(unittest.TestCase):
         assert_type(jobs.job_occupation_record(), OccupationRecord)
         assert_type(jobs.job_occupation_skills(), list[str])
         assert_type(jobs.job_occupation_posting()["occupation"], OccupationRecord)
+        assert_type(jobs.job_candidate(), CandidateRecord)
         assert_type(jobs.job_id(), int)
         assert_type(jobs.job_id("JOB-######"), str)
         assert_type(posting["job_id"], int | str)
