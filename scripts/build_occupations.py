@@ -1192,16 +1192,74 @@ def world_sources():
     return ilo, gdp, country_info(), eurostat
 
 
+# Years of GDP per capita growth that give the yearly growth of the salaries.
+GROWTH_YEARS = 5
+# Bounds of that growth: no fall of nominal salaries; hyperinflation kept below 100% a year.
+GROWTH_BOUNDS = (0.0, 1.0)
+# Eurostat codes that are not the ISO ones.
+EUROSTAT_ISO = {"EL": "GR", "UK": "GB"}
+
+
+def wage_growth(values):
+    """Yearly growth of the GDP per capita in local currency over the latest
+    GROWTH_YEARS years (fewer when the series is shorter), None without two years."""
+    years = sorted(values, key=int)
+    if len(years) < 2:
+        return None
+    last = years[-1]
+    first = next((year for year in years if int(year) >= int(last) - GROWTH_YEARS), years[0])
+    span = int(last) - int(first)
+    if span == 0 or values[first] <= 0 or values[last] <= 0:
+        return None
+    growth = (values[last] / values[first]) ** (1 / span) - 1
+    return min(max(growth, GROWTH_BOUNDS[0]), GROWTH_BOUNDS[1])
+
+
+def add_labour(countries, gdp, info):
+    """`telework` [usually, sometimes] (shares of the employees working from
+    home, Eurostat) and `wage_growth` of each country that has them; the
+    defaults (EU, median growth) for the others."""
+    with open(fetch_salaries.TELEWORK_PATH, encoding="utf-8") as f:
+        telework = json.load(f)
+    by_alpha2 = {EUROSTAT_ISO.get(geo, geo): [entry["usually"] / 100, entry["sometimes"] / 100]
+                 for geo, entry in telework["values"].items()}
+    iso3_of = {country: iso3 for iso3, (country, _currency, _alpha2) in info.items()}
+    alpha2_of = {country: alpha2 for _iso3, (country, _currency, alpha2) in info.items()}
+    growths = []
+    for country, economy in countries.items():
+        if alpha2_of.get(country) in by_alpha2:
+            economy["telework"] = by_alpha2[alpha2_of[country]]
+        growth = wage_growth(gdp.get(iso3_of.get(country), {}))
+        if growth is not None:
+            economy["wage_growth"] = growth
+            growths.append(growth)
+    # Territories and micro-states: the figures of the country whose economy they take.
+    for country, proxy in ECONOMY_PROXIES.items():
+        if country in countries and proxy in countries:
+            for key in ("telework", "wage_growth"):
+                if key not in countries[country] and key in countries[proxy]:
+                    countries[country][key] = countries[proxy][key]
+    return {"telework": by_alpha2["EU27_2020"], "wage_growth": statistics.median(growths),
+            "telework_source": telework["source"]}
+
+
 def build_countries(conditions):
     """countries.json: the conditions of each language for the countries
     without conditions of their own in it, and the economy of every country."""
     ilo, gdp, info, eurostat = world_sources()
+    countries = economies(conditions, ilo, gdp, info, eurostat)
+    defaults = add_labour(countries, gdp, info)
     return round_floats({
         "meta": {"source": f"{ilo['source']}; World Bank GDP per capita (current LCU); currencies: GeoNames",
                  # Age ratios of the salaries (see salary_table): those of the US conditions.
-                 "age_ratio": conditions["en_US"]["salary"]["age_ratio"]},
+                 "age_ratio": conditions["en_US"]["salary"]["age_ratio"],
+                 # Countries without figures of their own: the EU shares of telework, the median growth.
+                 "telework": defaults["telework"], "wage_growth": defaults["wage_growth"],
+                 "telework_source": defaults["telework_source"],
+                 "wage_growth_source": f"World Bank GDP per capita (current LCU), yearly growth over the latest "
+                                       f"{GROWTH_YEARS} years"},
         "generic": generic_conditions(),
-        "countries": economies(conditions, ilo, gdp, info, eurostat),
+        "countries": countries,
     })
 
 

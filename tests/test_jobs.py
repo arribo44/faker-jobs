@@ -150,6 +150,26 @@ class TestJobsProvider(unittest.TestCase):
     def test_job_id(self):
         self.assertTrue(10**14 <= self.fake.job_id() < 10**16)
 
+    def test_remote_work(self):
+        def shares(locale):
+            Faker.seed(5)
+            fake = Faker(locale)
+            fake.add_provider(JobsProvider)
+            groups = {}
+            for _ in range(1500):
+                posting = fake.job_occupation_posting()
+                groups.setdefault(posting["occupation"]["isco_group"], []).append(posting["remote"])
+            return {group: 1 - values.count("on_site") / len(values) for group, values in groups.items()}, \
+                {value for values in groups.values() for value in values}
+
+        dutch, values = shares("nl_NL")
+        italian, _ = shares("it_IT")
+        self.assertEqual(values, {"on_site", "hybrid", "remote"})
+        self.assertGreater(dutch["2"], 0.6)
+        self.assertLess(dutch["9"], 0.2)
+        self.assertLess(italian["2"], dutch["2"] / 2)
+        self.assertIn(self.fake.job_posting()["remote"], {"on_site", "hybrid", "remote"})
+
     def test_job_id_template(self):
         date = datetime.date(2025, 3, 7)
         self.assertRegex(self.fake.job_id("JOB-######"), r"^JOB-\d{6}$")

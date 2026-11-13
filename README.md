@@ -498,9 +498,20 @@ fake.job_occupation_posting(sector="Logistique et transport")
 #     'seniority': 'mid',                       # 'junior' (< 3 years asked), 'mid' (3-7), 'senior' (8+)
 #     'job_portal': 'HelloWork',                # APEC and Cadremploi for executive jobs only
 #     'contact_person': 'Agathe Evrard de Lopez', 'contact': '+33 (0)3 51 39 07 57',
+#     'remote': 'on_site',                      # 'on_site', 'hybrid' or 'remote' (full remote)
 #     ...
 # }
 ```
+
+**Remote work** (`remote`) follows the country and the job: the share of
+postings offering hybrid or full remote work is the country's share of
+employees working from home, usually or sometimes (Eurostat LFS 2025, 37
+European countries; the EU's elsewhere), times a factor of the occupation's
+ISCO major group (hand-made: about 2 for managers and professionals, 0.1 to
+0.2 for manual jobs). About 30% of the French postings, 45% of the Dutch
+ones, 8% of the Italian ones; 70% of the French postings of professionals,
+1% of elementary occupations. Part of them (half the share working from
+home "usually") are full remote. The posting text says it.
 
 Benefits fit the job: remote work and flexible hours only for office jobs
 (banking and insurance, communication, business support) or executive ones,
@@ -697,6 +708,7 @@ fake.job_posting(job_title="Infirmier / Infirmière en gériatrie")          # b
 #     'job_posting_date': datetime.date(2025, 6, 1),
 #     'contact_person': 'Luc Renaud',       # from the Faker locale
 #     'contact': '04 97 52 87 61',          # from the Faker locale
+#     'remote': 'hybrid',
 # }
 ```
 
@@ -790,6 +802,10 @@ companies, postings = data.to_dataframes()   # needs pandas
   favouring those whose activity employs the occupation. An employer
   publishes several postings (a few dozen for the busiest of a pool of 150
   for 1,500 postings).
+- **Salaries over time**: those of the postings on `end_date`; earlier
+  postings are lower by the country's yearly growth of the GDP per capita in
+  local currency (World Bank, latest 5 years: about 5% a year in France, 7%
+  in the United States, much more where inflation is high).
 - **Lifecycle**: a publication date in the period (seasonal contracts from
   March to September), a closing date about a month later (log-normal) and
   a status on `end_date`: `open` (still on line, no closing date), `filled`
