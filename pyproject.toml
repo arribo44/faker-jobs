@@ -29,7 +29,14 @@ classifiers = [
 test = ["pytest"]
 # Rebuilding faker_jobs/data from DATAS/ (scripts/build_occupations.py reads xlsx and xls files).
 build = ["openpyxl", "xlrd", "pyarrow"]
-dev = ["faker-jobs[build]", "pytest", "ruff", "build", "mypy"]
+# REST API with FastAPI
+api = ["fastapi", "uvicorn"]
+# Parquet support (needs pandas + pyarrow or fastparquet)
+parquet = ["pyarrow"]
+# All optional dependencies
+all = ["faker-jobs[api,parquet,build,test]"]
+
+dev = ["faker-jobs[all]", "ruff", "mypy"]
 
 [project.urls]
 Homepage = "https://github.com/arribo44/faker-jobs"

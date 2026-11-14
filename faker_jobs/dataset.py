@@ -211,6 +211,75 @@ class JobDataset:
         fields, rows = tables[table]
         return pd.DataFrame(rows, columns=list(fields))
 
+    def to_parquet(self, directory: str, engine: str = "pyarrow") -> list[str]:
+        """Write companies.parquet and postings.parquet (Apache Parquet format)
+        in `directory` (created if needed), candidates.parquet and
+        applications.parquet with candidates, defects.parquet for a dirty
+        dataset; return their paths. Needs pandas and pyarrow or fastparquet.
+
+        Args:
+            directory: Output directory path
+            engine: Parquet engine to use ('pyarrow' or 'fastparquet', default: 'pyarrow')
+
+        Returns:
+            List of paths to the generated Parquet files
+
+        Example:
+            data = fake.job_dataset(postings=10_000)
+            data.to_parquet("output/")  # → ['output/companies.parquet', 'output/postings.parquet']
+        """
+        try:
+            import pandas as pd  # type: ignore[import-untyped, import-not-found, unused-ignore]
+        except ImportError as error:
+            raise ImportError("to_parquet() needs pandas: pip install pandas") from error
+
+        os.makedirs(directory, exist_ok=True)
+        paths = []
+        
+        # Get tables that have data
+        tables = [(name, fields, rows) for name, fields, rows in self._tables()
+                  if rows or name in ("companies", "postings")]
+        
+        for name, fields, rows in tables:
+            if not rows:
+                continue
+            path = os.path.join(directory, f"{name}.parquet")
+            df = pd.DataFrame(rows, columns=list(fields))
+            df.to_parquet(path, engine=engine)
+            paths.append(path)
+        
+        return paths
+
+    def to_parquet_table(self, table: str, path: str, engine: str = "pyarrow") -> str:
+        """Write one table as a Parquet file. Needs pandas and pyarrow or fastparquet.
+
+        Args:
+            table: Table name ('companies', 'postings', 'candidates', 'applications', 'defects')
+            path: Output file path
+            engine: Parquet engine to use ('pyarrow' or 'fastparquet', default: 'pyarrow')
+
+        Returns:
+            The path to the generated Parquet file
+        """
+        try:
+            import pandas as pd  # type: ignore[import-untyped, import-not-found, unused-ignore]
+        except ImportError as error:
+            raise ImportError("to_parquet_table() needs pandas: pip install pandas") from error
+
+        tables = {name: (fields, rows) for name, fields, rows in self._tables()}
+        if table not in tables:
+            raise ValueError(f"unknown table {table!r}: one of {', '.join(tables)}")
+        fields, rows = tables[table]
+        
+        if not rows:
+            # Create empty DataFrame with correct columns
+            df = pd.DataFrame(columns=list(fields))
+        else:
+            df = pd.DataFrame(rows, columns=list(fields))
+        
+        df.to_parquet(path, engine=engine)
+        return path
+
     def _tables(self) -> list[tuple[str, tuple[str, ...], list[Any]]]:
         return [("companies", COMPANY_FIELDS, self.companies), ("postings", POSTING_FIELDS, self.postings),
                 ("candidates", CANDIDATE_FIELDS, self.candidates),

@@ -46,6 +46,7 @@ from faker.providers import BaseProvider
 
 from faker_jobs.candidates import CandidateRecord as CandidateRecord
 from faker_jobs.candidates import make_candidate
+from faker_jobs.cv import CVFormat, CVRecord, CVText, generate_cv
 
 if TYPE_CHECKING:
     from faker_jobs.dataset import JobDataset
@@ -1812,3 +1813,72 @@ class JobsProvider(BaseProvider):
             "contact": posting["contact"],
             "remote": posting["remote"],
         }
+
+    def job_cv(
+        self,
+        candidate: CandidateRecord | None = None,
+        code: str | None = None,
+        sector: str | None = None,
+        weighted: bool = True,
+        sections: list[str] | None = None,
+        experience_count: int = 3,
+        education_count: int = 2,
+        project_count: int = 2,
+        output_format: CVFormat = "dict",
+    ) -> CVRecord | CVText | dict[str, Any]:
+        """Generate a complete CV/resume for a job candidate.
+
+        Returns a structured CV with professional experience, education, skills,
+        projects, and more. Can be based on an existing candidate (from
+        `job_candidate()` or `job_dataset(candidates=...)`) or generated from
+        scratch.
+
+        Args:
+            candidate: A candidate record to base the CV on. If None, a new
+                candidate is generated based on `code` or random.
+            code: Occupation code to use if no candidate is provided.
+            sector: Activity sector to use if no candidate is provided.
+            weighted: Whether to pick occupations by demand (default: True).
+            sections: List of sections to include (default: all). Options:
+                'summary', 'experience', 'education', 'skills', 'projects',
+                'languages', 'certifications', 'interests'.
+            experience_count: Number of work experience entries (default: 3).
+            education_count: Number of education entries (default: 2).
+            project_count: Number of project entries (default: 2).
+            output_format: Output format. Options:
+                - 'dict': Returns a CVRecord dictionary (default)
+                - 'json': Returns a JSON-serializable dictionary
+                - 'markdown': Returns a CVText with markdown-formatted CV
+
+        Returns:
+            A CVRecord (dict), CVText (dict with 'markdown' key), or JSON dict
+            depending on output_format.
+
+        Example:
+            # Generate CV from scratch
+            cv = fake.job_cv()
+
+            # Generate CV for a specific occupation
+            cv = fake.job_cv(code="J1506")  # Nurse in French ROME
+
+            # Generate CV for an existing candidate
+            candidate = fake.job_candidate()
+            cv = fake.job_cv(candidate=candidate)
+
+            # Generate CV in markdown format
+            cv_md = fake.job_cv(output_format="markdown")
+            print(cv_md["markdown"])
+        """
+        if candidate is None:
+            # Generate a candidate based on code/sector or random
+            candidate = self.job_candidate(code=code, sector=sector, weighted=weighted)
+
+        return generate_cv(
+            self,
+            candidate=candidate,
+            sections=sections,
+            experience_count=experience_count,
+            education_count=education_count,
+            project_count=project_count,
+            output_format=output_format,
+        )
